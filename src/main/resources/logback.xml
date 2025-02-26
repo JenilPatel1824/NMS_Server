@@ -1,0 +1,21 @@
+<configuration>
+    <!-- Suppress all DEBUG logs from external libraries -->
+    <logger name="io.netty" level="WARN" />
+    <logger name="io.vertx" level="WARN" />
+    <logger name="io.netty.util.internal" level="WARN" />
+
+    <!-- Only show logs for your package (e.g., io.vertx.nms) -->
+    <logger name="io.vertx.nms" level="All" />
+
+    <!-- Root logger configuration -->
+    <root level="WARN">
+        <appender-ref ref="CONSOLE" />
+    </root>
+
+    <!-- Console appender configuration -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
+        </encoder>
+    </appender>
+</configuration>
