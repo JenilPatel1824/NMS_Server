@@ -1,13 +1,11 @@
 package io.vertx.nms;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
+import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
+import io.vertx.nms.database.QueryExecutor;
 import io.vertx.nms.http.HttpServerVerticle;
-import io.vertx.nms.service.CredentialService;
-import io.vertx.nms.service.DatabaseService;
-import io.vertx.pgclient.PgConnectOptions;
-import io.vertx.pgclient.PgPool;
-import io.vertx.sqlclient.PoolOptions;
 
 
 public class MainVerticle extends AbstractVerticle
@@ -24,15 +22,7 @@ public class MainVerticle extends AbstractVerticle
                     System.err.println("Failed to deploy HTTP Server: " + err.getMessage());
                 });
 
-        PgConnectOptions connectOptions = new PgConnectOptions().setHost("localhost").setPort(5432).setDatabase("NMS_Lite").setUser("admin").setPassword("admin");
-
-        PoolOptions poolOptions = new PoolOptions().setMaxSize(10);
-
-        PgPool pgPool = PgPool.pool(vertx, connectOptions, poolOptions);
-
-        vertx.deployVerticle(new CredentialService());
-
-        vertx.deployVerticle(new DatabaseService(pgPool));
+        vertx.deployVerticle(new QueryExecutor(),new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
     }
 
     public static void main(String[] args)

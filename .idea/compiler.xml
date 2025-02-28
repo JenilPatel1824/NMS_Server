@@ -6,7 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="my-vertx-project" />
+        <module name="NMS_Lite" />
       </profile>
     </annotationProcessing>
   </component>

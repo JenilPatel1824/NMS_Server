@@ -1,10 +1,12 @@
 package io.vertx.nms.http;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.RoutingContext;
+import io.vertx.nms.http.router.CredentialRouter;
+import io.vertx.nms.http.router.DiscoveryRouter;
+import io.vertx.nms.http.router.ProvisionRouter;
+import io.vertx.nms.http.router.HealthRouter;
+import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,113 +19,18 @@ public class HttpServerVerticle extends AbstractVerticle
     {
         Router mainRouter = Router.router(vertx);
 
-        Router credentialRouter = Router.router(vertx);
+        QueryBuilder queryBuilder = new QueryBuilder();
 
-        EventBus eventBus = vertx.eventBus();
+        mainRouter.route("/credential/*").subRouter( new CredentialRouter(vertx,queryBuilder).createRouter());
 
-        credentialRouter.get("/:credentialProfileName").handler(ctx ->
+        mainRouter.route("/discovery/*").subRouter( new DiscoveryRouter(vertx, queryBuilder).createRouter());
+
+        mainRouter.route("/provision/*").subRouter( new ProvisionRouter(vertx,queryBuilder).createRouter());
+
+        mainRouter.route("/health/*").subRouter( new HealthRouter(vertx).createRouter());
+
+        vertx.createHttpServer().requestHandler(mainRouter).listen(8080, http ->
         {
-            String credentialProfileName = ctx.pathParam("credentialProfileName");
-
-            if (!isValidId(credentialProfileName, ctx)) return;
-
-            eventBus.request("service.credential.read", credentialProfileName, reply -> {
-
-                if (reply.succeeded())
-                {
-                    ctx.response()
-                            .setStatusCode(200)
-                            .end(reply.result().body().toString());
-                }
-                else
-                {
-                    logger.error("Failed to process GET request: {}", reply.cause().getMessage());
-
-                    ctx.response().setStatusCode(500).end("Internal Server Error");
-                }
-            });
-        });
-
-        credentialRouter.delete("/:credentialProfileName").handler(ctx -> {
-
-            String credentialProfileName = ctx.pathParam("credentialProfileName");
-
-            if (!isValidId(credentialProfileName, ctx)) return;
-
-            eventBus.request("service.credential.delete", credentialProfileName, reply -> {
-
-                if (reply.succeeded())
-                {
-                    ctx.response()
-                            .setStatusCode(200)
-                            .end(reply.result().body().toString());
-                }
-                else
-                {
-                    logger.error("Failed to process DELETE request: {}", reply.cause().getMessage());
-                    ctx.response().setStatusCode(500).end("Internal Server Error");
-                }
-            });
-        });
-
-        credentialRouter.post().handler(ctx -> {
-
-            ctx.request().bodyHandler(buffer -> {
-
-                String body = buffer.toString();
-
-                logger.info("POST Request body: {}", body);
-
-                eventBus.request("service.credential.create", body, reply -> {
-
-                    if (reply.succeeded())
-                    {
-                        ctx.response()
-                                .setStatusCode(201)
-                                .end(reply.result().body().toString());
-                    }
-                    else
-                    {
-                        logger.error("Failed to process POST request: {}", reply.cause().getMessage());
-                        ctx.response().setStatusCode(500).end("Internal Server Error");
-                    }
-                });
-            });
-        });
-
-        credentialRouter.put().handler(ctx -> {
-
-            logger.info("put req recived: ");
-
-            ctx.request().bodyHandler(buffer -> {
-
-                String body = buffer.toString();
-
-                logger.info("PUT Request body: {}", body);
-
-                JsonObject updateRequest = new JsonObject(body);
-
-                eventBus.request("service.credential.update", updateRequest, reply -> {
-
-                    if (reply.succeeded())
-                    {
-                        ctx.response()
-                                .setStatusCode(200)
-                                .end(reply.result().body().toString());
-                    }
-                    else
-                    {
-                        logger.error("Failed to process PUT request: {}", reply.cause().getMessage());
-
-                        ctx.response().setStatusCode(500).end("Internal Server Error");
-                    }
-                });
-            });
-        });
-
-        mainRouter.mountSubRouter("/credential", credentialRouter);
-
-        vertx.createHttpServer().requestHandler(mainRouter).listen(8080, http -> {
             if (http.succeeded())
             {
                 logger.info("HTTP Server is listening on port 8080");
@@ -134,16 +41,4 @@ public class HttpServerVerticle extends AbstractVerticle
             }
         });
     }
-
-    private boolean isValidId(String id, RoutingContext ctx)
-    {
-        if (id == null || id.isEmpty())
-        {
-            ctx.response().setStatusCode(400).end("Bad Request: Credential Profile Name is required");
-
-            return false;
-        }
-        return true;
-    }
-
 }

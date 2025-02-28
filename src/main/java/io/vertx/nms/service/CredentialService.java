@@ -1,181 +1,165 @@
 package io.vertx.nms.service;
 
-import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
+import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CredentialService extends AbstractVerticle
+public class CredentialService
 {
+
     private static final Logger logger = LoggerFactory.getLogger(CredentialService.class);
 
-    @Override
-    public void start()
+    private final EventBus eventBus;
+
+    public CredentialService(EventBus eventBus, QueryBuilder queryBuilder)
     {
-        EventBus eventBus = vertx.eventBus();
+        this.eventBus = eventBus;
+    }
 
-        logger.info("CredentialService is listening on eventbus address: service.credential");
+    public void getAllCredentials(RoutingContext ctx)
+    {
+        JsonObject request = new JsonObject().put("tableName", "credential").put("operation", "select").put("columns", new JsonArray().add("*"));
 
-        eventBus.consumer("service.credential.create", message -> {
+        String query = QueryBuilder.buildQuery(request);
 
-            String requestBodyStr = message.body().toString();
+        logger.info("[{}] Generated Query: {}", Thread.currentThread().getName(), query);
 
-            JsonObject requestBody = new JsonObject(requestBodyStr);
-
-            String systemType = requestBody.getString("system_type");
-
-            if ("snmp".equalsIgnoreCase(systemType))
+        eventBus.request("database.query.execute", new JsonObject().put("query", query), reply ->
+        {
+            if (reply.succeeded())
             {
-                if (!requestBody.containsKey("community") || !requestBody.containsKey("version") || !requestBody.containsKey("credential_profile_name"))
-                {
-                    message.reply(new JsonObject()
-                            .put("status", "fail")
-                            .put("message", "System type and parameters not matching"));
-                    return;
-                }
-            }
-            else if ("windows".equalsIgnoreCase(systemType) || "linux".equalsIgnoreCase(systemType))
-            {
-                message.reply(new JsonObject()
-                        .put("status", "fail")
-                        .put("message", "Currently not supported, try with snmp only"));
-                return;
+                ctx.response().setStatusCode(200).end(reply.result().body().toString());
             }
             else
             {
-                message.reply(new JsonObject()
-                        .put("status", "fail")
-                        .put("message", "system type is not known"));
-                return;
+                logger.error("[{}] Failed to process GET request: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+
+                ctx.response().setStatusCode(500).end("Internal Server Error");
             }
-
-            eventBus.request("database.credential.add", requestBody, reply -> {
-
-                if (reply.succeeded())
-                {
-                    message.reply(reply.result().body());
-                }
-                else {
-                    String errorMessage = reply.cause().getMessage();
-
-                    if (errorMessage.contains("duplicate key value violates unique constraint")) {
-                        JsonObject response = new JsonObject()
-                                .put("status", "fail")
-                                .put("message", "Credential Profile Name already exists");
-
-                        message.reply(response);
-                    } else {
-                        JsonObject response = new JsonObject()
-                                .put("status", "fail")
-                                .put("message", "not proceed");
-
-                        message.reply(response);
-                    }
-                }
-            });
         });
+    }
 
-        eventBus.consumer("service.credential.read", message -> {
+    public void getCredentialByName(String credentialProfileName, RoutingContext ctx)
+    {
+        JsonObject request = new JsonObject().put("tableName", "credential").put("operation", "select").put("columns", new JsonArray().add("*")).put("condition", "credential_profile_name = '" + credentialProfileName + "'");
 
-            String credentialProfileName = message.body().toString();
+        String query = QueryBuilder.buildQuery(request);
 
-            logger.info("Fetching Credential for Profile Name: {}", credentialProfileName);
+        logger.info("[{}] Generated Query: {}", Thread.currentThread().getName(), query);
 
-            eventBus.request("database.credential.read", credentialProfileName, reply -> {
-
-                if (reply.succeeded())
-                {
-                    message.reply(reply.result().body());
-                }
-                else
-                {
-                    JsonObject response = new JsonObject()
-                            .put("status", "fail")
-                            .put("message", "Credential not found");
-
-                    message.reply(response);
-                }
-            });
-        });
-
-        eventBus.consumer("service.credential.update", message -> {
-
-            logger.info("service.credential.update received message: " + message.body());
-
-            String requestBodyStr = message.body().toString();
-
-            JsonObject requestBody = new JsonObject(requestBodyStr);
-
-            String credentialProfileName = requestBody.getString("credential_profile_name");
-            String systemType = requestBody.getString("system_type");
-            String community = requestBody.getString("community");
-            String version = requestBody.getString("version");
-
-            if (credentialProfileName == null || credentialProfileName.isEmpty() ||
-                    systemType == null || systemType.isEmpty() ||
-                    community == null || community.isEmpty() ||
-                    version == null || version.isEmpty())
+        eventBus.request("database.query.execute", new JsonObject().put("query", query), reply ->
+        {
+            if (reply.succeeded())
             {
-                message.reply(new JsonObject()
-                        .put("status", "fail")
-                        .put("message", "All fields (credential_profile_name, system_type, community, version) are required and must not be empty"));
-                return;
+                ctx.response().setStatusCode(200).end(reply.result().body().toString());
             }
-
-            if (!"snmp".equalsIgnoreCase(systemType)) {
-                message.reply(new JsonObject()
-                        .put("status", "fail")
-                        .put("message", "Currently not supported, try with snmp only"));
-                return;
-            }
-
-            logger.debug("sending from service.credential.update to database.credential.update ");
-            eventBus.request("database.credential.update", requestBody, reply -> {
-                if (reply.succeeded())
-                {
-                    message.reply(reply.result().body());
-                }
-                else
-                {
-                    JsonObject response = new JsonObject()
-                            .put("status", "fail")
-                            .put("message", "Update failed");
-
-                    message.reply(response);
-                }
-            });
-        });
-
-        eventBus.consumer("service.credential.delete", message -> {
-
-            String credentialProfileName = message.body().toString();
-
-            if (credentialProfileName == null || credentialProfileName.isEmpty())
+            else
             {
-                message.reply(new JsonObject()
-                        .put("status", "fail")
-                        .put("message", "Credential Profile Name is required for deleting credential"));
-                return;
+                logger.error("[{}] Failed to process GET by name request: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+
+                ctx.response().setStatusCode(500).end("Internal Server Error");
             }
-
-            logger.info("Deleting Credential for Profile Name: {}", credentialProfileName);
-
-            eventBus.request("database.credential.delete", credentialProfileName, reply -> {
-
-                if (reply.succeeded())
-                {
-                    message.reply(reply.result().body());
-                }
-                else
-                {
-                    JsonObject response = new JsonObject()
-                            .put("status", "fail")
-                            .put("message", "Deletion failed");
-
-                    message.reply(response);
-                }
-            });
         });
+    }
+
+    public void createCredential(JsonObject requestBody, RoutingContext ctx)
+    {
+        if (isValidRequestBody(requestBody, ctx)) return;
+
+        JsonObject request = new JsonObject()
+                .put("tableName", "credential")
+                .put("operation", "insert")
+                .put("data", requestBody);
+
+        String query = QueryBuilder.buildQuery(request);
+
+        logger.info("[{}] Generated Query: {}", Thread.currentThread().getName(), query);
+
+        eventBus.request("database.query.execute", new JsonObject().put("query", query), reply ->
+        {
+            if (reply.succeeded())
+            {
+                ctx.response().setStatusCode(201).end(reply.result().body().toString());
+            }
+            else
+            {
+                logger.error("[{}] Failed to process POST request: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+
+                ctx.response().setStatusCode(500).end("Internal Server Error");
+            }
+        });
+    }
+
+    public void updateCredential(String credentialProfileName, JsonObject requestBody, RoutingContext ctx)
+    {
+        if (isValidRequestBody(requestBody, ctx)) return;
+
+        JsonObject request = new JsonObject()
+                .put("tableName", "credential")
+                .put("operation", "update")
+                .put("data", requestBody)
+                .put("condition", "credential_profile_name = '" + credentialProfileName + "'");
+
+        String query = QueryBuilder.buildQuery(request);
+
+        logger.info("[{}] Generated Query: {}", Thread.currentThread().getName(), query);
+
+        eventBus.request("database.query.execute", new JsonObject().put("query", query), reply ->
+        {
+            if (reply.succeeded())
+            {
+                ctx.response().setStatusCode(200).end(reply.result().body().toString());
+            }
+            else
+            {
+                logger.error("[{}] Failed to process PUT request: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+
+                ctx.response().setStatusCode(500).end("Internal Server Error");
+            }
+        });
+    }
+
+    public void deleteCredential(String credentialProfileName, RoutingContext ctx)
+    {
+        JsonObject request = new JsonObject()
+                .put("tableName", "credential")
+                .put("operation", "delete")
+                .put("condition", "credential_profile_name = '" + credentialProfileName + "'");
+
+        String query = QueryBuilder.buildQuery(request);
+
+        logger.info("[{}] Generated Query: {}", Thread.currentThread().getName(), query);
+
+        eventBus.request("database.query.execute", new JsonObject().put("query", query), reply ->
+        {
+            if (reply.succeeded())
+            {
+                ctx.response().setStatusCode(204).end();
+            }
+            else
+            {
+                logger.error("[{}] Failed to process DELETE request: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+
+                ctx.response().setStatusCode(500).end("Internal Server Error");
+            }
+        });
+    }
+
+    private boolean isValidRequestBody(JsonObject requestBody, RoutingContext ctx)
+    {
+        if (!requestBody.containsKey("credential_profile_name") || requestBody.getString("credential_profile_name").isEmpty() ||
+                !requestBody.containsKey("version") || requestBody.getString("version").isEmpty() ||
+                !requestBody.containsKey("community") || requestBody.getString("community").isEmpty() ||
+                !requestBody.containsKey("system_type") || requestBody.getString("system_type").isEmpty()) {
+
+            ctx.response().setStatusCode(400).end("Required fields: credential_profile_name, version, community, system_type");
+
+            return true;
+        }
+        return false;
     }
 }
