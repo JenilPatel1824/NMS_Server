@@ -74,6 +74,62 @@ public class QueryExecutor extends AbstractVerticle
             }
         });
 
+        String createSnmpTableQuery = "CREATE TABLE IF NOT EXISTS snmp (" +
+                "id SERIAL PRIMARY KEY," +
+                "discovery_profile_name VARCHAR(255) REFERENCES discovery(discovery_profile_name)," +
+                "system_name VARCHAR(255)," +
+                "system_description TEXT," +
+                "system_location VARCHAR(255)," +
+                "system_object_id VARCHAR(255)," +
+                "system_uptime BIGINT" +
+                ");";
+
+        pgClient.query(createSnmpTableQuery).execute(ar ->
+        {
+            if (ar.succeeded())
+            {
+                logger.info("Checked snmp table existence. Created if not present.");
+            }
+            else
+            {
+                logger.error("Failed to check or create snmp table: {}", ar.cause().getMessage());
+            }
+        });
+
+        // SNMP Interface Table
+        String createSnmpInterfaceTableQuery = "CREATE TABLE IF NOT EXISTS snmp_interface (" +
+                "id SERIAL PRIMARY KEY," +
+                "snmp_id INTEGER REFERENCES snmp(id)," +
+                "interface_index INTEGER," +
+                "interface_name VARCHAR(255)," +
+                "interface_alias VARCHAR(255)," +
+                "interface_operational_status VARCHAR(50)," +
+                "interface_admin_status VARCHAR(50)," +
+                "interface_description TEXT," +
+                "interface_sent_error_packet BIGINT," +
+                "interface_received_error_packet BIGINT," +
+                "interface_sent_octets BIGINT," +
+                "interface_received_octets BIGINT," +
+                "interface_speed BIGINT," +
+                "interface_physical_address VARCHAR(255)," +
+                "interface_discard_packets BIGINT," +
+                "interface_in_packets BIGINT," +
+                "interface_out_packets BIGINT" +
+                ");";
+
+        pgClient.query(createSnmpInterfaceTableQuery).execute(ar ->
+        {
+            if (ar.succeeded())
+            {
+                logger.info("Checked snmp_interface table existence. Created if not present.");
+            }
+            else
+            {
+                logger.error("Failed to check or create snmp_interface table: {}", ar.cause().getMessage());
+            }
+        });
+
+
         logger.info("DatabaseService is listening on eventbus address: database.query.execute");
 
         eventBus.consumer("database.query.execute", message -> {

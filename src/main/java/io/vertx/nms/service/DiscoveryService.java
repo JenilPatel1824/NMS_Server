@@ -202,88 +202,62 @@ public class DiscoveryService
         });
     }
 
-    public void runDiscovery(String discoveryProfileName, RoutingContext ctx)
-    {
+    public void runDiscovery(String discoveryProfileName, RoutingContext ctx) {
         JsonObject request = new JsonObject().put("query", "SELECT * FROM discovery WHERE discovery_profile_name = '" + discoveryProfileName + "'");
 
-        eventBus.request("database.query.execute", request, fetchResult ->
-        {
-            if (fetchResult.failed())
-            {
+        eventBus.request("database.query.execute", request, fetchResult -> {
+            if (fetchResult.failed()) {
                 logger.error("Failed to fetch discovery for profile name: {}", discoveryProfileName);
-
                 ctx.response().setStatusCode(500).end("Internal server error");
-
                 return;
             }
 
             JsonObject result = (JsonObject) fetchResult.result().body();
-
             JsonArray dataArray = result.getJsonArray("data");
 
-            if (dataArray == null || dataArray.isEmpty())
-            {
+            if (dataArray == null || dataArray.isEmpty()) {
                 logger.error("No discovery data found for profile name: {}", discoveryProfileName);
-
                 ctx.response().setStatusCode(404).end("Discovery not found");
-
                 return;
             }
 
             JsonObject discovery = dataArray.getJsonObject(0);
-
             String targetIp = discovery.getString("ip");
-
             String credentialProfileName = discovery.getString("credential_profile_name");
 
-            if (targetIp == null || targetIp.isEmpty())
-            {
+            if (targetIp == null || targetIp.isEmpty()) {
                 ctx.response().setStatusCode(400).end("Target IP not found in discovery data");
-
                 return;
             }
 
             logger.info("Found IP for request: {}", targetIp);
 
-            vertx.executeBlocking(promise ->
-            {
+            vertx.executeBlocking(promise -> {
                 boolean isReachable = PingUtil.ping(targetIp);
-
                 promise.complete(isReachable);
-            }, res ->
-            {
-                if (res.succeeded() && (Boolean) res.result())
-                {
+            }, res -> {
+                if (res.succeeded() && (Boolean) res.result()) {
                     String query = "SELECT * FROM credential WHERE credential_profile_name = '" + credentialProfileName + "'";
-
                     logger.info("Credential Query: {}", query);
 
-                    eventBus.request("database.query.execute", new JsonObject().put("query", query), credentialResult ->
-                    {
-                        if (credentialResult.failed())
-                        {
+                    eventBus.request("database.query.execute", new JsonObject().put("query", query), credentialResult -> {
+                        if (credentialResult.failed()) {
                             logger.error("Failed to fetch credential for profile: {}", credentialProfileName);
-
                             ctx.response().setStatusCode(500).end("Failed to fetch credential");
-
                             return;
                         }
-                        JsonObject credentialResultBody = (JsonObject) credentialResult.result().body();
 
+                        JsonObject credentialResultBody = (JsonObject) credentialResult.result().body();
                         JsonArray credentialData = credentialResultBody.getJsonArray("data");
 
-                        if (credentialData == null || credentialData.isEmpty())
-                        {
+                        if (credentialData == null || credentialData.isEmpty()) {
                             ctx.response().setStatusCode(404).end("No credential data found");
-
                             return;
                         }
+
                         JsonObject credential = credentialData.getJsonObject(0);
-
                         String community = credential.getString("community");
-
                         String version = credential.getString("version");
-
                         String deviceType = credential.getString("system_type");
 
                         JsonObject zmqRequest = new JsonObject()
@@ -295,65 +269,51 @@ public class DiscoveryService
 
                         logger.info("ZMQ Request: " + zmqRequest);
 
-                        vertx.executeBlocking(promise ->
-                        {
-                            try
-                            {
-                                String zmqResponse = ZmqClient.sendToZmq(zmqRequest.encode());
-
-                                promise.complete(zmqResponse);
-                            }
-                            catch (Exception e)
-                            {
-                                promise.fail(e);
-                            }
-                        }, zmqResult ->
-                        {
-                            JsonObject zmqResponse = new JsonObject((String) zmqResult.result());
-
-                            if (zmqResult.failed() || !"success".equalsIgnoreCase(zmqResponse.getString("status")))
-                            {
-                                logger.error("Discovery failed for IP: {}", targetIp);
-
-                                ctx.response().setStatusCode(500).end("Discovery failed for IP: "+targetIp);
-
+                        eventBus.request("zmq.send", zmqRequest, zmqResult -> {
+                            if (zmqResult.failed()) {
+                                logger.info("No response from ZMQ server");
+                                ctx.response().setStatusCode(504).end("No response from ZMQ server");
                                 return;
                             }
+
+                            String zmqResponseStr = (String) zmqResult.result().body();
+                            logger.info("ZMQ Response: " + zmqResponseStr);
+
+                            JsonObject zmqResponse = new JsonObject(zmqResponseStr);
+                            boolean isSuccess = "success".equalsIgnoreCase(zmqResponse.getString("status"));
 
                             JsonObject updateRequest = new JsonObject()
                                     .put("tableName", "discovery")
                                     .put("operation", "update")
-                                    .put("data", new JsonObject().put("discovery", true))
+                                    .put("data", new JsonObject().put("status", isSuccess))
                                     .put("condition", "discovery_profile_name = '" + discoveryProfileName + "'");
 
                             String updateQuery = queryBuilder.buildQuery(updateRequest);
 
-                            eventBus.request("database.query.execute", new JsonObject().put("query", updateQuery), updateResult ->
-                            {
-                                if (updateResult.succeeded())
-                                {
-                                    logger.info("Discovery status updated successfully for profile name: {}", discoveryProfileName);
+                            eventBus.request("database.query.execute", new JsonObject().put("query", updateQuery), updateResult -> {
+                                if (updateResult.succeeded()) {
+                                    logger.info("Discovery status updated to '{}' for profile name: {}", isSuccess, discoveryProfileName);
 
-                                    ctx.response().setStatusCode(200).end("Discovery run successful system name: "+zmqResponse.getString("systemName"));
-                                }
-                                else
-                                {
+                                    if (isSuccess) {
+                                        ctx.response().setStatusCode(200).end("Discovery run successful system name: " + zmqResponse.getString("systemName"));
+                                    } else {
+                                        ctx.response().setStatusCode(500).end("Discovery failed for IP: " + targetIp);
+                                    }
+                                } else {
                                     logger.error("Failed to update discovery status for profile name: {}", discoveryProfileName);
-
                                     ctx.response().setStatusCode(500).end("Failed to update discovery status");
                                 }
                             });
                         });
                     });
-                }
-                else {
+                } else {
                     logger.error("Ping failed for IP: {}", targetIp);
-
                     ctx.response().setStatusCode(400).end("Ping failed");
                 }
             });
         });
     }
+
 
     private boolean isValidDiscoveryRequest(JsonObject requestBody)
     {

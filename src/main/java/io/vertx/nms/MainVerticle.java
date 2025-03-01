@@ -5,7 +5,9 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
 import io.vertx.nms.database.QueryExecutor;
+import io.vertx.nms.engine.PollingEngine;
 import io.vertx.nms.http.HttpServerVerticle;
+import io.vertx.nms.util.ZmqClient;
 
 
 public class MainVerticle extends AbstractVerticle
@@ -23,6 +25,10 @@ public class MainVerticle extends AbstractVerticle
                 });
 
         vertx.deployVerticle(new QueryExecutor(),new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+
+        vertx.deployVerticle(new ZmqClient());
+
+        vertx.deployVerticle(new PollingEngine());
     }
 
     public static void main(String[] args)
