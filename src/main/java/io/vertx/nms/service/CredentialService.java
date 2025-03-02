@@ -26,8 +26,6 @@ public class CredentialService
 
         String query = QueryBuilder.buildQuery(request);
 
-        logger.info("[{}] Generated Query: {}", Thread.currentThread().getName(), query);
-
         eventBus.request("database.query.execute", new JsonObject().put("query", query), reply ->
         {
             if (reply.succeeded())
@@ -48,8 +46,6 @@ public class CredentialService
         JsonObject request = new JsonObject().put("tableName", "credential").put("operation", "select").put("columns", new JsonArray().add("*")).put("condition", "credential_profile_name = '" + credentialProfileName + "'");
 
         String query = QueryBuilder.buildQuery(request);
-
-        logger.info("[{}] Generated Query: {}", Thread.currentThread().getName(), query);
 
         eventBus.request("database.query.execute", new JsonObject().put("query", query), reply ->
         {
@@ -77,8 +73,6 @@ public class CredentialService
 
         String query = QueryBuilder.buildQuery(request);
 
-        logger.info("[{}] Generated Query: {}", Thread.currentThread().getName(), query);
-
         eventBus.request("database.query.execute", new JsonObject().put("query", query), reply ->
         {
             if (reply.succeeded())
@@ -105,8 +99,6 @@ public class CredentialService
                 .put("condition", "credential_profile_name = '" + credentialProfileName + "'");
 
         String query = QueryBuilder.buildQuery(request);
-
-        logger.info("[{}] Generated Query: {}", Thread.currentThread().getName(), query);
 
         eventBus.request("database.query.execute", new JsonObject().put("query", query), reply ->
         {

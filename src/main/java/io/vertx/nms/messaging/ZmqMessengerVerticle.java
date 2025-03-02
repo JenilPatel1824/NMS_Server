@@ -46,6 +46,8 @@ public class ZmqMessengerVerticle extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
+        logger.info("zmq message verticle "+Thread.currentThread().getName());
+
         context = ZMQ.context(1);
 
         dealer = context.socket(ZMQ.DEALER);
@@ -67,6 +69,7 @@ public class ZmqMessengerVerticle extends AbstractVerticle
         });
 
         startPromise.complete();
+
     }
 
     private void handleRequest(Message<JsonObject> message)
@@ -77,7 +80,7 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
         request.put("request_id", requestId);
 
-        logger.info("zmq.send request: {}", request);
+        logger.info(Thread.currentThread().getName()+" zmq.send request: after putting req id {}", request);
 
         pendingRequests.put(requestId, new PendingRequest(message, System.currentTimeMillis()));
 
@@ -109,6 +112,8 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
                     if (pendingRequest != null)
                     {
+                        logger.info(Thread.currentThread().getName()+" Replying "+replyJson);
+
                         pendingRequest.message.reply(replyJson);
                     }
                     else

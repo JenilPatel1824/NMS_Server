@@ -25,7 +25,7 @@ public class MainVerticle extends AbstractVerticle
 
         vertx.deployVerticle(new DatabaseVerticle());
 
-        vertx.deployVerticle(new ZmqMessengerVerticle(),new DeploymentOptions().setWorkerPoolName("ZMQ").setWorkerPoolSize(5));
+        vertx.deployVerticle(ZmqMessengerVerticle.class,new DeploymentOptions().setInstances(5));
 
         vertx.deployVerticle(new PollingEngine());
 

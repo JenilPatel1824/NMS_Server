@@ -19,7 +19,7 @@ public class PollingEngine extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        vertx.setTimer(300000, id -> fetchProvisionedDevices());
+        vertx.setTimer(5000, id -> fetchProvisionedDevices());
 
         startPromise.complete();
     }
