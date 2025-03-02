@@ -2,12 +2,11 @@ package io.vertx.nms;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.DeploymentOptions;
-import io.vertx.core.ThreadingModel;
 import io.vertx.core.Vertx;
-import io.vertx.nms.database.QueryExecutor;
+import io.vertx.nms.database.DatabaseVerticle;
 import io.vertx.nms.engine.PollingEngine;
 import io.vertx.nms.http.HttpServerVerticle;
-import io.vertx.nms.util.ZmqClient;
+import io.vertx.nms.messaging.ZmqMessengerVerticle;
 
 
 public class MainVerticle extends AbstractVerticle
@@ -24,9 +23,9 @@ public class MainVerticle extends AbstractVerticle
                     System.err.println("Failed to deploy HTTP Server: " + err.getMessage());
                 });
 
-        vertx.deployVerticle(new QueryExecutor());
+        vertx.deployVerticle(new DatabaseVerticle());
 
-        vertx.deployVerticle(new ZmqClient(),new DeploymentOptions().setWorkerPoolName("ZMQ").setWorkerPoolSize(5));
+        vertx.deployVerticle(new ZmqMessengerVerticle(),new DeploymentOptions().setWorkerPoolName("ZMQ").setWorkerPoolSize(5));
 
         vertx.deployVerticle(new PollingEngine());
 

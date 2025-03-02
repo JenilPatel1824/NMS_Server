@@ -2,10 +2,10 @@ package io.vertx.nms.http;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.ext.web.Router;
-import io.vertx.nms.http.router.CredentialRouter;
-import io.vertx.nms.http.router.DiscoveryRouter;
-import io.vertx.nms.http.router.ProvisionRouter;
-import io.vertx.nms.http.router.HealthRouter;
+import io.vertx.nms.http.handler.CredentialHandler;
+import io.vertx.nms.http.handler.DiscoveryHandler;
+import io.vertx.nms.http.handler.ProvisionHandler;
+import io.vertx.nms.http.handler.HealthHandler;
 import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,15 +19,13 @@ public class HttpServerVerticle extends AbstractVerticle
     {
         Router mainRouter = Router.router(vertx);
 
-        QueryBuilder queryBuilder = new QueryBuilder();
+        mainRouter.route("/credential/*").subRouter( new CredentialHandler(vertx).createRouter());
 
-        mainRouter.route("/credential/*").subRouter( new CredentialRouter(vertx,queryBuilder).createRouter());
+        mainRouter.route("/discovery/*").subRouter( new DiscoveryHandler(vertx).createRouter());
 
-        mainRouter.route("/discovery/*").subRouter( new DiscoveryRouter(vertx, queryBuilder).createRouter());
+        mainRouter.route("/provision/*").subRouter( new ProvisionHandler(vertx).createRouter());
 
-        mainRouter.route("/provision/*").subRouter( new ProvisionRouter(vertx,queryBuilder).createRouter());
-
-        mainRouter.route("/health/*").subRouter( new HealthRouter(vertx).createRouter());
+        mainRouter.route("/health/*").subRouter( new HealthHandler(vertx).createRouter());
 
         vertx.createHttpServer().requestHandler(mainRouter).listen(8080, http ->
         {

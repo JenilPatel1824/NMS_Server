@@ -1,17 +1,17 @@
-package io.vertx.nms.http.router;
+package io.vertx.nms.http.handler;
 
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HealthRouter
+public class HealthHandler
 {
-    private static final Logger logger = LoggerFactory.getLogger(HealthRouter.class);
+    private static final Logger logger = LoggerFactory.getLogger(HealthHandler.class);
 
     private final Vertx vertx;
 
-    public HealthRouter(Vertx vertx)
+    public HealthHandler(Vertx vertx)
     {
         this.vertx=vertx;
     }

@@ -2,31 +2,31 @@ package io.vertx.nms.engine;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.nms.database.QueryExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PollingEngine extends AbstractVerticle {
+public class PollingEngine extends AbstractVerticle
+{
 
     private static final Logger logger = LoggerFactory.getLogger(PollingEngine.class);
 
-
     private static final String DB_QUERY_ADDRESS = "database.query.execute";
+
     private static final String ZMQ_REQUEST_ADDRESS = "zmq.send";
 
     @Override
-    public void start(Promise<Void> startPromise) {
-        vertx.setTimer(3000, id -> fetchProvisionedDevices());
+    public void start(Promise<Void> startPromise)
+    {
+        vertx.setTimer(300000, id -> fetchProvisionedDevices());
+
         startPromise.complete();
     }
 
-    private void fetchProvisionedDevices() {
-
+    private void fetchProvisionedDevices()
+    {
         logger.info("calling ");
-
 
         JsonObject queryRequest = new JsonObject().put("query",
                 "SELECT d.id as discovery_id, d.discovery_profile_name, d.ip, " +
@@ -36,29 +36,38 @@ public class PollingEngine extends AbstractVerticle {
                         "WHERE d.provision = TRUE"
         );
 
-        vertx.eventBus().request(DB_QUERY_ADDRESS, queryRequest, reply -> {
-            if (reply.succeeded()) {
+        vertx.eventBus().request(DB_QUERY_ADDRESS, queryRequest, reply ->
+        {
+            if (reply.succeeded())
+            {
                 processDevices(reply.result().body());
 
-                logger.info("success with "+reply.result().body());
-            } else {
+            }
+            else
+            {
                 System.err.println("Failed to fetch provisioned devices: " + reply.cause().getMessage());
             }
         });
     }
 
-    private void processDevices(Object body) {
+    private void processDevices(Object body)
+    {
         if (!(body instanceof JsonObject)) return;
+
         JsonObject response = (JsonObject) body;
+
         if (!response.containsKey("data")) return;
 
-        response.getJsonArray("data").forEach(entry -> {
+        response.getJsonArray("data").forEach(entry ->
+        {
             JsonObject device = (JsonObject) entry;
+
             sendZmqRequest(device);
         });
     }
 
-    private void sendZmqRequest(JsonObject device) {
+    private void sendZmqRequest(JsonObject device)
+    {
         JsonObject requestObject = new JsonObject()
                 .put("ip", device.getString("ip"))
                 .put("community", device.getString("community"))
@@ -66,19 +75,25 @@ public class PollingEngine extends AbstractVerticle {
                 .put("requestType","polling")
                 .put("pluginType", device.getString("system_type"));
 
-        vertx.eventBus().request(ZMQ_REQUEST_ADDRESS, requestObject, reply -> {
-            if (reply.succeeded()) {
+        vertx.eventBus().request(ZMQ_REQUEST_ADDRESS, requestObject, reply ->
+        {
+            if (reply.succeeded())
+            {
                 storeSnmpData(reply.result().body(), device.getString("discovery_profile_name"));
-            } else {
-                System.err.println("Failed to get SNMP response: " + reply.cause().getMessage());
+            }
+            else
+            {
+                logger.error("Failed to get SNMP response: " + reply.cause().getMessage());
             }
         });
     }
 
-    private void storeSnmpData(Object body, String discoveryProfileName) {
-        logger.info("store snmp data "+body+discoveryProfileName);
+    private void storeSnmpData(Object body, String discoveryProfileName)
+    {
+        logger.info("store snmp data ");
+
         if (!(body instanceof JsonObject)) return;
-        logger.info("after null");
+
         JsonObject snmpData = (JsonObject) body;
 
         String snmpInsertQuery = String.format(
@@ -93,29 +108,34 @@ public class PollingEngine extends AbstractVerticle {
                 sanitize(snmpData.getString("error"))
         );
 
-        // Wrap query in JSON object
         JsonObject queryRequest = new JsonObject().put("query", snmpInsertQuery);
 
-        // Send request to DB event bus
-        vertx.eventBus().request(DB_QUERY_ADDRESS, queryRequest, reply -> {
-            if (reply.succeeded()) {
+        vertx.eventBus().request(DB_QUERY_ADDRESS, queryRequest, reply ->
+        {
+            if (reply.succeeded())
+            {
                 JsonObject response = (JsonObject) reply.result().body();
+
                 int snmpId = response.getInteger("id");
+
                 storeInterfaceData(snmpData.getJsonArray("interfaces"), snmpId);
-            } else {
+            }
+            else
+            {
                 logger.error("Failed to store SNMP data: {}", reply.cause().getMessage());
             }
         });
     }
 
 
-    private void storeInterfaceData(JsonArray interfaces, int snmpId) {
+    private void storeInterfaceData(JsonArray interfaces, int snmpId)
+    {
         if (interfaces == null || interfaces.isEmpty()) return;
 
-        interfaces.forEach(entry -> {
+        interfaces.forEach(entry ->
+        {
             JsonObject iface = (JsonObject) entry;
 
-            // Construct raw SQL query as a string
             String interfaceInsertQuery = String.format(
                     "INSERT INTO snmp_interface (snmp_id, interface_index, interface_name, interface_alias, interface_operational_status, " +
                             "interface_admin_status, interface_description, interface_sent_error_packet, interface_received_error_packet, interface_sent_octets, " +
@@ -145,9 +165,10 @@ public class PollingEngine extends AbstractVerticle {
         });
     }
 
-    private String sanitize(String value) {
+    private String sanitize(String value)
+    {
         if (value == null) return "";
+
         return value.replace("'", "''");
     }
-
 }

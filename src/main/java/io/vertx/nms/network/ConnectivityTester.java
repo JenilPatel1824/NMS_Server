@@ -1,6 +1,6 @@
-package io.vertx.nms.util;
+package io.vertx.nms.network;
 
-public class PingUtil
+public class ConnectivityTester
 {
     public static boolean ping(String ipAddress)
     {

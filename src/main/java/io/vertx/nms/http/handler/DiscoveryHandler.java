@@ -1,24 +1,24 @@
-package io.vertx.nms.http.router;
+package io.vertx.nms.http.handler;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.vertx.nms.database.QueryBuilder;
 import io.vertx.nms.service.DiscoveryService;
 
-public class DiscoveryRouter
+public class DiscoveryHandler
 {
-    private static final Logger logger = LoggerFactory.getLogger(DiscoveryRouter.class);
+    private static final Logger logger = LoggerFactory.getLogger(DiscoveryHandler.class);
 
     private final Vertx vertx;
 
     private final DiscoveryService discoveryService;
 
-    public DiscoveryRouter(Vertx vertx, QueryBuilder queryBuilder)
+    public DiscoveryHandler(Vertx vertx)
     {
-        this.discoveryService = new DiscoveryService(vertx, queryBuilder);
+        this.discoveryService = new DiscoveryService(vertx);
+
         this.vertx = vertx;
     }
 
@@ -26,22 +26,18 @@ public class DiscoveryRouter
     {
         Router discoveryRouter = Router.router(vertx);
 
-        // GET All Discoveries
-        discoveryRouter.get("/").handler(ctx ->
-        {
-            discoveryService.getAllDiscoveries(ctx);
-        });
+        discoveryRouter.get("/").handler(discoveryService::getAllDiscoveries);
 
-        // GET By discoveryProfileName
         discoveryRouter.get("/:discoveryProfileName").handler(ctx ->
         {
             String discoveryProfileName = ctx.pathParam("discoveryProfileName");
 
-            logger.info("Req for /discovery/:discoveryProfileName", discoveryProfileName);
+            logger.info("Discovery Get/:");
 
             if (discoveryProfileName == null || discoveryProfileName.isEmpty())
             {
                 ctx.response().setStatusCode(400).end("Parameter 'discoveryProfileName' is required.");
+
                 return;
             }
 
@@ -50,6 +46,8 @@ public class DiscoveryRouter
 
         discoveryRouter.post("/").handler(ctx ->
         {
+            logger.info("Discovery Post/:");
+
             ctx.request().bodyHandler(buffer ->
             {
                 JsonObject requestBody;
@@ -60,12 +58,14 @@ public class DiscoveryRouter
                 catch (Exception e)
                 {
                     ctx.response().setStatusCode(400).end("Bad Request: Invalid JSON");
+
                     return;
                 }
 
                 if (requestBody.isEmpty())
                 {
                     ctx.response().setStatusCode(400).end("Bad Request: Empty request body");
+
                     return;
                 }
 
@@ -73,9 +73,10 @@ public class DiscoveryRouter
             });
         });
 
-        // PUT (Update) by discoveryProfileName
         discoveryRouter.put("/:discoveryProfileName").handler(ctx ->
         {
+            logger.info("Discovery Put/:");
+
             String discoveryProfileName = ctx.pathParam("discoveryProfileName");
 
             ctx.request().bodyHandler(buffer ->
@@ -103,12 +104,17 @@ public class DiscoveryRouter
 
         discoveryRouter.delete("/:discoveryProfileName").handler(ctx ->
         {
+            logger.info("Discovery Delete/:");
+
             String discoveryProfileName = ctx.pathParam("discoveryProfileName");
+
             discoveryService.deleteDiscovery(discoveryProfileName, ctx);
         });
 
         discoveryRouter.post("/:discoveryId/run").handler(ctx ->
         {
+            logger.info("Discovery Run/:");
+
             String discoveryId = ctx.pathParam("discoveryId");
 
             discoveryService.runDiscovery(discoveryId, ctx);

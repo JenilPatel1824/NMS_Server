@@ -15,7 +15,7 @@ public class CredentialService
 
     private final EventBus eventBus;
 
-    public CredentialService(EventBus eventBus, QueryBuilder queryBuilder)
+    public CredentialService(EventBus eventBus)
     {
         this.eventBus = eventBus;
     }

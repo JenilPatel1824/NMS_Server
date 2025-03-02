@@ -5,6 +5,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.nms.config.Config;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
@@ -13,19 +14,19 @@ import io.vertx.sqlclient.RowSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class QueryExecutor extends AbstractVerticle
+public class DatabaseVerticle extends AbstractVerticle
 {
-    private static final Logger logger = LoggerFactory.getLogger(QueryExecutor.class);
+    private static final Logger logger = LoggerFactory.getLogger(DatabaseVerticle.class);
 
     @Override
     public void start(Promise<Void> startPromise)
     {
         PgConnectOptions connectOptions = new PgConnectOptions()
-                .setHost("localhost")
-                .setPort(5432)
-                .setDatabase("NMS_Lite")
-                .setUser("admin")
-                .setPassword("admin");
+                .setHost(Config.DB_HOST)
+                .setPort(Config.DB_PORT)
+                .setDatabase(Config.DB_NAME)
+                .setUser(Config.DB_USER)
+                .setPassword(Config.DB_PASSWORD);
 
         PoolOptions poolOptions = new PoolOptions().setMaxSize(10);
 
@@ -96,7 +97,6 @@ public class QueryExecutor extends AbstractVerticle
             }
         });
 
-        // SNMP Interface Table
         String createSnmpInterfaceTableQuery = "CREATE TABLE IF NOT EXISTS snmp_interface (" +
                 "id SERIAL PRIMARY KEY," +
                 "snmp_id INTEGER REFERENCES snmp(id)," +
@@ -177,7 +177,8 @@ public class QueryExecutor extends AbstractVerticle
                     {
                         response.put("data",data);
                     }
-                    if (id != null) {  // Ensure ID is returned
+                    if (id != null)
+                    {
                         response.put("id", id);
                     }
 
