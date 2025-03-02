@@ -150,6 +150,8 @@ public class QueryExecutor extends AbstractVerticle
 
                     JsonArray data = new JsonArray();
 
+                    Integer id = null;
+
                     for (Row row : rows)
                     {
                         JsonObject json = new JsonObject();
@@ -159,8 +161,14 @@ public class QueryExecutor extends AbstractVerticle
                             String columnName = row.getColumnName(i);
 
                             json.put(columnName, row.getValue(i));
+
+                            if (columnName.equalsIgnoreCase("id"))
+                            {
+                                id = row.getInteger(i);
+                            }
                         }
                         data.add(json);
+
                     }
 
                     JsonObject response = new JsonObject().put("status", "success");
@@ -168,6 +176,9 @@ public class QueryExecutor extends AbstractVerticle
                     if(!data.isEmpty())
                     {
                         response.put("data",data);
+                    }
+                    if (id != null) {  // Ensure ID is returned
+                        response.put("id", id);
                     }
 
                     message.reply(response);

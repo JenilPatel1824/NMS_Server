@@ -24,11 +24,13 @@ public class MainVerticle extends AbstractVerticle
                     System.err.println("Failed to deploy HTTP Server: " + err.getMessage());
                 });
 
-        vertx.deployVerticle(new QueryExecutor(),new DeploymentOptions().setThreadingModel(ThreadingModel.WORKER));
+        vertx.deployVerticle(new QueryExecutor());
 
-        vertx.deployVerticle(new ZmqClient());
+        vertx.deployVerticle(new ZmqClient(),new DeploymentOptions().setWorkerPoolName("ZMQ").setWorkerPoolSize(5));
 
         vertx.deployVerticle(new PollingEngine());
+
+
     }
 
     public static void main(String[] args)

@@ -2,9 +2,10 @@ package io.vertx.nms.engine;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.nms.database.QueryExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,135 +13,141 @@ public class PollingEngine extends AbstractVerticle {
 
     private static final Logger logger = LoggerFactory.getLogger(PollingEngine.class);
 
+
+    private static final String DB_QUERY_ADDRESS = "database.query.execute";
+    private static final String ZMQ_REQUEST_ADDRESS = "zmq.send";
+
     @Override
     public void start(Promise<Void> startPromise) {
-        EventBus eventBus = vertx.eventBus();
-
-        // Poll every 5 seconds (5000 ms)
-        vertx.setTimer(5000, timerId -> {
-            logger.info("Starting polling process...");
-
-            // Fetch all discovery profiles with provision true
-            String discoveryQuery = "SELECT discovery_profile_name, ip, credential_profile_name " +
-                    "FROM discovery WHERE provision = true";
-
-            eventBus.request("database.query.execute", new JsonObject().put("query", discoveryQuery), discoveryReply -> {
-                if (discoveryReply.succeeded()) {
-                    JsonObject discoveryResult = (JsonObject) discoveryReply.result().body();
-                    JsonArray discoveryData = discoveryResult.getJsonArray("data");
-
-                    if (discoveryData != null && !discoveryData.isEmpty()) {
-                        for (int i = 0; i < discoveryData.size(); i++) {
-                            JsonObject discoveryProfile = discoveryData.getJsonObject(i);
-                            String credentialProfileName = discoveryProfile.getString("credential_profile_name");
-
-                            logger.info("Processing discovery profile: {}", discoveryProfile);
-
-                            // Fetch credential details for the discovery profile, including system_type
-                            String credentialQuery = String.format(
-                                    "SELECT community, version, system_type FROM credential WHERE credential_profile_name = '%s'",
-                                    credentialProfileName);
-
-                            eventBus.request("database.query.execute", new JsonObject().put("query", credentialQuery), credentialReply -> {
-                                if (credentialReply.succeeded()) {
-                                    JsonObject credentialResult = (JsonObject) credentialReply.result().body();
-                                    JsonArray credentialData = credentialResult.getJsonArray("data");
-
-                                    if (credentialData != null && credentialData.size() > 0) {
-                                        JsonObject credentialProfile = credentialData.getJsonObject(0);
-
-                                        // Create the request object for polling
-                                        JsonObject requestObject = new JsonObject()
-                                                .put("ip", discoveryProfile.getString("ip"))
-                                                .put("community", credentialProfile.getString("community"))
-                                                .put("version", credentialProfile.getString("version"))
-                                                .put("pluginType", credentialProfile.getString("system_type"))
-                                                .put("requestType", "polling");
-
-                                        logger.info("Sending polling request for " + requestObject);
-
-                                        // Send request to ZMQ sender
-                                        eventBus.request("zmq.send", requestObject, zmqResult -> {
-                                            if (zmqResult.succeeded()) {
-                                                String responseString = (String) zmqResult.result().body();
-                                                JsonObject response = new JsonObject(responseString);
-                                                logger.info("Polling request response: " + response);
-
-                                                // Check for errors
-                                                if (response.containsKey("error")) {
-                                                    String error = response.getString("error");
-                                                    logger.error("Polling Error: {}", error);
-
-                                                    // Store the error in the snmp table
-                                                    String insertSnmpErrorQuery = String.format(
-                                                            "INSERT INTO snmp (discovery_profile_name, error) VALUES ('%s', '%s')",
-                                                            discoveryProfile.getString("discovery_profile_name"),
-                                                            error.replace("'", "''")
-                                                    );
-                                                    eventBus.request("database.query.execute", new JsonObject().put("query", insertSnmpErrorQuery));
-                                                } else {
-                                                    // Store SNMP data
-                                                    JsonObject snmpData = response.getJsonObject("snmp");
-                                                    String insertSnmpQuery = String.format(
-                                                            "INSERT INTO snmp (discovery_profile_name, system_name, system_description, system_location, system_object_id, system_uptime) " +
-                                                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s') RETURNING id",
-                                                            discoveryProfile.getString("discovery_profile_name"),
-                                                            snmpData.getString("system.name"),
-                                                            snmpData.getString("system.description"),
-                                                            snmpData.getString("system.location"),
-                                                            snmpData.getString("system.objectId"),
-                                                            snmpData.getString("system.uptime")
-                                                    );
-
-                                                    eventBus.request("database.query.execute", new JsonObject().put("query", insertSnmpQuery), insertReply -> {
-                                                        if (insertReply.succeeded()) {
-                                                            String insertResultString = (String) insertReply.result().body();
-                                                            JsonObject insertResult = new JsonObject(insertResultString);
-                                                            int snmpId = insertResult.getInteger("id");
-
-                                                            JsonArray interfaces = response.getJsonArray("snmp.interface");
-
-                                                            for (int j = 0; j < interfaces.size(); j++) {
-                                                                JsonObject iface = interfaces.getJsonObject(j);
-
-                                                                // Store Interface data with foreign key to snmp table
-                                                                String insertInterfaceQuery = String.format(
-                                                                        "INSERT INTO interface (snmp_id, interface_index, interface_name, interface_alias, operational_status, admin_status, description, sent_error_packet, received_error_packet, sent_octets, received_octets, speed, physical_address, discard_packets, in_packets, out_packets) " +
-                                                                                "VALUES (%d, '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
-                                                                        snmpId,
-                                                                        iface.getString("interface.index"),
-                                                                        iface.getString("interface.name"),
-                                                                        iface.getString("interface.alias"),
-                                                                        iface.getString("interface.operational.status"),
-                                                                        iface.getString("interface.admin.status"),
-                                                                        iface.getString("interface.description"),
-                                                                        iface.getString("interface.sent.error.packet"),
-                                                                        iface.getString("interface.received.error.packet"),
-                                                                        iface.getString("interface.sent.octets"),
-                                                                        iface.getString("interface.received.octets"),
-                                                                        iface.getString("interface.speed"),
-                                                                        iface.getString("interface.physical.address"),
-                                                                        iface.getString("interface.discard.packets"),
-                                                                        iface.getString("interface.in.packets"),
-                                                                        iface.getString("interface.out.packets")
-                                                                );
-
-                                                                eventBus.request("database.query.execute", new JsonObject().put("query", insertInterfaceQuery));
-                                                            }
-                                                        }
-                                                    });
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-                            });
-                        }
-                    }
-                }
-            });
-        });
-
+        vertx.setTimer(3000, id -> fetchProvisionedDevices());
         startPromise.complete();
     }
+
+    private void fetchProvisionedDevices() {
+
+        logger.info("calling ");
+
+
+        JsonObject queryRequest = new JsonObject().put("query",
+                "SELECT d.id as discovery_id, d.discovery_profile_name, d.ip, " +
+                        "c.credential_profile_name, c.community, c.version, c.system_type " +
+                        "FROM discovery d " +
+                        "JOIN credential c ON d.credential_profile_name = c.credential_profile_name " +
+                        "WHERE d.provision = TRUE"
+        );
+
+        vertx.eventBus().request(DB_QUERY_ADDRESS, queryRequest, reply -> {
+            if (reply.succeeded()) {
+                processDevices(reply.result().body());
+
+                logger.info("success with "+reply.result().body());
+            } else {
+                System.err.println("Failed to fetch provisioned devices: " + reply.cause().getMessage());
+            }
+        });
+    }
+
+    private void processDevices(Object body) {
+        if (!(body instanceof JsonObject)) return;
+        JsonObject response = (JsonObject) body;
+        if (!response.containsKey("data")) return;
+
+        response.getJsonArray("data").forEach(entry -> {
+            JsonObject device = (JsonObject) entry;
+            sendZmqRequest(device);
+        });
+    }
+
+    private void sendZmqRequest(JsonObject device) {
+        JsonObject requestObject = new JsonObject()
+                .put("ip", device.getString("ip"))
+                .put("community", device.getString("community"))
+                .put("version", device.getString("version"))
+                .put("requestType","polling")
+                .put("pluginType", device.getString("system_type"));
+
+        vertx.eventBus().request(ZMQ_REQUEST_ADDRESS, requestObject, reply -> {
+            if (reply.succeeded()) {
+                storeSnmpData(reply.result().body(), device.getString("discovery_profile_name"));
+            } else {
+                System.err.println("Failed to get SNMP response: " + reply.cause().getMessage());
+            }
+        });
+    }
+
+    private void storeSnmpData(Object body, String discoveryProfileName) {
+        logger.info("store snmp data "+body+discoveryProfileName);
+        if (!(body instanceof JsonObject)) return;
+        logger.info("after null");
+        JsonObject snmpData = (JsonObject) body;
+
+        String snmpInsertQuery = String.format(
+                "INSERT INTO snmp (discovery_profile_name, system_name, system_description, system_location, system_object_id, system_uptime, error) " +
+                        "VALUES ('%s', '%s', '%s', '%s', '%s', %d, '%s') RETURNING id",
+                discoveryProfileName,
+                sanitize(snmpData.getString("system_name")),
+                sanitize(snmpData.getString("system_description")),
+                sanitize(snmpData.getString("system_location")),
+                sanitize(snmpData.getString("system_object_id")),
+                snmpData.getLong("system_uptime"),
+                sanitize(snmpData.getString("error"))
+        );
+
+        // Wrap query in JSON object
+        JsonObject queryRequest = new JsonObject().put("query", snmpInsertQuery);
+
+        // Send request to DB event bus
+        vertx.eventBus().request(DB_QUERY_ADDRESS, queryRequest, reply -> {
+            if (reply.succeeded()) {
+                JsonObject response = (JsonObject) reply.result().body();
+                int snmpId = response.getInteger("id");
+                storeInterfaceData(snmpData.getJsonArray("interfaces"), snmpId);
+            } else {
+                logger.error("Failed to store SNMP data: {}", reply.cause().getMessage());
+            }
+        });
+    }
+
+
+    private void storeInterfaceData(JsonArray interfaces, int snmpId) {
+        if (interfaces == null || interfaces.isEmpty()) return;
+
+        interfaces.forEach(entry -> {
+            JsonObject iface = (JsonObject) entry;
+
+            // Construct raw SQL query as a string
+            String interfaceInsertQuery = String.format(
+                    "INSERT INTO snmp_interface (snmp_id, interface_index, interface_name, interface_alias, interface_operational_status, " +
+                            "interface_admin_status, interface_description, interface_sent_error_packet, interface_received_error_packet, interface_sent_octets, " +
+                            "interface_received_octets, interface_speed, interface_physical_address, interface_discard_packets, interface_in_packets, interface_out_packets) " +
+                            "VALUES (%d, %d, '%s', '%s', '%s', '%s', '%s', %d, %d, %d, %d, %d, '%s', %d, %d, %d)",
+                    snmpId,
+                    iface.getInteger("interface_index"),
+                    sanitize(iface.getString("interface_name")),
+                    sanitize(iface.getString("interface_alias")),
+                    sanitize(iface.getString("interface_operational_status")),
+                    sanitize(iface.getString("interface_admin_status")),
+                    sanitize(iface.getString("interface_description")),
+                    iface.getLong("interface_sent_error_packet"),
+                    iface.getLong("interface_received_error_packet"),
+                    iface.getLong("interface_sent_octets"),
+                    iface.getLong("interface_received_octets"),
+                    iface.getLong("interface_speed"),
+                    sanitize(iface.getString("interface_physical_address")),
+                    iface.getLong("interface_discard_packets"),
+                    iface.getLong("interface_in_packets"),
+                    iface.getLong("interface_out_packets")
+            );
+
+            JsonObject queryRequest = new JsonObject().put("query", interfaceInsertQuery);
+
+            vertx.eventBus().request(DB_QUERY_ADDRESS, queryRequest);
+        });
+    }
+
+    private String sanitize(String value) {
+        if (value == null) return "";
+        return value.replace("'", "''");
+    }
+
 }

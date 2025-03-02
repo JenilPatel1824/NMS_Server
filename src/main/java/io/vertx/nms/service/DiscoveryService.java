@@ -285,7 +285,7 @@ public class DiscoveryService
                             JsonObject updateRequest = new JsonObject()
                                     .put("tableName", "discovery")
                                     .put("operation", "update")
-                                    .put("data", new JsonObject().put("status", isSuccess))
+                                    .put("data", new JsonObject().put("discovery", isSuccess))
                                     .put("condition", "discovery_profile_name = '" + discoveryProfileName + "'");
 
                             String updateQuery = queryBuilder.buildQuery(updateRequest);
