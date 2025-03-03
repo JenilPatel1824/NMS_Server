@@ -90,7 +90,7 @@ public class CredentialService
 
     public void updateCredential(String credentialProfileName, JsonObject requestBody, RoutingContext ctx)
     {
-        if (isValidRequestBody(requestBody, ctx)) return;
+//        if (isValidRequestBody(requestBody, ctx)) return;
 
         JsonObject request = new JsonObject()
                 .put("tableName", "credential")

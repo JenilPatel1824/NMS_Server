@@ -106,7 +106,7 @@ public class ProvisionService
                             .put("system.description", row.getString("system_description"))
                             .put("system.location", row.getString("system_location"))
                             .put("system.objectId", row.getString("system_object_id"))
-                            .put("system.uptime", row.getLong("system_uptime"))
+                            .put("system.uptime", row.getString("system_uptime"))
                             .put("error",row.getString("error"))
                             .put("system.interfaces", new JsonArray()));
 

@@ -29,7 +29,7 @@ public class ProvisionHandler
 
         provisionRouter.route().handler(BodyHandler.create());
 
-        provisionRouter.put("/:discoveryProfileName/:status").handler(this::handleUpdateProvision);
+        provisionRouter.post("/:discoveryProfileName/:status").handler(this::handleUpdateProvision);
 
         provisionRouter.get("/data/:discoveryProfileName").handler(this::handleGetProvisionData);
 

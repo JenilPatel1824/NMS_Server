@@ -79,7 +79,15 @@ public class PollingEngine extends AbstractVerticle
         {
             if (reply.succeeded())
             {
-                storeSnmpData(reply.result().body(), device.getString("discovery_profile_name"));
+                JsonObject snmpData;
+                try {
+                    snmpData = new JsonObject(reply.result().body().toString()); // Ensure conversion
+                } catch (Exception e) {
+                    logger.error("Failed to parse SNMP response: {}", reply.result().body(), e);
+                    return;
+                }
+
+                storeSnmpData(snmpData, device.getString("discovery_profile_name"));
             }
             else
             {
@@ -96,15 +104,17 @@ public class PollingEngine extends AbstractVerticle
 
         JsonObject snmpData = (JsonObject) body;
 
+
+
         String snmpInsertQuery = String.format(
                 "INSERT INTO snmp (discovery_profile_name, system_name, system_description, system_location, system_object_id, system_uptime, error) " +
-                        "VALUES ('%s', '%s', '%s', '%s', '%s', %d, '%s') RETURNING id",
+                        "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s') RETURNING id",
                 discoveryProfileName,
-                sanitize(snmpData.getString("system_name")),
-                sanitize(snmpData.getString("system_description")),
-                sanitize(snmpData.getString("system_location")),
-                sanitize(snmpData.getString("system_object_id")),
-                snmpData.getLong("system_uptime"),
+                sanitize(snmpData.getString("system.name")),
+                sanitize(snmpData.getString("system.description")),
+                sanitize(snmpData.getString("system.location")),
+                sanitize(snmpData.getString("system.objectId")),
+                sanitize(snmpData.getString("system.uptime")),
                 sanitize(snmpData.getString("error"))
         );
 
@@ -116,7 +126,13 @@ public class PollingEngine extends AbstractVerticle
             {
                 JsonObject response = (JsonObject) reply.result().body();
 
-                int snmpId = response.getInteger("id");
+                Integer snmpIdObj = response.getInteger("id");
+                if (snmpIdObj == null) {
+                    logger.error("SNMP ID is null. Response: {}", response.encodePrettily());
+                    return;
+                }
+                int snmpId = snmpIdObj;
+
 
                 storeInterfaceData(snmpData.getJsonArray("interfaces"), snmpId);
             }
@@ -142,21 +158,21 @@ public class PollingEngine extends AbstractVerticle
                             "interface_received_octets, interface_speed, interface_physical_address, interface_discard_packets, interface_in_packets, interface_out_packets) " +
                             "VALUES (%d, %d, '%s', '%s', '%s', '%s', '%s', %d, %d, %d, %d, %d, '%s', %d, %d, %d)",
                     snmpId,
-                    iface.getInteger("interface_index"),
-                    sanitize(iface.getString("interface_name")),
-                    sanitize(iface.getString("interface_alias")),
-                    sanitize(iface.getString("interface_operational_status")),
-                    sanitize(iface.getString("interface_admin_status")),
-                    sanitize(iface.getString("interface_description")),
-                    iface.getLong("interface_sent_error_packet"),
-                    iface.getLong("interface_received_error_packet"),
-                    iface.getLong("interface_sent_octets"),
-                    iface.getLong("interface_received_octets"),
-                    iface.getLong("interface_speed"),
-                    sanitize(iface.getString("interface_physical_address")),
-                    iface.getLong("interface_discard_packets"),
-                    iface.getLong("interface_in_packets"),
-                    iface.getLong("interface_out_packets")
+                    iface.getInteger("interface.index"),
+                    sanitize(iface.getString("interface.name")),
+                    sanitize(iface.getString("interface.alias")),
+                    sanitize(iface.getString("interface.operational.status")),
+                    sanitize(iface.getString("interface.admin_status")),
+                    sanitize(iface.getString("interface.description")),
+                    iface.getLong("interface.sent.error.packet"),
+                    iface.getLong("interface.received.error.packet"),
+                    iface.getLong("interface.sent.octets"),
+                    iface.getLong("interface.received.octets"),
+                    iface.getLong("interface.speed"),
+                    sanitize(iface.getString("interface.physical.address")),
+                    iface.getLong("interface.discard.packets"),
+                    iface.getLong("interface.in.packets"),
+                    iface.getLong("interface.out.packets")
             );
 
             JsonObject queryRequest = new JsonObject().put("query", interfaceInsertQuery);

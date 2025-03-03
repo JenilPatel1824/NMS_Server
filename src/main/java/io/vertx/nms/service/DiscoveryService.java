@@ -295,7 +295,8 @@ public class DiscoveryService
                                 return;
                             }
 
-                            String zmqResponseStr = (String) zmqResult.result().body();
+                            JsonObject zmqResponseJson = (JsonObject) zmqResult.result().body();
+                            String zmqResponseStr = zmqResponseJson.encode();
 
                             JsonObject zmqResponse = new JsonObject(zmqResponseStr);
 
