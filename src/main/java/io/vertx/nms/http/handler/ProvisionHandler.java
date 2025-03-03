@@ -33,6 +33,8 @@ public class ProvisionHandler
 
         provisionRouter.get("/data/:discoveryProfileName").handler(this::handleGetProvisionData);
 
+        provisionRouter.get("/data").handler(this::handleGetAllProvisionData);
+
         return provisionRouter;
     }
 
@@ -75,5 +77,12 @@ public class ProvisionHandler
         }
 
         provisionService.getProvisionData(discoveryProfileName, ctx);
+    }
+
+    private void handleGetAllProvisionData(RoutingContext ctx)
+    {
+        logger.debug("ProvisionHandler GET /data");
+
+        provisionService.getAllProvisionData(ctx);
     }
 }

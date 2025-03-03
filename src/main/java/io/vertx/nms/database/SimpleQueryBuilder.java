@@ -3,7 +3,7 @@ package io.vertx.nms.database;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-public class QueryBuilder
+public class SimpleQueryBuilder
 {
     public static String buildQuery(JsonObject request)
     {

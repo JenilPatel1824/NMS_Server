@@ -108,6 +108,8 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
                     String requestId = replyJson.getString("request_id");
 
+                    replyJson.remove("request_id");
+
                     PendingRequest pendingRequest = pendingRequests.remove(requestId);
 
                     if (pendingRequest != null)
@@ -128,6 +130,7 @@ public class ZmqMessengerVerticle extends AbstractVerticle
             }
         }
     }
+
 
     private void checkTimeouts()
     {

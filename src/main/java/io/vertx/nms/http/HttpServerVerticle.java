@@ -6,7 +6,6 @@ import io.vertx.nms.http.handler.CredentialHandler;
 import io.vertx.nms.http.handler.DiscoveryHandler;
 import io.vertx.nms.http.handler.ProvisionHandler;
 import io.vertx.nms.http.handler.HealthHandler;
-import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
