@@ -16,6 +16,7 @@ public class HealthHandler
         this.vertx=vertx;
     }
 
+    //Creates and returns a router for handling basic ping for HTTP requests.
     public Router createRouter()
     {
         Router router = Router.router(vertx);
@@ -24,7 +25,7 @@ public class HealthHandler
 
             String threadName = Thread.currentThread().getName();
 
-            logger.info("[{}] Handling GET request for /health", threadName);
+            logger.info("[{}] Handling GET request for /ping", threadName);
 
            ctx.request().response().setStatusCode(200).end("UP and Working");
         });

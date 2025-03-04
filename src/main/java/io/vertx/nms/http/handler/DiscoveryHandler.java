@@ -22,6 +22,7 @@ public class DiscoveryHandler
         this.vertx = vertx;
     }
 
+    //Creates and returns a router for handling discovery-related HTTP requests.
     public Router createRouter()
     {
         Router discoveryRouter = Router.router(vertx);

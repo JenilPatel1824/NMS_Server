@@ -13,6 +13,9 @@ public class HttpServerVerticle extends AbstractVerticle
 {
     private static final Logger logger = LoggerFactory.getLogger(HttpServerVerticle.class);
 
+    // Starts the HTTP server and sets up route handlers for different endpoints.
+    // Initializes sub-routers for handling credential, discovery, provision, and health endpoints.
+    // Listens on port 8080 for incoming requests.
     @Override
     public void start()
     {

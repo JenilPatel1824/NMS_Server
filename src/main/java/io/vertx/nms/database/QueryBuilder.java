@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class ComplexQueryBuilder
+public class QueryBuilder
 {
     public static class QueryResult
     {

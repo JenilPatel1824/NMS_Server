@@ -26,6 +26,7 @@ public class CredentialHandler
         this.credentialService = new CredentialService(eventBus);
     }
 
+    //Creates and returns a router for handling credential-related HTTP requests.
     public Router createRouter()
     {
         Router credentialRouter = Router.router(vertx);

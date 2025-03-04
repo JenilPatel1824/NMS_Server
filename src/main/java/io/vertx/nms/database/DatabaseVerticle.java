@@ -57,11 +57,11 @@ public class DatabaseVerticle extends AbstractVerticle
                 FOREIGN KEY (credential_profile_name) REFERENCES credential_profile(credential_profile_name) ON DELETE CASCADE
             );
 
-            CREATE TABLE IF NOT EXISTS discovery_data (
+            CREATE TABLE IF NOT EXISTS provision_data (
                 id SERIAL PRIMARY KEY,
                 discovery_profile_name TEXT NOT NULL,
                 data JSONB NOT NULL,
-                inserted_at TIMESTAMPTZ DEFAULT NOW(),
+                polled_at TEXT,
                 FOREIGN KEY (discovery_profile_name) REFERENCES discovery_profiles(discovery_profile_name) ON DELETE CASCADE
             );
         """;
