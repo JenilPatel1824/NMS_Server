@@ -2,6 +2,7 @@ package io.vertx.nms.database;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.nms.constants.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,15 +40,15 @@ public class QueryBuilder
 // @return QueryResult containing the constructed query string and parameters.
     public static QueryResult buildQuery(JsonObject request)
     {
-        String operation = request.getString("operation", "").toLowerCase();
+        String operation = request.getString(Constants.OPERATION_KEY, "").toLowerCase();
 
-        String tableName = request.getString("tableName");
+        String tableName = request.getString(Constants.TABLE_NAME_KEY);
 
-        JsonArray columns = request.getJsonArray("columns", new JsonArray());
+        JsonArray columns = request.getJsonArray(Constants.COLUMNS_KEY, new JsonArray());
 
-        JsonObject data = request.getJsonObject("data", new JsonObject());
+        JsonObject data = request.getJsonObject(Constants.DATA_KEY, new JsonObject());
 
-        JsonObject condition = request.getJsonObject("condition", new JsonObject());
+        JsonObject condition = request.getJsonObject(Constants.CONDITION_KEY, new JsonObject());
 
         StringBuilder query = new StringBuilder();
 
@@ -57,7 +58,7 @@ public class QueryBuilder
 
         switch (operation)
         {
-            case "select":
+            case Constants.DATABASE_OPERATION_SELECT:
 
                 query.append("SELECT ")
                         .append(columns.isEmpty() ? "*" : String.join(", ", columns.getList()))
@@ -67,7 +68,7 @@ public class QueryBuilder
 
                 break;
 
-            case "insert":
+            case Constants.DATABASE_OPERATION_INSERT:
 
                 List<String> keys = new ArrayList<>(data.fieldNames());
 
@@ -83,7 +84,7 @@ public class QueryBuilder
 
                 break;
 
-            case "update":
+            case Constants.DATABASE_OPERATION_UPDATE:
 
                 query.append("UPDATE ").append(tableName).append(" SET ");
 
@@ -102,7 +103,7 @@ public class QueryBuilder
 
                 break;
 
-            case "delete":
+            case Constants.DATABASE_OPERATION_DELETE:
 
                 query.append("DELETE FROM ").append(tableName);
 

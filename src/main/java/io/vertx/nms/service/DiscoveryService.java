@@ -5,6 +5,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.nms.constants.Constants;
 import io.vertx.nms.database.QueryBuilder;
 import io.vertx.nms.network.ConnectivityTester;
 import org.slf4j.Logger;
@@ -25,9 +26,9 @@ public class DiscoveryService
 
     static
     {
-        VALID_FIELDS.add("discovery_profile_name");
+        VALID_FIELDS.add(Constants.DISCOVERY_PROFILE_NAME_KEY);
 
-        VALID_FIELDS.add("credential_profile_name");
+        VALID_FIELDS.add(Constants.CREDENTIAL_PROFILE_NAME_KEY);
 
         VALID_FIELDS.add("ip");
     }
@@ -44,15 +45,15 @@ public class DiscoveryService
     public void getAllDiscoveries(RoutingContext ctx)
     {
         JsonObject request = new JsonObject()
-                .put("tableName", "discovery_profiles")
-                .put("operation", "select")
-                .put("columns", new JsonArray().add("*"));
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute", new JsonObject()
-                .put("query", queryResult.getQuery())
-                .put("params", queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject()
+                .put(Constants.QUERY_KEY, queryResult.getQuery())
+                .put(Constants.PARAMS_KEY, queryResult.getParams()), reply ->
         {
             if (reply.succeeded())
             {
@@ -81,14 +82,14 @@ public class DiscoveryService
         }
 
         JsonObject request = new JsonObject()
-                .put("tableName", "discovery_profiles")
-                .put("operation", "select")
-                .put("columns", new JsonArray().add("*"))
-                .put("condition", new JsonObject().put("discovery_profile_name", profileName));
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"))
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, profileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute", new JsonObject().put("query", queryResult.getQuery()).put("params",queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY, queryResult.getQuery()).put(Constants.PARAMS_KEY,queryResult.getParams()), reply ->
         {
             if (reply.succeeded())
             {
@@ -116,13 +117,13 @@ public class DiscoveryService
 
         }
         JsonObject request = new JsonObject()
-                .put("tableName", "discovery_profiles")
-                .put("operation", "insert")
-                .put("data", requestBody);
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_INSERT)
+                .put(Constants.DATA_KEY, requestBody);
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute", new JsonObject().put("query", queryResult.getQuery()).put("params",queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY, queryResult.getQuery()).put(Constants.PARAMS_KEY,queryResult.getParams()), reply ->
         {
             if (reply.succeeded())
             {
@@ -153,14 +154,14 @@ public class DiscoveryService
         if(!isValidUpdateRequest(updateRequest)) return;
 
         JsonObject request = new JsonObject()
-                .put("tableName", "discovery_profiles")
-                .put("operation", "update")
-                .put("data", updateRequest)
-                .put("condition", new JsonObject().put("discovery_profile_name", profileName));
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_UPDATE)
+                .put(Constants.DATA_KEY, updateRequest)
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, profileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute", new JsonObject().put("query", queryResult.getQuery()).put("params",queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY, queryResult.getQuery()).put(Constants.PARAMS_KEY,queryResult.getParams()), reply ->
         {
             if (reply.succeeded())
             {
@@ -187,14 +188,14 @@ public class DiscoveryService
         }
 
         JsonObject request = new JsonObject()
-                .put("tableName", "discovery_profiles")
-                .put("operation", "delete")
-                .put("condition", new JsonObject().put("discovery_profile_name", discoveryProfileName)); // Correctly formatted condition
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_DELETE)
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)); // Correctly formatted condition
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
 
-        eventBus.request("database.query.execute", new JsonObject().put("query", queryResult.getQuery()).put("params",queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY, queryResult.getQuery()).put(Constants.PARAMS_KEY,queryResult.getParams()), reply ->
         {
             if (reply.succeeded())
             {
@@ -222,7 +223,7 @@ public class DiscoveryService
                 "JOIN credential_profile cp ON dp.credential_profile_name = cp.credential_profile_name " +
                 "WHERE dp.discovery_profile_name = $1";
 
-        eventBus.request("database.query.execute", new JsonObject().put("query",queryForDiscovery).put("params",new JsonArray().add(discoveryProfileName)), fetchResult ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY,queryForDiscovery).put(Constants.PARAMS_KEY,new JsonArray().add(discoveryProfileName)), fetchResult ->
         {
             if (fetchResult.failed())
             {
@@ -235,7 +236,7 @@ public class DiscoveryService
 
             JsonObject result = (JsonObject) fetchResult.result().body();
 
-            JsonArray dataArray = result.getJsonArray("data");
+            JsonArray dataArray = result.getJsonArray(Constants.DATA_KEY);
 
             if (dataArray == null || dataArray.isEmpty())
             {
@@ -309,14 +310,14 @@ public class DiscoveryService
                         boolean isSuccess = "success".equalsIgnoreCase(zmqResponseJson.getString("status"));
 
                         JsonObject request = new JsonObject()
-                                .put("operation", "update")
-                                .put("tableName", "discovery_profiles")
-                                .put("data", new JsonObject().put("discovery", isSuccess))
-                                .put("condition", new JsonObject().put("discovery_profile_name", discoveryProfileName));
+                                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_UPDATE)
+                                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                                .put(Constants.DATA_KEY, new JsonObject().put("discovery", isSuccess))
+                                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName));
 
                         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-                        eventBus.request("database.query.execute", new JsonObject().put("query",queryResult.getQuery()).put("params",queryResult.getParams()), updateResult ->
+                        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY,queryResult.getQuery()).put(Constants.PARAMS_KEY,queryResult.getParams()), updateResult ->
                          {
                              if (updateResult.succeeded())
                              {
@@ -361,8 +362,8 @@ public class DiscoveryService
                 return false;
             }
         }
-        return requestBody.containsKey("discovery_profile_name") &&
-                requestBody.containsKey("credential_profile_name") &&
+        return requestBody.containsKey(Constants.DISCOVERY_PROFILE_NAME_KEY) &&
+                requestBody.containsKey(Constants.CREDENTIAL_PROFILE_NAME_KEY) &&
                 requestBody.containsKey("ip");
     }
 

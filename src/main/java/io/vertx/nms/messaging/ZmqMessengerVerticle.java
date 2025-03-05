@@ -21,11 +21,11 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
     private ZMQ.Socket dealer;
 
-    private ZMQ.Poller poller;
+    private static final int RESPONSE_CHECK_INTERVAL_MS = 500;
 
-    private static final int POLLING_INTERVAL_MS = 500;
+    private static final long REQUEST_TIMEOUT_MS = 59000;
 
-    private static final long REQUEST_TIMEOUT_MS = 300_000;
+    private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 10000;
 
     private Map<String, PendingRequest> pendingRequests = new HashMap<>();
 
@@ -50,7 +50,7 @@ public class ZmqMessengerVerticle extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        logger.info("zmq message verticle "+Thread.currentThread().getName());
+        logger.debug("zmq message verticle "+Thread.currentThread().getName());
 
         context = ZMQ.context(1);
 
@@ -60,21 +60,19 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
         dealer.connect(Config.ZMQ_ADDRESS);
 
-        poller = context.poller(1);
-
-        poller.register(dealer, ZMQ.Poller.POLLIN);
-
         vertx.eventBus().consumer("zmq.send", this::handleRequest);
 
-        vertx.setPeriodic(POLLING_INTERVAL_MS, id ->
+        vertx.setPeriodic(RESPONSE_CHECK_INTERVAL_MS, id ->
         {
             checkResponses();
 
+        });
+        vertx.setPeriodic(REQUEST_TIMEOUT_CHECK_INTERVAL, id ->
+        {
             checkTimeouts();
         });
 
         startPromise.complete();
-
     }
 
     // Handles incoming ZMQ requests.
@@ -99,55 +97,50 @@ public class ZmqMessengerVerticle extends AbstractVerticle
         dealer.send(request.toString());
     }
 
-
      // Checks for and processes any incoming responses from the ZMQ dealer socket.
      // Polls for new responses.
      // Parses the response and matches it to a pending request using the request ID.
-    private void checkResponses()
-    {
-        if (poller.poll(0) > 0)
-        {
-            while (poller.pollin(0))
-            {
-                String response = dealer.recvStr();
+     private void checkResponses()
+     {
+         String response;
 
-                if (response == null || response.trim().isEmpty())
-                {
-                    return;
-                }
+         // Keep reading while messages are available
+         while ((response = dealer.recvStr(ZMQ.DONTWAIT)) != null)
+         {
+             if (response.trim().isEmpty())
+             {
+                 continue;
+             }
 
-                try
-                {
-                    JsonObject replyJson = new JsonObject(response);
+             try
+             {
+                 JsonObject replyJson = new JsonObject(response);
 
-                    String requestId = replyJson.getString("request_id");
+                 String requestId = replyJson.getString("request_id");
 
-                    replyJson.remove("request_id");
+                 replyJson.remove("request_id");
 
-                    PendingRequest pendingRequest = pendingRequests.remove(requestId);
+                 PendingRequest pendingRequest = pendingRequests.remove(requestId);
 
-                    if (pendingRequest != null)
-                    {
-                        logger.info(Thread.currentThread().getName()+" Replying ");
+                 if (pendingRequest != null)
+                 {
+                     logger.info(Thread.currentThread().getName() + " Replying ");
 
-                        pendingRequest.message.reply(replyJson);
-                    }
-                    else
-                    {
-                        logger.warn("No pending request found for request_id: " + requestId);
-                    }
-                }
-                catch (Exception e)
-                {
-                    logger.error("Failed to parse response as JSON: " + response, e);
-                }
-            }
-        }
-    }
+                     pendingRequest.message.reply(replyJson);
+                 }
+                 else
+                 {
+                     logger.warn("No pending request found for request_id: " + requestId);
+                 }
+             }
+             catch (Exception e)
+             {
+                 logger.error("Failed to parse response as JSON: " + response, e);
+             }
+         }
+     }
 
-
-
-     // Checks for and handles any pending requests that have timed out.
+    // Checks for and handles any pending requests that have timed out.
      // If the request has exceeded the timeout threshold, it logs a warning and sends a failure response to the original message.
      // Removes the timed-out request from the pending requests map.
     private void checkTimeouts()
@@ -166,7 +159,7 @@ public class ZmqMessengerVerticle extends AbstractVerticle
             {
                 logger.warn("Request {} timed out", entry.getKey());
 
-                pendingRequest.message.fail(408, "Request timed out after 60 seconds");
+                pendingRequest.message.fail(408, "Request timed out");
 
                 iterator.remove();
             }
@@ -185,7 +178,6 @@ public class ZmqMessengerVerticle extends AbstractVerticle
         {
             context.close();
         }
-
         stopPromise.complete();
     }
 }

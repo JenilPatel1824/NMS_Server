@@ -4,6 +4,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.nms.constants.Constants;
 import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,18 +20,18 @@ public class CredentialService
         this.eventBus = eventBus;
     }
 
-    //Fetches all credential profiles from the database.
+    // Fetches all credential profiles from the database.
     // @param ctx The RoutingContext containing the request and response.
     public void getAllCredentials(RoutingContext ctx)
     {
         JsonObject request = new JsonObject()
-                .put("tableName", "credential_profile")
-                .put("operation", "select")
-                .put("columns", new JsonArray().add("*"));
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute", new JsonObject().put("query", queryResult.getQuery()).put("params", queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY, queryResult.getQuery()).put(Constants.PARAMS_KEY, queryResult.getParams()), reply ->
                 {
                     if (reply.succeeded())
                     {
@@ -51,15 +52,14 @@ public class CredentialService
     public void getCredentialByName(String credentialProfileName, RoutingContext ctx)
     {
         JsonObject request = new JsonObject()
-                .put("tableName", "credential_profile")
-                .put("operation", "select")
-                .put("columns", new JsonArray().add("*"))
-                .put("condition", new JsonObject().put("credential_profile_name", credentialProfileName));
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"))
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.CREDENTIAL_PROFILE_NAME_KEY, credentialProfileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute",
-                new JsonObject().put("query", queryResult.getQuery()).put("params", queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY, queryResult.getQuery()).put(Constants.PARAMS_KEY, queryResult.getParams()), reply ->
                 {
                     if (reply.succeeded())
                     {
@@ -81,13 +81,13 @@ public class CredentialService
         if (isValidRequestBody(requestBody, ctx)) return;
 
         JsonObject request = new JsonObject()
-                .put("tableName", "credential_profile")
-                .put("operation", "insert")
-                .put("data", requestBody);
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_INSERT)
+                .put(Constants.DATA_KEY, requestBody);
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute", new JsonObject().put("query", queryResult.getQuery()).put("params", queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY, queryResult.getQuery()).put(Constants.PARAMS_KEY, queryResult.getParams()), reply ->
                 {
                     if (reply.succeeded())
                     {
@@ -109,14 +109,14 @@ public class CredentialService
     public void updateCredential(String credentialProfileName, JsonObject requestBody, RoutingContext ctx)
     {
         JsonObject request = new JsonObject()
-                .put("tableName", "credential_profile")
-                .put("operation", "update")
-                .put("data", requestBody)
-                .put("condition", new JsonObject().put("credential_profile_name", credentialProfileName));
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_UPDATE)
+                .put(Constants.DATA_KEY, requestBody)
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.CREDENTIAL_PROFILE_NAME_KEY, credentialProfileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute", new JsonObject().put("query", queryResult.getQuery()).put("params", queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY, queryResult.getQuery()).put(Constants.PARAMS_KEY, queryResult.getParams()), reply ->
         {
                     if (reply.succeeded())
                     {
@@ -137,13 +137,13 @@ public class CredentialService
     public void deleteCredential(String credentialProfileName, RoutingContext ctx)
     {
         JsonObject request = new JsonObject()
-                .put("tableName", "credential_profile")
-                .put("operation", "delete")
-                .put("condition", new JsonObject().put("credential_profile_name", credentialProfileName));
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_DELETE)
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.CREDENTIAL_PROFILE_NAME_KEY, credentialProfileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute", new JsonObject().put("query", queryResult.getQuery()).put("params", queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY, queryResult.getQuery()).put(Constants.PARAMS_KEY, queryResult.getParams()), reply ->
         {
                     if (reply.succeeded())
                     {
@@ -163,7 +163,7 @@ public class CredentialService
     // @param ctx The RoutingContext containing the request and response.
     private boolean isValidRequestBody(JsonObject requestBody, RoutingContext ctx)
     {
-        if (!requestBody.containsKey("credential_profile_name") || requestBody.getString("credential_profile_name").isEmpty() ||
+        if (!requestBody.containsKey(Constants.CREDENTIAL_PROFILE_NAME_KEY) || requestBody.getString(Constants.CREDENTIAL_PROFILE_NAME_KEY).isEmpty() ||
                 !requestBody.containsKey("system_type") || requestBody.getString("system_type").isEmpty() ||
                 !requestBody.containsKey("credentials") || requestBody.getJsonObject("credentials").isEmpty()) {
 

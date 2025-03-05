@@ -5,6 +5,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.nms.constants.Constants;
 import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,16 +45,16 @@ public class ProvisionService
         }
 
         JsonObject request = new JsonObject()
-                .put("operation", "update")
-                .put("tableName", "discovery_profiles")
-                .put("data", new JsonObject().put("provision", provisionStatus))
-                .put("condition", new JsonObject()
-                        .put("discovery_profile_name", discoveryProfileName)
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_UPDATE)
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                .put(Constants.DATA_KEY, new JsonObject().put("provision", provisionStatus))
+                .put(Constants.CONDITION_KEY, new JsonObject()
+                        .put(Constants.DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)
                         .put("discovery", true));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request("database.query.execute", new JsonObject().put("query",queryResult.getQuery()).put("params",queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY,queryResult.getQuery()).put(Constants.PARAMS_KEY,queryResult.getParams()), reply ->
         {
             if (reply.succeeded())
             {
@@ -74,18 +75,18 @@ public class ProvisionService
     public void getProvisionData(String discoveryProfileName, RoutingContext ctx)
     {
         JsonObject request = new JsonObject()
-                .put("operation", "select")
-                .put("tableName", "provision_data")
-                .put("columns", new JsonArray().add("data").add("polled_at"))
-                .put("condition", new JsonObject().put("discovery_profile_name", discoveryProfileName));
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_PROVISION_DATA)
+                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATA_KEY).add("polled_at"))
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
         JsonObject fetchRequest = new JsonObject()
-                .put("query", queryResult.getQuery())
-                .put("params", queryResult.getParams());
+                .put(Constants.QUERY_KEY, queryResult.getQuery())
+                .put(Constants.PARAMS_KEY, queryResult.getParams());
 
-        eventBus.request("database.query.execute", fetchRequest, reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, fetchRequest, reply ->
         {
             if (reply.succeeded())
             {
@@ -100,7 +101,7 @@ public class ProvisionService
 
                 JsonObject resultObject = (JsonObject) body;
 
-                JsonArray results = resultObject.getJsonArray("data");
+                JsonArray results = resultObject.getJsonArray(Constants.DATA_KEY);
 
                 if (results == null || results.isEmpty())
                 {
@@ -116,13 +117,13 @@ public class ProvisionService
                     JsonObject row = results.getJsonObject(i);
 
                     JsonObject responseData = new JsonObject()
-                            .put("data", row.getJsonObject("data"))
+                            .put(Constants.DATA_KEY, row.getJsonObject(Constants.DATA_KEY))
                             .put("polled_at", row.getString("polled_at"));
 
                     responseArray.add(responseData);
                 }
 
-                ctx.response().setStatusCode(200).end(new JsonObject().put("data", responseArray).encode());
+                ctx.response().setStatusCode(200).end(new JsonObject().put(Constants.DATA_KEY, responseArray).encode());
             }
             else
             {
@@ -138,17 +139,17 @@ public class ProvisionService
     public void getAllProvisionData(RoutingContext ctx)
     {
         JsonObject request = new JsonObject()
-                .put("operation", "select")
-                .put("tableName", "discovery_data")
-                .put("columns", new JsonArray().add("*"));
+                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_PROVISION_DATA)
+                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
         JsonObject fetchRequest = new JsonObject()
-                .put("query", queryResult.getQuery())
-                .put("params", queryResult.getParams());
+                .put(Constants.QUERY_KEY, queryResult.getQuery())
+                .put(Constants.PARAMS_KEY, queryResult.getParams());
 
-        eventBus.request("database.query.execute", fetchRequest, reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, fetchRequest, reply ->
         {
             if (reply.succeeded())
             {
@@ -163,7 +164,7 @@ public class ProvisionService
 
                 JsonObject resultObject = (JsonObject) body;
 
-                JsonArray results = resultObject.getJsonArray("data");
+                JsonArray results = resultObject.getJsonArray(Constants.DATA_KEY);
 
                 if (results == null || results.isEmpty())
                 {
@@ -179,13 +180,13 @@ public class ProvisionService
                     JsonObject row = results.getJsonObject(i);
 
                     JsonObject entry = new JsonObject()
-                            .put("discoveryProfileName", row.getString("discovery_profile_name"))
-                            .put("data", row.getJsonObject("data"));
+                            .put("discoveryProfileName", row.getString(Constants.DISCOVERY_PROFILE_NAME_KEY))
+                            .put(Constants.DATA_KEY, row.getJsonObject(Constants.DATA_KEY));
 
                     responseArray.add(entry);
                 }
 
-                ctx.response().setStatusCode(200).end(new JsonObject().put("data", responseArray).encode());
+                ctx.response().setStatusCode(200).end(new JsonObject().put(Constants.DATA_KEY, responseArray).encode());
 
             }
             else

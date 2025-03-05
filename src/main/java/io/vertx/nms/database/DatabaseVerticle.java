@@ -6,6 +6,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.nms.config.Config;
+import io.vertx.nms.constants.Constants;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
@@ -82,13 +83,13 @@ public class DatabaseVerticle extends AbstractVerticle
             }
         });
 
-        eventBus.consumer("database.query.execute", message ->
+        eventBus.consumer(Constants.EVENTBUS_DATABASE_ADDRESS, message ->
         {
             JsonObject request = (JsonObject) message.body();
 
-            String query = request.getString("query");
+            String query = request.getString(Constants.QUERY_KEY);
 
-            JsonArray params = request.getJsonArray("params");
+            JsonArray params = request.getJsonArray(Constants.PARAMS_KEY);
 
             if (params == null)
             {
@@ -125,9 +126,9 @@ public class DatabaseVerticle extends AbstractVerticle
                     }
                     JsonObject response = new JsonObject().put("status", "success");
 
-                    if (finalQuery.trim().toLowerCase().startsWith("select"))
+                    if (finalQuery.trim().toLowerCase().startsWith(Constants.DATABASE_OPERATION_SELECT))
                     {
-                        response.put("data", resultData);
+                        response.put(Constants.DATA_KEY, resultData);
                     }
                     else
                     {
