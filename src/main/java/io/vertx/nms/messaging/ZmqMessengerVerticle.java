@@ -8,8 +8,6 @@ import io.vertx.nms.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
-
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,7 +25,7 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
     private static final int POLLING_INTERVAL_MS = 500;
 
-    private static final long REQUEST_TIMEOUT_MS = 20_000;
+    private static final long REQUEST_TIMEOUT_MS = 300_000;
 
     private Map<String, PendingRequest> pendingRequests = new HashMap<>();
 
@@ -79,7 +77,6 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
     }
 
-
     // Handles incoming ZMQ requests.
     // Generates a unique request ID and adds it to the request.
     // Stores the request in the pendingRequests map with a timestamp.
@@ -87,13 +84,13 @@ public class ZmqMessengerVerticle extends AbstractVerticle
     // @param message The incoming message containing the ZMQ request.
     private void handleRequest(Message<JsonObject> message)
     {
+        logger.info(Thread.currentThread().getName()+" zmq.send request");
+
         JsonObject request = message.body();
 
         String requestId = request.getString("request_id", UUID.randomUUID().toString());
 
         request.put("request_id", requestId);
-
-        logger.info(Thread.currentThread().getName()+" zmq.send request: after putting req id {}", request);
 
         pendingRequests.put(requestId, new PendingRequest(message, System.currentTimeMillis()));
 
@@ -131,7 +128,7 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
                     if (pendingRequest != null)
                     {
-                        logger.info(Thread.currentThread().getName()+" Replying "+replyJson);
+                        logger.info(Thread.currentThread().getName()+" Replying ");
 
                         pendingRequest.message.reply(replyJson);
                     }

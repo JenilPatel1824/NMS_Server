@@ -27,7 +27,7 @@ public class HttpServerVerticle extends AbstractVerticle
 
         mainRouter.route("/provision/*").subRouter( new ProvisionHandler(vertx).createRouter());
 
-        mainRouter.route("/health/*").subRouter( new HealthHandler(vertx).createRouter());
+        mainRouter.route("/ping/*").subRouter( new HealthHandler(vertx).createRouter());
 
         vertx.createHttpServer().requestHandler(mainRouter).listen(8080, http ->
         {

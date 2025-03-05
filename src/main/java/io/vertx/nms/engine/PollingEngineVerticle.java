@@ -2,23 +2,21 @@ package io.vertx.nms.engine;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PollingEngine extends AbstractVerticle
+public class PollingEngineVerticle extends AbstractVerticle
 {
-    private static final Logger logger = LoggerFactory.getLogger(PollingEngine.class);
+    private static final Logger logger = LoggerFactory.getLogger(PollingEngineVerticle.class);
 
     private static final String DB_QUERY_ADDRESS = "database.query.execute";
 
@@ -28,6 +26,8 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_INTERVAL = 20_000;
 
+    private static final long FETCH_DEVICE_INTERVAL = 3_00_000;
+
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
     private long lastFlushTime = System.currentTimeMillis();
@@ -35,7 +35,7 @@ public class PollingEngine extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        vertx.setTimer(20000, id -> fetchProvisionedDevices());
+        vertx.setTimer(2000, id -> fetchProvisionedDevices());
 
         vertx.setPeriodic(1000, id -> checkBatchTimeFlush());
 
@@ -65,7 +65,7 @@ public class PollingEngine extends AbstractVerticle
         {
             if (reply.succeeded())
             {
-                logger.info(reply.result().body().toString());
+                logger.info("Device Fetch Successful");
 
                 processDevices(reply.result().body());
             }
@@ -173,6 +173,8 @@ public class PollingEngine extends AbstractVerticle
     // Flushes batch data and stores it.
     private void flushBatchData()
     {
+        logger.info("flushing batch "+batchSnmpData.size());
+
         if (batchSnmpData.isEmpty()) return;
 
         List<JsonObject> batchCopy = new ArrayList<>(batchSnmpData);

@@ -9,10 +9,6 @@ import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
 public class ProvisionService
 {
     private static final Logger logger = LoggerFactory.getLogger(ProvisionService.class);
