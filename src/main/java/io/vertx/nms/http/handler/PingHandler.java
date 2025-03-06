@@ -5,13 +5,13 @@ import io.vertx.ext.web.Router;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HealthHandler
+public class PingHandler
 {
-    private static final Logger logger = LoggerFactory.getLogger(HealthHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(PingHandler.class);
 
     private final Vertx vertx;
 
-    public HealthHandler(Vertx vertx)
+    public PingHandler(Vertx vertx)
     {
         this.vertx=vertx;
     }

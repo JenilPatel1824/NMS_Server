@@ -124,7 +124,7 @@ public class DatabaseVerticle extends AbstractVerticle
 
                         resultData.add(rowJson);
                     }
-                    JsonObject response = new JsonObject().put("status", "success");
+                    JsonObject response = new JsonObject().put(Constants.STATUS_KEY, Constants.SUCCESS_KEY);
 
                     if (finalQuery.trim().toLowerCase().startsWith(Constants.DATABASE_OPERATION_SELECT))
                     {
@@ -132,7 +132,7 @@ public class DatabaseVerticle extends AbstractVerticle
                     }
                     else
                     {
-                        response.put("message", "Query executed successfully");
+                        response.put(Constants.MESSAGE_KEY, "Query executed successfully");
                     }
 
                     message.reply(response);
@@ -141,7 +141,7 @@ public class DatabaseVerticle extends AbstractVerticle
                 {
                     logger.error("Database query failed: {}", ar.cause().getMessage());
 
-                    message.fail(1, String.valueOf(new JsonObject().put("status", "fail").put("message", ar.cause().getMessage())));
+                    message.fail(1, String.valueOf(new JsonObject().put(Constants.STATUS_KEY, "fail").put(Constants.MESSAGE_KEY, ar.cause().getMessage())));
                 }
             });
         });

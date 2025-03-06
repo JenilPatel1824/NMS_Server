@@ -17,6 +17,10 @@ public class CredentialHandler
 
     private final Vertx vertx;
 
+    private static final String CREDENTIAL_PROFILE_NAME_KEY = "credentialProfileName";
+
+    public static final String CREDENTIAL_PROFILE_NAME_PARAM = "/:credentialProfileName";
+
     public CredentialHandler(Vertx vertx)
     {
         EventBus eventBus = vertx.eventBus();
@@ -31,11 +35,11 @@ public class CredentialHandler
     {
         Router credentialRouter = Router.router(vertx);
 
-        credentialRouter.get("/:credentialProfileName").handler(ctx ->
+        credentialRouter.get(CREDENTIAL_PROFILE_NAME_PARAM).handler(ctx ->
         {
             logger.debug("CredentialHandler Get/:");
 
-            String credentialProfileName = ctx.pathParam("credentialProfileName");
+            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME_KEY);
 
             if (credentialProfileName == null || credentialProfileName.isEmpty())
             {
@@ -73,11 +77,11 @@ public class CredentialHandler
             });
         });
 
-        credentialRouter.put("/:credentialProfileName").handler(ctx ->
+        credentialRouter.put(CREDENTIAL_PROFILE_NAME_PARAM).handler(ctx ->
         {
             logger.debug("CredentialHandler Put/:");
 
-            String credentialProfileName = ctx.pathParam("credentialProfileName");
+            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME_KEY);
 
             if (credentialProfileName == null || credentialProfileName.isEmpty())
             {
@@ -109,11 +113,11 @@ public class CredentialHandler
             });
         });
 
-        credentialRouter.delete("/:credentialProfileName").handler(ctx ->
+        credentialRouter.delete(CREDENTIAL_PROFILE_NAME_PARAM).handler(ctx ->
         {
             logger.debug("CredentialHandler Delete");
 
-            String credentialProfileName = ctx.pathParam("credentialProfileName");
+            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME_KEY);
 
             if (credentialProfileName == null || credentialProfileName.isEmpty())
             {

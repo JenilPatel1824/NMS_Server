@@ -16,6 +16,12 @@ public class ProvisionService
 
     private final EventBus eventBus;
 
+    private static final String YES_KEY = "yes";
+
+    private static final String NO_KEY = "no";
+
+    private static final String PROVISION_COLUMN = "provision";
+
     public ProvisionService(Vertx vertx)
     {
         this.eventBus = vertx.eventBus();
@@ -29,11 +35,11 @@ public class ProvisionService
     {
         boolean provisionStatus;
 
-        if ("yes".equalsIgnoreCase(status))
+        if (YES_KEY.equalsIgnoreCase(status))
         {
             provisionStatus = true;
         }
-        else if ("no".equalsIgnoreCase(status))
+        else if (NO_KEY.equalsIgnoreCase(status))
         {
             provisionStatus = false;
         }
@@ -47,10 +53,10 @@ public class ProvisionService
         JsonObject request = new JsonObject()
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_UPDATE)
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                .put(Constants.DATA_KEY, new JsonObject().put("provision", provisionStatus))
+                .put(Constants.DATA_KEY, new JsonObject().put(PROVISION_COLUMN, provisionStatus))
                 .put(Constants.CONDITION_KEY, new JsonObject()
-                        .put(Constants.DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)
-                        .put("discovery", true));
+                        .put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)
+                        .put(Constants.DISCOVERY_KEY, true));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -62,9 +68,9 @@ public class ProvisionService
             }
             else
             {
-                logger.error("[{}] Failed to update provision status: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+                logger.error(" Failed to update provision status: {}",reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end("Internal Server Error");
+                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
             }
         });
     }
@@ -77,8 +83,8 @@ public class ProvisionService
         JsonObject request = new JsonObject()
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_PROVISION_DATA)
-                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATA_KEY).add("polled_at"))
-                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName));
+                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATA_KEY).add(Constants.DATABASE_COLUMN_POLLED_AT))
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -105,7 +111,7 @@ public class ProvisionService
 
                 if (results == null || results.isEmpty())
                 {
-                    ctx.response().setStatusCode(404).end(new JsonObject().put("message", "No data found for discoveryProfileName: " + discoveryProfileName).encode());
+                    ctx.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE_KEY, "No data found for discoveryProfileName: " + discoveryProfileName).encode());
 
                     return;
                 }
@@ -118,7 +124,7 @@ public class ProvisionService
 
                     JsonObject responseData = new JsonObject()
                             .put(Constants.DATA_KEY, row.getJsonObject(Constants.DATA_KEY))
-                            .put("polled_at", row.getString("polled_at"));
+                            .put(Constants.DATABASE_COLUMN_POLLED_AT, row.getString(Constants.DATABASE_COLUMN_POLLED_AT));
 
                     responseArray.add(responseData);
                 }
@@ -127,9 +133,9 @@ public class ProvisionService
             }
             else
             {
-                logger.error("[{}] Failed to fetch provision data: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+                logger.error("Failed to fetch provision data: {}", reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end(new JsonObject().put("message", "Internal Server Error").encode());
+                ctx.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE_KEY, Constants.INTERNAL_SERVER_ERROR_MESSAGE).encode());
             }
         });
     }
@@ -141,7 +147,7 @@ public class ProvisionService
         JsonObject request = new JsonObject()
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_PROVISION_DATA)
-                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"));
+                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -168,7 +174,7 @@ public class ProvisionService
 
                 if (results == null || results.isEmpty())
                 {
-                    ctx.response().setStatusCode(404).end(new JsonObject().put("message", "No data found").encode());
+                    ctx.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE_KEY, "No data found").encode());
 
                     return;
                 }
@@ -180,7 +186,7 @@ public class ProvisionService
                     JsonObject row = results.getJsonObject(i);
 
                     JsonObject entry = new JsonObject()
-                            .put("discoveryProfileName", row.getString(Constants.DISCOVERY_PROFILE_NAME_KEY))
+                            .put("discoveryProfileName", row.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY))
                             .put(Constants.DATA_KEY, row.getJsonObject(Constants.DATA_KEY));
 
                     responseArray.add(entry);
@@ -191,9 +197,9 @@ public class ProvisionService
             }
             else
             {
-                logger.error("[{}] Failed to fetch all provision data: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+                logger.error(" Failed to fetch all provision data: {}", reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end(new JsonObject().put("message", "Internal Server Error").encode());
+                ctx.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE_KEY, Constants.INTERNAL_SERVER_ERROR_MESSAGE).encode());
             }
         });
     }

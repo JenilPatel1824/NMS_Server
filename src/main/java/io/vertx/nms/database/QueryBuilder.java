@@ -61,7 +61,7 @@ public class QueryBuilder
             case Constants.DATABASE_OPERATION_SELECT:
 
                 query.append("SELECT ")
-                        .append(columns.isEmpty() ? "*" : String.join(", ", columns.getList()))
+                        .append(columns.isEmpty() ? Constants.DATABASE_ALL_COLUMN : String.join(", ", columns.getList()))
                         .append(" FROM ").append(tableName);
 
                 appendCondition(query, condition, parameters, paramIndex);

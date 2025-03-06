@@ -26,11 +26,11 @@ public class DiscoveryService
 
     static
     {
-        VALID_FIELDS.add(Constants.DISCOVERY_PROFILE_NAME_KEY);
+        VALID_FIELDS.add(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY);
 
-        VALID_FIELDS.add(Constants.CREDENTIAL_PROFILE_NAME_KEY);
+        VALID_FIELDS.add(Constants.DATABASE_CREDENTIAL_PROFILE_NAME_KEY);
 
-        VALID_FIELDS.add("ip");
+        VALID_FIELDS.add(Constants.IP_KEY);
     }
 
     public DiscoveryService(Vertx vertx)
@@ -47,7 +47,7 @@ public class DiscoveryService
         JsonObject request = new JsonObject()
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
-                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"));
+                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -61,10 +61,9 @@ public class DiscoveryService
             }
             else
             {
-                logger.error("[{}] Failed to process GET all discoveries request: {}",
-                        Thread.currentThread().getName(), reply.cause().getMessage());
+                logger.error("Failed to process GET all discoveries request {}", reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end("Internal Server Error");
+                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
             }
         });
     }
@@ -84,8 +83,8 @@ public class DiscoveryService
         JsonObject request = new JsonObject()
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
-                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"))
-                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, profileName));
+                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATABASE_ALL_COLUMN))
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, profileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -99,7 +98,7 @@ public class DiscoveryService
             {
                 logger.error("[{}] Failed to process GET by profile name request: {}", Thread.currentThread().getName(), reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end("Internal Server Error");
+                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
             }
         });
     }
@@ -133,7 +132,7 @@ public class DiscoveryService
             {
                 logger.error("[{}] Failed to create discovery: {}", Thread.currentThread().getName(), reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end("Internal Server Error"+reply.cause().getMessage());
+                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE+reply.cause().getMessage());
             }
         });
     }
@@ -157,7 +156,7 @@ public class DiscoveryService
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_UPDATE)
                 .put(Constants.DATA_KEY, updateRequest)
-                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, profileName));
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, profileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -169,9 +168,9 @@ public class DiscoveryService
             }
             else
             {
-                logger.error("[{}] Failed to update discovery: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+                logger.error(" Failed to update discovery {}", reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end("Internal Server Error" +reply.cause());
+                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE +reply.cause());
             }
         });
     }
@@ -190,7 +189,7 @@ public class DiscoveryService
         JsonObject request = new JsonObject()
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_DELETE)
-                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)); // Correctly formatted condition
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)); // Correctly formatted condition
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -203,9 +202,9 @@ public class DiscoveryService
             }
             else
             {
-                logger.error("[{}] Failed to delete discovery: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+                logger.error(" Failed to delete discovery: {}", reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end("Internal Server Error");
+                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
             }
         });
     }
@@ -249,7 +248,7 @@ public class DiscoveryService
 
             JsonObject discovery = dataArray.getJsonObject(0);
 
-            String targetIp = discovery.getString("ip");
+            String targetIp = discovery.getString(Constants.IP_KEY);
 
             if (targetIp == null || targetIp.isEmpty())
             {
@@ -269,7 +268,7 @@ public class DiscoveryService
             {
                 if (res.succeeded() && (Boolean) res.result())
                 {
-                    String deviceType = discovery.getString("system_type");
+                    String deviceType = discovery.getString(Constants.JSON_SYSTEM_TYPE_KEY);
 
                     if(!deviceType.equalsIgnoreCase("snmp"))
                     {
@@ -278,7 +277,7 @@ public class DiscoveryService
                         return;
                     }
 
-                    JsonObject credentials = discovery.getJsonObject("credentials");
+                    JsonObject credentials = discovery.getJsonObject(Constants.JSON_CREDENTIALS_KEY);
 
                     if (credentials == null)
                     {
@@ -288,13 +287,13 @@ public class DiscoveryService
                     }
 
                     JsonObject zmqRequest = new JsonObject()
-                            .put("ip", targetIp)
-                            .put("community", credentials.getString("community"))
-                            .put("version", credentials.getString("version"))
-                            .put("pluginType", deviceType)
-                            .put("requestType", "discovery");
+                            .put(Constants.IP_KEY, targetIp)
+                            .put(Constants.JSON_COMMUNITY_KEY, credentials.getString(Constants.JSON_COMMUNITY_KEY))
+                            .put(Constants.JSON_VERSION_KEY, credentials.getString(Constants.JSON_VERSION_KEY))
+                            .put(Constants.JSON_PLUGIN_TYPE_KEY, deviceType)
+                            .put(Constants.JSON_REQUEST_TYPE_KEY, Constants.DISCOVERY_KEY);
 
-                    eventBus.request("zmq.send", zmqRequest, zmqResult ->
+                    eventBus.request(Constants.EVENTBUS_ZMQ_ADDRESS, zmqRequest, zmqResult ->
                     {
                         if (zmqResult.failed())
                         {
@@ -307,13 +306,13 @@ public class DiscoveryService
 
                         JsonObject zmqResponseJson = (JsonObject) zmqResult.result().body();
 
-                        boolean isSuccess = "success".equalsIgnoreCase(zmqResponseJson.getString("status"));
+                        boolean isSuccess = Constants.SUCCESS_KEY.equalsIgnoreCase(zmqResponseJson.getString(Constants.STATUS_KEY));
 
                         JsonObject request = new JsonObject()
                                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_UPDATE)
                                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                                .put(Constants.DATA_KEY, new JsonObject().put("discovery", isSuccess))
-                                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName));
+                                .put(Constants.DATA_KEY, new JsonObject().put(Constants.DISCOVERY_KEY, isSuccess))
+                                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName));
 
                         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -362,9 +361,9 @@ public class DiscoveryService
                 return false;
             }
         }
-        return requestBody.containsKey(Constants.DISCOVERY_PROFILE_NAME_KEY) &&
-                requestBody.containsKey(Constants.CREDENTIAL_PROFILE_NAME_KEY) &&
-                requestBody.containsKey("ip");
+        return requestBody.containsKey(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY) &&
+                requestBody.containsKey(Constants.DATABASE_CREDENTIAL_PROFILE_NAME_KEY) &&
+                requestBody.containsKey(Constants.IP_KEY);
     }
 
     // Validates the update request body for valid fields.

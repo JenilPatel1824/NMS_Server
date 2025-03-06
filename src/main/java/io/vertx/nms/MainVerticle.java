@@ -24,7 +24,7 @@ public class MainVerticle extends AbstractVerticle
 
         }).onFailure(err->
         {
-            logger.error("HTTP server verticle failed to deploy "+err.getMessage());
+            logger.error("HTTP server verticle failed to deploy {}", err.getMessage());
 
         });
 
@@ -34,7 +34,7 @@ public class MainVerticle extends AbstractVerticle
 
         }).onFailure(err->
         {
-            logger.error("Database verticle failed to deploy "+err.getMessage());
+            logger.error("Database verticle failed to deploy {}", err.getMessage());
 
         });
 
@@ -43,7 +43,7 @@ public class MainVerticle extends AbstractVerticle
             logger.info("Zmq verticle deployed");
         }).onFailure(err->
         {
-            logger.error("Zmq verticle failed to deploy "+err.getMessage());
+            logger.error("Zmq verticle failed to deploy {}", err.getMessage());
         });
 
         vertx.deployVerticle(new PollingEngineVerticle()).onSuccess(id->
@@ -51,7 +51,7 @@ public class MainVerticle extends AbstractVerticle
             logger.info("Poling engine verticle deployed");
         }).onFailure(err->
         {
-            logger.error("Poling engine verticle failed to deploy "+err.getMessage());
+            logger.error("Poling engine verticle failed to deploy {}", err.getMessage());
         });
     }
 
@@ -66,7 +66,7 @@ public class MainVerticle extends AbstractVerticle
 
         }).onFailure(err->
         {
-            logger.error("main verticle failed to deploy "+err.getMessage());
+            logger.error("main verticle failed to deploy {}", err.getMessage());
         });
     }
 }

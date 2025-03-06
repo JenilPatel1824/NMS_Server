@@ -15,6 +15,8 @@ public class DiscoveryHandler
 
     private final DiscoveryService discoveryService;
 
+    private static final String DISCOVERY_PROFILE_NAME_PARAM = "/:discoveryProfileName";
+
     public DiscoveryHandler(Vertx vertx)
     {
         this.discoveryService = new DiscoveryService(vertx);
@@ -27,9 +29,7 @@ public class DiscoveryHandler
     {
         Router discoveryRouter = Router.router(vertx);
 
-        discoveryRouter.get("/").handler(discoveryService::getAllDiscoveries);
-
-        discoveryRouter.get("/:discoveryProfileName").handler(ctx ->
+        discoveryRouter.get(DISCOVERY_PROFILE_NAME_PARAM).handler(ctx ->
         {
             String discoveryProfileName = ctx.pathParam("discoveryProfileName");
 
@@ -44,6 +44,8 @@ public class DiscoveryHandler
 
             discoveryService.getDiscoveryByProfileName(discoveryProfileName, ctx);
         });
+
+        discoveryRouter.get().handler(discoveryService::getAllDiscoveries);
 
         discoveryRouter.post("/").handler(ctx ->
         {
@@ -74,7 +76,7 @@ public class DiscoveryHandler
             });
         });
 
-        discoveryRouter.put("/:discoveryProfileName").handler(ctx ->
+        discoveryRouter.put(DISCOVERY_PROFILE_NAME_PARAM).handler(ctx ->
         {
             logger.info("Discovery Put/:");
 
@@ -103,7 +105,7 @@ public class DiscoveryHandler
             });
         });
 
-        discoveryRouter.delete("/:discoveryProfileName").handler(ctx ->
+        discoveryRouter.delete(DISCOVERY_PROFILE_NAME_PARAM).handler(ctx ->
         {
             logger.info("Discovery Delete/:");
 

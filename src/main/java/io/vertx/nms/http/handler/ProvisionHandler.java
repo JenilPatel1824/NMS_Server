@@ -4,6 +4,7 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.nms.constants.Constants;
 import io.vertx.nms.service.ProvisionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public class ProvisionHandler
 
         String discoveryProfileName = ctx.pathParam("discoveryProfileName");
 
-        String status = ctx.pathParam("status");
+        String status = ctx.pathParam(Constants.STATUS_KEY);
 
         if (discoveryProfileName == null || discoveryProfileName.isEmpty())
         {

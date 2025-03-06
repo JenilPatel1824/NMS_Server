@@ -27,7 +27,7 @@ public class CredentialService
         JsonObject request = new JsonObject()
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
-                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"));
+                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -41,7 +41,7 @@ public class CredentialService
                     {
                         logger.error("Failed to fetch credentials: {}", reply.cause().getMessage());
 
-                        ctx.response().setStatusCode(500).end("Internal Server Error");
+                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
                     }
                 });
     }
@@ -54,8 +54,8 @@ public class CredentialService
         JsonObject request = new JsonObject()
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
-                .put(Constants.COLUMNS_KEY, new JsonArray().add("*"))
-                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.CREDENTIAL_PROFILE_NAME_KEY, credentialProfileName));
+                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATABASE_ALL_COLUMN))
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DATABASE_CREDENTIAL_PROFILE_NAME_KEY, credentialProfileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -68,7 +68,8 @@ public class CredentialService
                     else
                     {
                         logger.error("Failed to fetch credential by name: {}", reply.cause().getMessage());
-                        ctx.response().setStatusCode(500).end("Internal Server Error");
+
+                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
                     }
                 });
     }
@@ -97,7 +98,7 @@ public class CredentialService
                     {
                         logger.error("Failed to create credential: {}", reply.cause().getMessage());
 
-                        ctx.response().setStatusCode(500).end("Internal Server Error");
+                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
                     }
                 });
     }
@@ -112,7 +113,7 @@ public class CredentialService
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_UPDATE)
                 .put(Constants.DATA_KEY, requestBody)
-                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.CREDENTIAL_PROFILE_NAME_KEY, credentialProfileName));
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DATABASE_CREDENTIAL_PROFILE_NAME_KEY, credentialProfileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -126,7 +127,7 @@ public class CredentialService
                     {
                         logger.error("Failed to update credential: {}", reply.cause().getMessage());
 
-                        ctx.response().setStatusCode(500).end("Internal Server Error");
+                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
                     }
                 });
     }
@@ -139,7 +140,7 @@ public class CredentialService
         JsonObject request = new JsonObject()
                 .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
                 .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_DELETE)
-                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.CREDENTIAL_PROFILE_NAME_KEY, credentialProfileName));
+                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DATABASE_CREDENTIAL_PROFILE_NAME_KEY, credentialProfileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
@@ -153,7 +154,7 @@ public class CredentialService
                     {
                         logger.error("Failed to delete credential: {}", reply.cause().getMessage());
 
-                        ctx.response().setStatusCode(500).end("Internal Server Error");
+                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
                     }
                 });
     }
@@ -163,20 +164,20 @@ public class CredentialService
     // @param ctx The RoutingContext containing the request and response.
     private boolean isValidRequestBody(JsonObject requestBody, RoutingContext ctx)
     {
-        if (!requestBody.containsKey(Constants.CREDENTIAL_PROFILE_NAME_KEY) || requestBody.getString(Constants.CREDENTIAL_PROFILE_NAME_KEY).isEmpty() ||
-                !requestBody.containsKey("system_type") || requestBody.getString("system_type").isEmpty() ||
-                !requestBody.containsKey("credentials") || requestBody.getJsonObject("credentials").isEmpty()) {
+        if (!requestBody.containsKey(Constants.DATABASE_CREDENTIAL_PROFILE_NAME_KEY) || requestBody.getString(Constants.DATABASE_CREDENTIAL_PROFILE_NAME_KEY).isEmpty() ||
+                !requestBody.containsKey(Constants.JSON_SYSTEM_TYPE_KEY) || requestBody.getString(Constants.JSON_SYSTEM_TYPE_KEY).isEmpty() ||
+                !requestBody.containsKey(Constants.JSON_CREDENTIALS_KEY) || requestBody.getJsonObject(Constants.JSON_CREDENTIALS_KEY).isEmpty()) {
 
             ctx.response().setStatusCode(400).end("Required fields: credential_profile_name, system_type, credentials");
 
             return true;
         }
 
-        String systemType = requestBody.getString("system_type");
+        String systemType = requestBody.getString(Constants.JSON_SYSTEM_TYPE_KEY);
 
-        JsonObject credentials = requestBody.getJsonObject("credentials");
+        JsonObject credentials = requestBody.getJsonObject(Constants.JSON_CREDENTIALS_KEY);
 
-        if ("SNMP".equalsIgnoreCase(systemType) && !credentials.containsKey("community") && !credentials.containsKey("version"))
+        if ("SNMP".equalsIgnoreCase(systemType) && !credentials.containsKey(Constants.JSON_COMMUNITY_KEY) && !credentials.containsKey(Constants.JSON_VERSION_KEY))
         {
             ctx.response().setStatusCode(400).end("SNMP system type requires 'community_version' in credentials");
 

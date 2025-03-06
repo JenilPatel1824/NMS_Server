@@ -23,7 +23,7 @@ public class PollingEngineVerticle extends AbstractVerticle
 
     private static final String DB_QUERY_ADDRESS = Constants.EVENTBUS_DATABASE_ADDRESS;
 
-    private static final String ZMQ_REQUEST_ADDRESS = "zmq.send";
+    private static final String ZMQ_REQUEST_ADDRESS = Constants.EVENTBUS_ZMQ_ADDRESS;
 
     private static final int BATCH_SIZE = 10;
 
@@ -31,7 +31,7 @@ public class PollingEngineVerticle extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 3000;
+    private static final long FETCH_DEVICE_INTERVAL = 30000000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -105,14 +105,14 @@ public class PollingEngineVerticle extends AbstractVerticle
     // @param device The JSON object containing device details, including IP, credentials, and system type.
     private void sendZmqRequest(JsonObject device)
     {
-        JsonObject credentials = device.getJsonObject("credentials");
+        JsonObject credentials = device.getJsonObject(Constants.JSON_CREDENTIALS_KEY);
 
         JsonObject requestObject = new JsonObject()
-                .put("ip", device.getString("ip"))
-                .put("community", credentials.getString("community"))
-                .put("version", credentials.getString("version"))
-                .put("requestType", "polling")
-                .put("pluginType", device.getString("system_type"));
+                .put(Constants.IP_KEY, device.getString(Constants.IP_KEY))
+                .put(Constants.JSON_COMMUNITY_KEY, credentials.getString(Constants.JSON_COMMUNITY_KEY))
+                .put(Constants.JSON_VERSION_KEY, credentials.getString(Constants.JSON_VERSION_KEY))
+                .put(Constants.JSON_REQUEST_TYPE_KEY, Constants.POLLING_KEY)
+                .put(Constants.JSON_PLUGIN_TYPE_KEY, device.getString(Constants.JSON_SYSTEM_TYPE_KEY));
 
         vertx.eventBus().request(ZMQ_REQUEST_ADDRESS, requestObject, reply ->
         {
@@ -131,7 +131,7 @@ public class PollingEngineVerticle extends AbstractVerticle
                     return;
                 }
 
-                addToBatch(snmpData, device.getString(Constants.DISCOVERY_PROFILE_NAME_KEY));
+                addToBatch(snmpData, device.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY));
             }
             else
             {
@@ -151,9 +151,9 @@ public class PollingEngineVerticle extends AbstractVerticle
         String timestamp = istTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         JsonObject entry = new JsonObject()
-                .put(Constants.DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)
+                .put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)
                 .put(Constants.DATA_KEY, snmpData)
-                .put("polled_at", timestamp);
+                .put(Constants.DATABASE_COLUMN_POLLED_AT, timestamp);
 
         batchSnmpData.add(entry);
 
@@ -177,7 +177,7 @@ public class PollingEngineVerticle extends AbstractVerticle
     // Flushes batch data and stores it.
     private void flushBatchData()
     {
-        logger.info("flushing batch "+batchSnmpData.size());
+        logger.info("flushing batch {}", batchSnmpData.size());
 
         if (batchSnmpData.isEmpty()) return;
 
@@ -208,9 +208,9 @@ public class PollingEngineVerticle extends AbstractVerticle
          {
              queryBuilder.append("($").append(index++).append(", $").append(index++).append(", $").append(index++).append("),");
 
-             params.add(data.getString(Constants.DISCOVERY_PROFILE_NAME_KEY))
+             params.add(data.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY))
                      .add(data.getJsonObject(Constants.DATA_KEY))
-                     .add(data.getString("polled_at"));
+                     .add(data.getString(Constants.DATABASE_COLUMN_POLLED_AT));
          }
 
          queryBuilder.setLength(queryBuilder.length() - 1);

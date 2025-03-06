@@ -5,8 +5,10 @@ import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import io.vertx.nms.config.Config;
+import io.vertx.nms.constants.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -23,11 +25,13 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
     private static final int RESPONSE_CHECK_INTERVAL_MS = 500;
 
-    private static final long REQUEST_TIMEOUT_MS = 59000;
+    private static final long REQUEST_TIMEOUT_MS = 60_000;
 
     private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 10000;
 
     private Map<String, PendingRequest> pendingRequests = new HashMap<>();
+
+    private static final String REQUEST_ID_KEY = "request_id";
 
     private static class PendingRequest
     {
@@ -45,22 +49,22 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
     // Sets up a ZMQ DEALER socket for communication.
     // Registers the socket with a poller for incoming messages.
-    // Listens for event bus messages on "zmq.send".
+    // Listens for event bus messages on Constants.EVENTBUS_ZMQ_ADDRESS.
     // Starts periodic checks for responses and timeouts.
     @Override
     public void start(Promise<Void> startPromise)
     {
-        logger.debug("zmq message verticle "+Thread.currentThread().getName());
+        logger.debug("{} zmq message verticle ", Thread.currentThread().getName());
 
         context = ZMQ.context(1);
 
-        dealer = context.socket(ZMQ.DEALER);
+        dealer = context.socket(SocketType.DEALER);
 
         dealer.setReceiveTimeOut(0);
 
         dealer.connect(Config.ZMQ_ADDRESS);
 
-        vertx.eventBus().consumer("zmq.send", this::handleRequest);
+        vertx.eventBus().consumer(Constants.EVENTBUS_ZMQ_ADDRESS, this::handleRequest);
 
         vertx.setPeriodic(RESPONSE_CHECK_INTERVAL_MS, id ->
         {
@@ -82,13 +86,13 @@ public class ZmqMessengerVerticle extends AbstractVerticle
     // @param message The incoming message containing the ZMQ request.
     private void handleRequest(Message<JsonObject> message)
     {
-        logger.info(Thread.currentThread().getName()+" zmq.send request");
+        logger.info("{} zmq.send request", Thread.currentThread().getName());
 
         JsonObject request = message.body();
 
-        String requestId = request.getString("request_id", UUID.randomUUID().toString());
+        String requestId = request.getString(REQUEST_ID_KEY, UUID.randomUUID().toString());
 
-        request.put("request_id", requestId);
+        request.put(REQUEST_ID_KEY, requestId);
 
         pendingRequests.put(requestId, new PendingRequest(message, System.currentTimeMillis()));
 
@@ -116,26 +120,26 @@ public class ZmqMessengerVerticle extends AbstractVerticle
              {
                  JsonObject replyJson = new JsonObject(response);
 
-                 String requestId = replyJson.getString("request_id");
+                 String requestId = replyJson.getString(REQUEST_ID_KEY);
 
-                 replyJson.remove("request_id");
+                 replyJson.remove(REQUEST_ID_KEY);
 
                  PendingRequest pendingRequest = pendingRequests.remove(requestId);
 
                  if (pendingRequest != null)
                  {
-                     logger.info(Thread.currentThread().getName() + " Replying ");
+                     logger.info("{} Replying ", Thread.currentThread().getName());
 
                      pendingRequest.message.reply(replyJson);
                  }
                  else
                  {
-                     logger.warn("No pending request found for request_id: " + requestId);
+                     logger.warn("No pending request found for request_id: {}", requestId);
                  }
              }
              catch (Exception e)
              {
-                 logger.error("Failed to parse response as JSON: " + response, e);
+                 logger.error("Failed to parse response as JSON: {}", response, e);
              }
          }
      }
