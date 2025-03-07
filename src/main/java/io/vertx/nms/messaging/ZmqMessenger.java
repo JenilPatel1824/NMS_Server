@@ -4,7 +4,6 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.nms.config.Config;
 import io.vertx.nms.constants.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,13 +24,13 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
     private static final int RESPONSE_CHECK_INTERVAL_MS = 500;
 
-    private static final long REQUEST_TIMEOUT_MS = 60_000;
+    private static final long REQUEST_TIMEOUT_MS = 28_000;
 
-    private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 10000;
+    private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 1000;
 
     private Map<String, PendingRequest> pendingRequests = new HashMap<>();
 
-    private static final String REQUEST_ID_KEY = "request_id";
+    private static final String REQUEST_ID = "request_id";
 
     private static class PendingRequest
     {
@@ -62,9 +61,9 @@ public class ZmqMessengerVerticle extends AbstractVerticle
 
         dealer.setReceiveTimeOut(0);
 
-        dealer.connect(Config.ZMQ_ADDRESS);
+        dealer.connect(Constants.ZMQ_ADDRESS);
 
-        vertx.eventBus().consumer(Constants.EVENTBUS_ZMQ_ADDRESS, this::handleRequest);
+        vertx.eventBus().<JsonObject>localConsumer(Constants.EVENTBUS_ZMQ_ADDRESS, this::handleRequest);
 
         vertx.setPeriodic(RESPONSE_CHECK_INTERVAL_MS, id ->
         {
@@ -86,13 +85,13 @@ public class ZmqMessengerVerticle extends AbstractVerticle
     // @param message The incoming message containing the ZMQ request.
     private void handleRequest(Message<JsonObject> message)
     {
-        logger.info("{} zmq.send request", Thread.currentThread().getName());
+        logger.info("{} zmq.send request {}", Thread.currentThread().getName(), message.body());
 
         JsonObject request = message.body();
 
-        String requestId = request.getString(REQUEST_ID_KEY, UUID.randomUUID().toString());
+        String requestId =  UUID.randomUUID().toString();
 
-        request.put(REQUEST_ID_KEY, requestId);
+        request.put(REQUEST_ID, requestId);
 
         pendingRequests.put(requestId, new PendingRequest(message, System.currentTimeMillis()));
 
@@ -108,7 +107,6 @@ public class ZmqMessengerVerticle extends AbstractVerticle
      {
          String response;
 
-         // Keep reading while messages are available
          while ((response = dealer.recvStr(ZMQ.DONTWAIT)) != null)
          {
              if (response.trim().isEmpty())
@@ -120,33 +118,34 @@ public class ZmqMessengerVerticle extends AbstractVerticle
              {
                  JsonObject replyJson = new JsonObject(response);
 
-                 String requestId = replyJson.getString(REQUEST_ID_KEY);
+                 String requestId = replyJson.getString(REQUEST_ID);
 
-                 replyJson.remove(REQUEST_ID_KEY);
+                 replyJson.remove(REQUEST_ID);
 
                  PendingRequest pendingRequest = pendingRequests.remove(requestId);
 
                  if (pendingRequest != null)
                  {
-                     logger.info("{} Replying ", Thread.currentThread().getName());
+                     logger.info("{} Replying ", Thread.currentThread());
 
                      pendingRequest.message.reply(replyJson);
+
                  }
                  else
                  {
-                     logger.warn("No pending request found for request_id: {}", requestId);
+                     logger.error("No pending request found for request_id: {}", requestId);
                  }
              }
              catch (Exception e)
              {
-                 logger.error("Failed to parse response as JSON: {}", response, e);
+                 logger.error("Failed to parse response as JSON: {} from plugin", response, e);
              }
          }
      }
 
     // Checks for and handles any pending requests that have timed out.
-     // If the request has exceeded the timeout threshold, it logs a warning and sends a failure response to the original message.
-     // Removes the timed-out request from the pending requests map.
+    // If the request has exceeded the timeout threshold, it logs a warning and sends a failure response to the original message.
+    // Removes the timed-out request from the pending requests map.
     private void checkTimeouts()
     {
         long now = System.currentTimeMillis();

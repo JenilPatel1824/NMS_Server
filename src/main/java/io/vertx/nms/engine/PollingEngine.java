@@ -2,6 +2,7 @@ package io.vertx.nms.engine;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -31,7 +32,7 @@ public class PollingEngineVerticle extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 30000000;
+    private static final long FETCH_DEVICE_INTERVAL = 300000000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -53,20 +54,20 @@ public class PollingEngineVerticle extends AbstractVerticle
     private void fetchProvisionedDevices()
     {
         JsonObject request = new JsonObject()
-                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
-                .put(Constants.TABLE_NAME_KEY, "discovery_profiles d JOIN credential_profile c ON d.credential_profile_name = c.credential_profile_name")
-                .put(Constants.COLUMNS_KEY, new JsonArray()
+                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.TABLE_NAME, "discovery_profiles d JOIN credential_profile c ON d.credential_profile_name = c.credential_profile_name")
+                .put(Constants.COLUMNS, new JsonArray()
                         .add("d.discovery_profile_name")
                         .add("d.ip")
                         .add("c.system_type")
                         .add("c.credentials"))
-                .put(Constants.CONDITION_KEY, new JsonObject()
+                .put(Constants.CONDITION, new JsonObject()
                         .put("d.provision", true)
                         .put("c.system_type", "snmp"));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        vertx.eventBus().request(DB_QUERY_ADDRESS, new JsonObject().put(Constants.QUERY_KEY,queryResult.getQuery()).put(Constants.PARAMS_KEY,queryResult.getParams()), reply ->
+        vertx.eventBus().request(DB_QUERY_ADDRESS, new JsonObject().put(Constants.QUERY,queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()), reply ->
         {
             if (reply.succeeded())
             {
@@ -82,16 +83,16 @@ public class PollingEngineVerticle extends AbstractVerticle
     }
 
     // Processes the fetched provisioned devices.
-    // Extracts the Constants.DATA_KEY array from the response and iterates through each device.
+    // Extracts the Constants.DATA array from the response and iterates through each device.
     // Sends each device's details to the ZMQ request handler.
-    // @param body The response object received from the database query, expected to be a JsonObject containing a Constants.DATA_KEY array.
+    // @param body The response object received from the database query, expected to be a JsonObject containing a Constants.DATA array.
     private void processDevices(Object body)
     {
         if (!(body instanceof JsonObject response)) return;
 
-        if (!response.containsKey(Constants.DATA_KEY)) return;
+        if (!response.containsKey(Constants.DATA)) return;
 
-        response.getJsonArray(Constants.DATA_KEY).forEach(entry ->
+        response.getJsonArray(Constants.DATA).forEach(entry ->
         {
             JsonObject device = (JsonObject) entry;
 
@@ -105,33 +106,20 @@ public class PollingEngineVerticle extends AbstractVerticle
     // @param device The JSON object containing device details, including IP, credentials, and system type.
     private void sendZmqRequest(JsonObject device)
     {
-        JsonObject credentials = device.getJsonObject(Constants.JSON_CREDENTIALS_KEY);
+        JsonObject credentials = device.getJsonObject(Constants.JSON_CREDENTIALS);
 
         JsonObject requestObject = new JsonObject()
-                .put(Constants.IP_KEY, device.getString(Constants.IP_KEY))
-                .put(Constants.JSON_COMMUNITY_KEY, credentials.getString(Constants.JSON_COMMUNITY_KEY))
-                .put(Constants.JSON_VERSION_KEY, credentials.getString(Constants.JSON_VERSION_KEY))
-                .put(Constants.JSON_REQUEST_TYPE_KEY, Constants.POLLING_KEY)
-                .put(Constants.JSON_PLUGIN_TYPE_KEY, device.getString(Constants.JSON_SYSTEM_TYPE_KEY));
+                .put(Constants.IP, device.getString(Constants.IP))
+                .put(Constants.JSON_COMMUNITY, credentials.getString(Constants.JSON_COMMUNITY))
+                .put(Constants.JSON_VERSION, credentials.getString(Constants.JSON_VERSION))
+                .put(Constants.JSON_REQUEST_TYPE, Constants.POLLING)
+                .put(Constants.JSON_PLUGIN_TYPE, device.getString(Constants.JSON_SYSTEM_TYPE));
 
-        vertx.eventBus().request(ZMQ_REQUEST_ADDRESS, requestObject, reply ->
+        vertx.eventBus().<JsonObject>request(ZMQ_REQUEST_ADDRESS, requestObject, reply ->
         {
-            if (reply.succeeded())
+            if (reply.succeeded() && reply.result().body().getString(Constants.STATUS).equalsIgnoreCase("success"))
             {
-                JsonObject snmpData;
-
-                try
-                {
-                    snmpData = new JsonObject(reply.result().body().toString());
-                }
-                catch (Exception e)
-                {
-                    logger.error("Failed to parse SNMP response: {}", reply.result().body(), e);
-
-                    return;
-                }
-
-                addToBatch(snmpData, device.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY));
+                addToBatch(reply.result().body().getJsonObject("data"), device.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME));
             }
             else
             {
@@ -151,8 +139,8 @@ public class PollingEngineVerticle extends AbstractVerticle
         String timestamp = istTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         JsonObject entry = new JsonObject()
-                .put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)
-                .put(Constants.DATA_KEY, snmpData)
+                .put(Constants.DATABASE_DISCOVERY_PROFILE_NAME, discoveryProfileName)
+                .put(Constants.DATA, snmpData)
                 .put(Constants.DATABASE_COLUMN_POLLED_AT, timestamp);
 
         batchSnmpData.add(entry);
@@ -208,8 +196,8 @@ public class PollingEngineVerticle extends AbstractVerticle
          {
              queryBuilder.append("($").append(index++).append(", $").append(index++).append(", $").append(index++).append("),");
 
-             params.add(data.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY))
-                     .add(data.getJsonObject(Constants.DATA_KEY))
+             params.add(data.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME))
+                     .add(data.getJsonObject(Constants.DATA))
                      .add(data.getString(Constants.DATABASE_COLUMN_POLLED_AT));
          }
 
@@ -218,8 +206,8 @@ public class PollingEngineVerticle extends AbstractVerticle
          queryBuilder.append(" RETURNING id");
 
          JsonObject queryRequest = new JsonObject()
-                 .put(Constants.QUERY_KEY, queryBuilder.toString())
-                 .put(Constants.PARAMS_KEY, params);
+                 .put(Constants.QUERY, queryBuilder.toString())
+                 .put(Constants.PARAMS, params);
 
          vertx.eventBus().request(DB_QUERY_ADDRESS, queryRequest, reply ->
          {
