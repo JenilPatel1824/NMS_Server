@@ -4,7 +4,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
-import io.vertx.nms.constants.Constants;
+import io.vertx.nms.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
@@ -14,9 +14,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
-public class ZmqMessengerVerticle extends AbstractVerticle
+public class ZmqMessenger extends AbstractVerticle
 {
-    private static final Logger logger = LoggerFactory.getLogger(ZmqMessengerVerticle.class);
+    private static final Logger logger = LoggerFactory.getLogger(ZmqMessenger.class);
 
     private ZMQ.Context context;
 

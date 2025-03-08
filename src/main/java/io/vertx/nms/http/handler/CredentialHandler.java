@@ -6,6 +6,7 @@ import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.nms.service.CredentialService;
+import io.vertx.nms.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,9 +18,11 @@ public class CredentialHandler
 
     private final Vertx vertx;
 
-    private static final String CREDENTIAL_PROFILE_NAME_KEY = "credentialProfileName";
+    private static final String CREDENTIAL_PROFILE_NAME = "credentialProfileName";
 
-    public static final String CREDENTIAL_PROFILE_NAME_PARAM = "/:credentialProfileName";
+    public static final String CREDENTIAL_PROFILE_NAME_URL = "/:credentialProfileName";
+
+    private static final String MESSAGE_REQUIRED_CREDENTIAL_PROFILE_NAME = "credentialProfileName is required.";
 
     public CredentialHandler(Vertx vertx)
     {
@@ -35,15 +38,15 @@ public class CredentialHandler
     {
         Router credentialRouter = Router.router(vertx);
 
-        credentialRouter.get(CREDENTIAL_PROFILE_NAME_PARAM).handler(ctx ->
+        credentialRouter.get(CREDENTIAL_PROFILE_NAME_URL).handler(ctx ->
         {
             logger.debug("CredentialHandler Get/:");
 
-            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME_KEY);
+            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME);
 
             if (credentialProfileName == null || credentialProfileName.isEmpty())
             {
-                ctx.response().setStatusCode(400).end("Parameter 'credentialProfileName' is required.");
+                ctx.response().setStatusCode(400).end(MESSAGE_REQUIRED_CREDENTIAL_PROFILE_NAME);
 
                 return;
             }
@@ -60,7 +63,7 @@ public class CredentialHandler
             {
                 if (buffer == null || buffer.length() == 0)
                 {
-                    ctx.response().setStatusCode(400).end("Request body is required.");
+                    ctx.response().setStatusCode(400).end(Constants.HTTP_REQUIRED_BODY);
 
                     return;
                 }
@@ -72,20 +75,20 @@ public class CredentialHandler
                 }
                 catch (DecodeException e)
                 {
-                    ctx.response().setStatusCode(400).end("Invalid JSON format.");
+                    ctx.response().setStatusCode(400).end(Constants.BAD_REQUEST_INVALID_JSON);
                 }
             });
         });
 
-        credentialRouter.put(CREDENTIAL_PROFILE_NAME_PARAM).handler(ctx ->
+        credentialRouter.put(CREDENTIAL_PROFILE_NAME_URL).handler(ctx ->
         {
             logger.debug("CredentialHandler Put/:");
 
-            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME_KEY);
+            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME);
 
             if (credentialProfileName == null || credentialProfileName.isEmpty())
             {
-                ctx.response().setStatusCode(400).end("Parameter 'credentialProfileName' is required.");
+                ctx.response().setStatusCode(400).end(MESSAGE_REQUIRED_CREDENTIAL_PROFILE_NAME);
 
                 return;
             }
@@ -94,7 +97,7 @@ public class CredentialHandler
             {
                 if (buffer == null || buffer.length() == 0)
                 {
-                    ctx.response().setStatusCode(400).end("Request body is required.");
+                    ctx.response().setStatusCode(400).end(Constants.HTTP_REQUIRED_BODY);
 
                     return;
                 }
@@ -108,20 +111,20 @@ public class CredentialHandler
 
                 catch (DecodeException e)
                 {
-                    ctx.response().setStatusCode(400).end("Invalid JSON format.");
+                    ctx.response().setStatusCode(400).end(Constants.BAD_REQUEST_INVALID_JSON);
                 }
             });
         });
 
-        credentialRouter.delete(CREDENTIAL_PROFILE_NAME_PARAM).handler(ctx ->
+        credentialRouter.delete(CREDENTIAL_PROFILE_NAME_URL).handler(ctx ->
         {
             logger.debug("CredentialHandler Delete");
 
-            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME_KEY);
+            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME);
 
             if (credentialProfileName == null || credentialProfileName.isEmpty())
             {
-                ctx.response().setStatusCode(400).end("Parameter 'credentialProfileName' is required.");
+                ctx.response().setStatusCode(400).end(MESSAGE_REQUIRED_CREDENTIAL_PROFILE_NAME);
 
                 return;
             }

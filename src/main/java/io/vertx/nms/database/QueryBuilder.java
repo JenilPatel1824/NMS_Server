@@ -2,7 +2,7 @@ package io.vertx.nms.database;
 
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.nms.constants.Constants;
+import io.vertx.nms.util.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,15 +40,15 @@ public class QueryBuilder
 // @return QueryResult containing the constructed query string and parameters.
     public static QueryResult buildQuery(JsonObject request)
     {
-        String operation = request.getString(Constants.OPERATION_KEY, "").toLowerCase();
+        String operation = request.getString(Constants.OPERATION, "").toLowerCase();
 
-        String tableName = request.getString(Constants.TABLE_NAME_KEY);
+        String tableName = request.getString(Constants.TABLE_NAME);
 
-        JsonArray columns = request.getJsonArray(Constants.COLUMNS_KEY, new JsonArray());
+        JsonArray columns = request.getJsonArray(Constants.COLUMNS, new JsonArray());
 
-        JsonObject data = request.getJsonObject(Constants.DATA_KEY, new JsonObject());
+        JsonObject data = request.getJsonObject(Constants.DATA, new JsonObject());
 
-        JsonObject condition = request.getJsonObject(Constants.CONDITION_KEY, new JsonObject());
+        JsonObject condition = request.getJsonObject(Constants.CONDITION, new JsonObject());
 
         StringBuilder query = new StringBuilder();
 

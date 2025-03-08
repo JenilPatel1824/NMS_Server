@@ -1,5 +1,12 @@
-package io.vertx.nms.constants;
-//todo: _ --> ., remove KEY
+package io.vertx.nms.util;
+
+import zmq.io.coder.IDecoder;
+
+import javax.swing.plaf.PanelUI;
+
+//todo: _ -->  variable _ remove , use constants in go, change some names
+
+
 public class Constants
 {
     public static final String DB_HOST = "localhost";
@@ -13,7 +20,6 @@ public class Constants
     public static final String DB_PASSWORD = "admin";
 
     public static final String ZMQ_ADDRESS = "tcp://localhost:5555";
-
 
     public static final String EVENTBUS_DATABASE_ADDRESS = "database.query.execute";
 
@@ -47,19 +53,19 @@ public class Constants
 
     public static final String PARAMS = "params";
 
-    public static final String JSON_SYSTEM_TYPE = "system_type";
+    public static final String SYSTEM_TYPE = "system_type";
 
-    public static final String JSON_CREDENTIALS = "credentials";
+    public static final String CREDENTIALS = "credentials";
 
-    public static final String JSON_COMMUNITY = "community";
+    public static final String COMMUNITY = "community";
 
-    public static final String JSON_VERSION = "version";
+    public static final String VERSION = "version";
 
     public static final String IP = "ip";
 
-    public static final String JSON_PLUGIN_TYPE = "pluginType";
+    public static final String PLUGIN_TYPE = "pluginType";
 
-    public static final String JSON_REQUEST_TYPE = "requestType";
+    public static final String REQUEST_TYPE = "requestType";
 
     public static final String DISCOVERY = "discovery";
 
@@ -80,5 +86,15 @@ public class Constants
     public static final String OPERATION = "operation";
 
     public static final String COLUMNS = "columns";
+
+    public static final String DISCOVERY_PROFILE_NAME = "discoveryProfileName";
+
+    public static final String BAD_REQUEST_INVALID_JSON = "Bad Request: Invalid JSON";
+
+    public static final String HTTP_REQUIRED_BODY  = "Request body is required.";
+
+    public static final String MESSAGE_REQUIRED_DISCOVERY_PROFILE_NAME = " DiscoveryProfileName is required";
+
+    public static final String HTTP_EMPTY_REQUEST = "Bad request: Empty message body";
 
 }

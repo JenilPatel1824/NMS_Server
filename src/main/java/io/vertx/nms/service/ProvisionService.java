@@ -5,7 +5,7 @@ import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.nms.constants.Constants;
+import io.vertx.nms.util.Constants;
 import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +16,9 @@ public class ProvisionService
 
     private final EventBus eventBus;
 
-    private static final String YES_KEY = "yes";
+    private static final String YES = "yes";
 
-    private static final String NO_KEY = "no";
+    private static final String NO = "no";
 
     private static final String PROVISION_COLUMN = "provision";
 
@@ -35,11 +35,11 @@ public class ProvisionService
     {
         boolean provisionStatus;
 
-        if (YES_KEY.equalsIgnoreCase(status))
+        if (YES.equalsIgnoreCase(status))
         {
             provisionStatus = true;
         }
-        else if (NO_KEY.equalsIgnoreCase(status))
+        else if (NO.equalsIgnoreCase(status))
         {
             provisionStatus = false;
         }
@@ -51,16 +51,16 @@ public class ProvisionService
         }
 
         JsonObject request = new JsonObject()
-                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_UPDATE)
-                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                .put(Constants.DATA_KEY, new JsonObject().put(PROVISION_COLUMN, provisionStatus))
-                .put(Constants.CONDITION_KEY, new JsonObject()
-                        .put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName)
-                        .put(Constants.DISCOVERY_KEY, true));
+                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
+                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                .put(Constants.DATA, new JsonObject().put(PROVISION_COLUMN, provisionStatus))
+                .put(Constants.CONDITION, new JsonObject()
+                        .put(Constants.DATABASE_DISCOVERY_PROFILE_NAME, discoveryProfileName)
+                        .put(Constants.DISCOVERY, true));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY_KEY,queryResult.getQuery()).put(Constants.PARAMS_KEY,queryResult.getParams()), reply ->
+        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY,queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()), reply ->
         {
             if (reply.succeeded())
             {
@@ -81,16 +81,16 @@ public class ProvisionService
     public void getProvisionData(String discoveryProfileName, RoutingContext ctx)
     {
         JsonObject request = new JsonObject()
-                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
-                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_PROVISION_DATA)
-                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATA_KEY).add(Constants.DATABASE_COLUMN_POLLED_AT))
-                .put(Constants.CONDITION_KEY, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY, discoveryProfileName));
+                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISION_DATA)
+                .put(Constants.COLUMNS, new JsonArray().add(Constants.DATA).add(Constants.DATABASE_COLUMN_POLLED_AT))
+                .put(Constants.CONDITION, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME, discoveryProfileName));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
         JsonObject fetchRequest = new JsonObject()
-                .put(Constants.QUERY_KEY, queryResult.getQuery())
-                .put(Constants.PARAMS_KEY, queryResult.getParams());
+                .put(Constants.QUERY, queryResult.getQuery())
+                .put(Constants.PARAMS, queryResult.getParams());
 
         eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, fetchRequest, reply ->
         {
@@ -107,11 +107,11 @@ public class ProvisionService
 
                 JsonObject resultObject = (JsonObject) body;
 
-                JsonArray results = resultObject.getJsonArray(Constants.DATA_KEY);
+                JsonArray results = resultObject.getJsonArray(Constants.DATA);
 
                 if (results == null || results.isEmpty())
                 {
-                    ctx.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE_KEY, "No data found for discoveryProfileName: " + discoveryProfileName).encode());
+                    ctx.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE, "No data found for discoveryProfileName: " + discoveryProfileName).encode());
 
                     return;
                 }
@@ -123,19 +123,19 @@ public class ProvisionService
                     JsonObject row = results.getJsonObject(i);
 
                     JsonObject responseData = new JsonObject()
-                            .put(Constants.DATA_KEY, row.getJsonObject(Constants.DATA_KEY))
+                            .put(Constants.DATA, row.getJsonObject(Constants.DATA))
                             .put(Constants.DATABASE_COLUMN_POLLED_AT, row.getString(Constants.DATABASE_COLUMN_POLLED_AT));
 
                     responseArray.add(responseData);
                 }
 
-                ctx.response().setStatusCode(200).end(new JsonObject().put(Constants.DATA_KEY, responseArray).encode());
+                ctx.response().setStatusCode(200).end(new JsonObject().put(Constants.DATA, responseArray).encode());
             }
             else
             {
                 logger.error("Failed to fetch provision data: {}", reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE_KEY, Constants.INTERNAL_SERVER_ERROR_MESSAGE).encode());
+                ctx.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE, Constants.INTERNAL_SERVER_ERROR_MESSAGE).encode());
             }
         });
     }
@@ -145,15 +145,15 @@ public class ProvisionService
     public void getAllProvisionData(RoutingContext ctx)
     {
         JsonObject request = new JsonObject()
-                .put(Constants.OPERATION_KEY, Constants.DATABASE_OPERATION_SELECT)
-                .put(Constants.TABLE_NAME_KEY, Constants.DATABASE_TABLE_PROVISION_DATA)
-                .put(Constants.COLUMNS_KEY, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
+                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISION_DATA)
+                .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
         QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
 
         JsonObject fetchRequest = new JsonObject()
-                .put(Constants.QUERY_KEY, queryResult.getQuery())
-                .put(Constants.PARAMS_KEY, queryResult.getParams());
+                .put(Constants.QUERY, queryResult.getQuery())
+                .put(Constants.PARAMS, queryResult.getParams());
 
         eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, fetchRequest, reply ->
         {
@@ -170,11 +170,11 @@ public class ProvisionService
 
                 JsonObject resultObject = (JsonObject) body;
 
-                JsonArray results = resultObject.getJsonArray(Constants.DATA_KEY);
+                JsonArray results = resultObject.getJsonArray(Constants.DATA);
 
                 if (results == null || results.isEmpty())
                 {
-                    ctx.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE_KEY, "No data found").encode());
+                    ctx.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE, "No data found").encode());
 
                     return;
                 }
@@ -186,20 +186,20 @@ public class ProvisionService
                     JsonObject row = results.getJsonObject(i);
 
                     JsonObject entry = new JsonObject()
-                            .put("discoveryProfileName", row.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME_KEY))
-                            .put(Constants.DATA_KEY, row.getJsonObject(Constants.DATA_KEY));
+                            .put(Constants.DISCOVERY_PROFILE_NAME, row.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME))
+                            .put(Constants.DATA, row.getJsonObject(Constants.DATA));
 
                     responseArray.add(entry);
                 }
 
-                ctx.response().setStatusCode(200).end(new JsonObject().put(Constants.DATA_KEY, responseArray).encode());
+                ctx.response().setStatusCode(200).end(new JsonObject().put(Constants.DATA, responseArray).encode());
 
             }
             else
             {
                 logger.error(" Failed to fetch all provision data: {}", reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE_KEY, Constants.INTERNAL_SERVER_ERROR_MESSAGE).encode());
+                ctx.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE, Constants.INTERNAL_SERVER_ERROR_MESSAGE).encode());
             }
         });
     }

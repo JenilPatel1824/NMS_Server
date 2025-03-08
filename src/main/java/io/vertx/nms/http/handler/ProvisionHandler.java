@@ -4,7 +4,7 @@ import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.nms.constants.Constants;
+import io.vertx.nms.util.Constants;
 import io.vertx.nms.service.ProvisionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +16,12 @@ public class ProvisionHandler
     private final Vertx vertx;
 
     private final ProvisionService provisionService;
+
+    private static final String PROVISION_STATUS_URL = "/:discoveryProfileName/:status";
+
+    private static final String PROVISION_DATA_URL = "/data/:discoveryProfileName";
+
+    private static final String PROVISION_ALL_DATA_URL = "/data";
 
     public ProvisionHandler(Vertx vertx)
     {
@@ -30,11 +36,11 @@ public class ProvisionHandler
 
         provisionRouter.route().handler(BodyHandler.create());
 
-        provisionRouter.post("/:discoveryProfileName/:status").handler(this::handleUpdateProvision);
+        provisionRouter.post(PROVISION_STATUS_URL).handler(this::handleUpdateProvision);
 
-        provisionRouter.get("/data/:discoveryProfileName").handler(this::handleGetProvisionData);
+        provisionRouter.get(PROVISION_DATA_URL).handler(this::handleGetProvisionData);
 
-        provisionRouter.get("/data").handler(this::handleGetAllProvisionData);
+        provisionRouter.get(PROVISION_ALL_DATA_URL).handler(this::handleGetAllProvisionData);
 
         return provisionRouter;
     }
@@ -43,13 +49,13 @@ public class ProvisionHandler
     {
         logger.debug("ProvisionHandler PUT /:discoveryProfileName/:status");
 
-        String discoveryProfileName = ctx.pathParam("discoveryProfileName");
+        String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
 
-        String status = ctx.pathParam(Constants.STATUS_KEY);
+        String status = ctx.pathParam(Constants.STATUS);
 
         if (discoveryProfileName == null || discoveryProfileName.isEmpty())
         {
-            ctx.response().setStatusCode(400).end("Parameter 'discoveryProfileName' is required.");
+            ctx.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_NAME);
 
             return;
         }
@@ -68,11 +74,11 @@ public class ProvisionHandler
     {
         logger.debug("ProvisionHandler GET /data/:discoveryProfileName");
 
-        String discoveryProfileName = ctx.pathParam("discoveryProfileName");
+        String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
 
         if (discoveryProfileName == null || discoveryProfileName.isEmpty())
         {
-            ctx.response().setStatusCode(400).end("Parameter 'discoveryProfileName' is required.");
+            ctx.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_NAME);
 
             return;
         }

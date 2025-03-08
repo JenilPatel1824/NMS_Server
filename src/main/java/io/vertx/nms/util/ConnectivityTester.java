@@ -1,10 +1,13 @@
 package io.vertx.nms.util;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
 public class ConnectivityTester
 {
-    // Pings the given IP address to check its reachability.
-    //@param ipAddress The IP address to ping.
-    //@return true if the IP is reachable, false otherwise.
+    // Pings the given IP address using fping to check its reachability.
+    // @param ipAddress The IP address to ping.
+    // @return true if the IP is reachable, false otherwise.
     public static boolean ping(String ipAddress)
     {
         try
@@ -13,12 +16,25 @@ public class ConnectivityTester
 
             Process process = processBuilder.start();
 
-            int returnCode = process.waitFor();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
-            return (returnCode == 0);
+            String line;
+
+            while ((line = reader.readLine()) != null)
+            {
+                if (line.contains("0% packet loss"))
+                {
+                    return true;
+                }
+            }
+            process.waitFor();
+
+            return false;
         }
         catch (Exception e)
         {
+            System.out.println("Error executing fping: " + e.getMessage());
+
             return false;
         }
     }

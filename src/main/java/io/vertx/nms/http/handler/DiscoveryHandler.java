@@ -3,6 +3,7 @@ package io.vertx.nms.http.handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import io.vertx.nms.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.vertx.nms.service.DiscoveryService;
@@ -16,6 +17,8 @@ public class DiscoveryHandler
     private final DiscoveryService discoveryService;
 
     private static final String DISCOVERY_PROFILE_NAME_PARAM = "/:discoveryProfileName";
+
+    private static final String DISCOVERY_RUN_URL = "/:discoveryProfileName/run";
 
     public DiscoveryHandler(Vertx vertx)
     {
@@ -31,13 +34,13 @@ public class DiscoveryHandler
 
         discoveryRouter.get(DISCOVERY_PROFILE_NAME_PARAM).handler(ctx ->
         {
-            String discoveryProfileName = ctx.pathParam("discoveryProfileName");
+            String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
 
             logger.info("Discovery Get/:");
 
             if (discoveryProfileName == null || discoveryProfileName.isEmpty())
             {
-                ctx.response().setStatusCode(400).end("Parameter 'discoveryProfileName' is required.");
+                ctx.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_NAME);
 
                 return;
             }
@@ -60,14 +63,14 @@ public class DiscoveryHandler
                 }
                 catch (Exception e)
                 {
-                    ctx.response().setStatusCode(400).end("Bad Request: Invalid JSON");
+                    ctx.response().setStatusCode(400).end(Constants.BAD_REQUEST_INVALID_JSON);
 
                     return;
                 }
 
                 if (requestBody.isEmpty())
                 {
-                    ctx.response().setStatusCode(400).end("Bad Request: Empty request body");
+                    ctx.response().setStatusCode(400).end(Constants.HTTP_EMPTY_REQUEST);
 
                     return;
                 }
@@ -80,7 +83,7 @@ public class DiscoveryHandler
         {
             logger.info("Discovery Put/:");
 
-            String discoveryProfileName = ctx.pathParam("discoveryProfileName");
+            String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
 
             ctx.request().bodyHandler(buffer ->
             {
@@ -91,13 +94,14 @@ public class DiscoveryHandler
                 }
                 catch (Exception e)
                 {
-                    ctx.response().setStatusCode(400).end("Bad Request: Invalid JSON");
+                    ctx.response().setStatusCode(400).end(Constants.BAD_REQUEST_INVALID_JSON);
                     return;
                 }
 
                 if (updateRequest.isEmpty())
                 {
-                    ctx.response().setStatusCode(400).end("Bad Request: No fields to update");
+                    ctx.response().setStatusCode(400).end(Constants.HTTP_EMPTY_REQUEST);
+
                     return;
                 }
 
@@ -109,18 +113,18 @@ public class DiscoveryHandler
         {
             logger.info("Discovery Delete/:");
 
-            String discoveryProfileName = ctx.pathParam("discoveryProfileName");
+            String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
 
             discoveryService.deleteDiscovery(discoveryProfileName, ctx);
         });
 
-        discoveryRouter.post("/:discoveryId/run").handler(ctx ->
+        discoveryRouter.post(DISCOVERY_RUN_URL).handler(ctx ->
         {
             logger.info("Discovery Run/:");
 
-            String discoveryId = ctx.pathParam("discoveryId");
+            String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
 
-            discoveryService.runDiscovery(discoveryId, ctx);
+            discoveryService.runDiscovery(discoveryProfileName, ctx);
         });
 
         return discoveryRouter;

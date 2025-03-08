@@ -2,11 +2,9 @@ package io.vertx.nms.engine;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import io.vertx.nms.constants.Constants;
+import io.vertx.nms.util.Constants;
 import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +13,11 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-public class PollingEngineVerticle extends AbstractVerticle
+public class PollingEngine extends AbstractVerticle
 {
-    private static final Logger logger = LoggerFactory.getLogger(PollingEngineVerticle.class);
+    private static final Logger logger = LoggerFactory.getLogger(PollingEngine.class);
 
     private static final String DB_QUERY_ADDRESS = Constants.EVENTBUS_DATABASE_ADDRESS;
 
@@ -32,7 +29,7 @@ public class PollingEngineVerticle extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 300000000;
+    private static final long FETCH_DEVICE_INTERVAL = 300000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -41,7 +38,7 @@ public class PollingEngineVerticle extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        vertx.setTimer(FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
+        vertx.setPeriodic(FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
 
         vertx.setPeriodic(BATCH_FLUSH_CHECK_INTERVAL, id -> checkBatchTimeFlush());
 
@@ -106,14 +103,14 @@ public class PollingEngineVerticle extends AbstractVerticle
     // @param device The JSON object containing device details, including IP, credentials, and system type.
     private void sendZmqRequest(JsonObject device)
     {
-        JsonObject credentials = device.getJsonObject(Constants.JSON_CREDENTIALS);
+        JsonObject credentials = device.getJsonObject(Constants.CREDENTIALS);
 
         JsonObject requestObject = new JsonObject()
                 .put(Constants.IP, device.getString(Constants.IP))
-                .put(Constants.JSON_COMMUNITY, credentials.getString(Constants.JSON_COMMUNITY))
-                .put(Constants.JSON_VERSION, credentials.getString(Constants.JSON_VERSION))
-                .put(Constants.JSON_REQUEST_TYPE, Constants.POLLING)
-                .put(Constants.JSON_PLUGIN_TYPE, device.getString(Constants.JSON_SYSTEM_TYPE));
+                .put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
+                .put(Constants.VERSION, credentials.getString(Constants.VERSION))
+                .put(Constants.REQUEST_TYPE, Constants.POLLING)
+                .put(Constants.PLUGIN_TYPE, device.getString(Constants.SYSTEM_TYPE));
 
         vertx.eventBus().<JsonObject>request(ZMQ_REQUEST_ADDRESS, requestObject, reply ->
         {
