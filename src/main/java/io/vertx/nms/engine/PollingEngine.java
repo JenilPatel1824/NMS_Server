@@ -52,7 +52,7 @@ public class PollingEngine extends AbstractVerticle
     private void fetchProvisionedDevices()
     {
         var request = new JsonObject()
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.OPERATION, Constants.SELECT)
                 .put(Constants.TABLE_NAME, "discovery_profiles d JOIN credential_profile c ON d.credential_profile_id = c.id")
                 .put(Constants.COLUMNS, new JsonArray()
                         .add("d.id")
@@ -101,9 +101,7 @@ public class PollingEngine extends AbstractVerticle
     {
         var credentials = device.getJsonObject(Constants.CREDENTIALS);
 
-                 device
-                .put(Constants.IP, device.getString(Constants.IP))
-                .put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
+                 device.put(Constants.IP, device.getString(Constants.IP)).put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
                 .put(Constants.VERSION, credentials.getString(Constants.VERSION))
                 .put(Constants.REQUEST_TYPE, Constants.POLLING)
                 .put(Constants.PLUGIN_TYPE, device.getString(Constants.SYSTEM_TYPE));
@@ -134,7 +132,7 @@ public class PollingEngine extends AbstractVerticle
         var entry = new JsonObject()
                 .put(Constants.DATABASE_DISCOVERY_PROFILE_ID, discoveryProfileId)
                 .put(Constants.DATA, snmpData)
-                .put(Constants.DATABASE_COLUMN_POLLED_AT, timestamp);
+                .put(Constants.POLLED_AT, timestamp);
 
         batchSnmpData.add(entry);
 
@@ -191,7 +189,7 @@ public class PollingEngine extends AbstractVerticle
 
              params.add(data.getLong(Constants.DATABASE_DISCOVERY_PROFILE_ID))
                      .add(data.getJsonObject(Constants.DATA))
-                     .add(data.getString(Constants.DATABASE_COLUMN_POLLED_AT));
+                     .add(data.getString(Constants.POLLED_AT));
          }
 
          queryBuilder.setLength(queryBuilder.length() - 1);

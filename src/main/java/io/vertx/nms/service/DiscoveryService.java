@@ -46,7 +46,7 @@ public class DiscoveryService
     {
         var request = new JsonObject()
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.OPERATION, Constants.SELECT)
                 .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
         var queryResult = QueryBuilder.buildQuery(request);
@@ -63,7 +63,7 @@ public class DiscoveryService
             {
                 logger.error("Failed to process GET all discoveries request {}", reply.cause().getMessage());
 
-                context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
             }
         });
     }
@@ -79,7 +79,7 @@ public class DiscoveryService
 
             var request = new JsonObject()
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                    .put(Constants.OPERATION, Constants.SELECT)
                     .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN))
                     .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
 
@@ -95,7 +95,7 @@ public class DiscoveryService
                 {
                     logger.error(" Failed to process GET by profile name request: {}", reply.cause().getMessage());
 
-                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
                 }
             });
         }
@@ -103,7 +103,7 @@ public class DiscoveryService
         {
             logger.error("Invalid profileId: {}", discoveryProfileId);
 
-            context.response().setStatusCode(400).end("Invalid profileId. It must be a numeric value.");
+            context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
         }
     }
 
@@ -121,7 +121,7 @@ public class DiscoveryService
 
         var request = new JsonObject()
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_INSERT)
+                .put(Constants.OPERATION, Constants.INSERT)
                 .put(Constants.DATA, requestBody);
 
         var queryResult = QueryBuilder.buildQuery(request);
@@ -136,7 +136,7 @@ public class DiscoveryService
             {
                 logger.error(" Failed to create discovery: {}", reply.cause().getMessage());
 
-                context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE+reply.cause().getMessage());
+                context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR+reply.cause().getMessage());
             }
         });
     }
@@ -155,7 +155,7 @@ public class DiscoveryService
 
             var request = new JsonObject()
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
+                    .put(Constants.OPERATION, Constants.UPDATE)
                     .put(Constants.DATA, updateRequest)
                     .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
 
@@ -171,7 +171,7 @@ public class DiscoveryService
                 {
                     logger.error(" Failed to update discovery {}", reply.cause().getMessage());
 
-                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
                 }
             });
         }
@@ -179,7 +179,7 @@ public class DiscoveryService
         {
             logger.error("Invalid profileId: {}", discoveryProfileId);
 
-            context.response().setStatusCode(400).end("Invalid profileId. It must be a numeric value.");
+            context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
         }
     }
 
@@ -193,7 +193,7 @@ public class DiscoveryService
 
             var request = new JsonObject()
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_DELETE)
+                    .put(Constants.OPERATION, Constants.DELETE)
                     .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
 
             var queryResult = QueryBuilder.buildQuery(request);
@@ -208,7 +208,7 @@ public class DiscoveryService
                 {
                     logger.error(" Failed to delete discovery: {}", reply.cause().getMessage());
 
-                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
                 }
             });
         }
@@ -216,7 +216,7 @@ public class DiscoveryService
         {
             logger.error("Invalid profileId: {}", discoveryProfileId);
 
-            context.response().setStatusCode(400).end("Invalid profileId. It must be a numeric value.");
+            context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
         }
     }
 
@@ -243,7 +243,7 @@ public class DiscoveryService
                 {
                     logger.error("Failed to fetch discovery for profile id: {}", discoveryProfileId);
 
-                    context.response().setStatusCode(500).end("Internal server error");
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
 
                     return;
                 }
@@ -325,7 +325,7 @@ public class DiscoveryService
                             var isSuccess = Constants.SUCCESS.equalsIgnoreCase(zmqResponseJson.getString(Constants.STATUS));
 
                             var request = new JsonObject()
-                                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
+                                    .put(Constants.OPERATION, Constants.UPDATE)
                                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                                     .put(Constants.DATA, new JsonObject().put(Constants.DISCOVERY, isSuccess))
                                     .put(Constants.CONDITION, new JsonObject().put(Constants.ID, discoveryProfileId));

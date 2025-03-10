@@ -61,6 +61,8 @@ public class ZmqMessenger extends AbstractVerticle
 
         dealer.setReceiveTimeOut(0);
 
+        dealer.setHWM(0);
+
         dealer.connect(Constants.ZMQ_ADDRESS);
 
         vertx.eventBus().<JsonObject>localConsumer(Constants.EVENTBUS_ZMQ_ADDRESS, this::handleRequest);

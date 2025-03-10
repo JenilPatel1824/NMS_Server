@@ -55,7 +55,7 @@ public class ProvisionService
             var profileId = Long.parseLong(discoveryProfileId);
 
             var request = new JsonObject()
-                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
+                    .put(Constants.OPERATION, Constants.UPDATE)
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                     .put(Constants.DATA, new JsonObject().put(PROVISION, provisionStatus))
                     .put(Constants.CONDITION, new JsonObject()
@@ -74,7 +74,7 @@ public class ProvisionService
                 {
                     logger.error(" Failed to update provision status: {}", reply.cause().getMessage());
 
-                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE);
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
                 }
             });
         }
@@ -82,7 +82,7 @@ public class ProvisionService
         {
             logger.error("Invalid profileId: {}", discoveryProfileId);
 
-            context.response().setStatusCode(400).end("Invalid profileId. It must be a numeric value.");
+            context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
         }
     }
 
@@ -96,9 +96,9 @@ public class ProvisionService
             var profileId = Long.parseLong(discoveryProfileId);
 
             var request = new JsonObject()
-                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                    .put(Constants.OPERATION, Constants.SELECT)
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISION_DATA)
-                    .put(Constants.COLUMNS, new JsonArray().add(Constants.DATA).add(Constants.DATABASE_COLUMN_POLLED_AT))
+                    .put(Constants.COLUMNS, new JsonArray().add(Constants.DATA).add(Constants.POLLED_AT))
                     .put(Constants.CONDITION, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_ID, profileId));
 
             var queryResult = QueryBuilder.buildQuery(request);
@@ -137,7 +137,7 @@ public class ProvisionService
 
                         var responseData = new JsonObject()
                                 .put(Constants.DATA, row.getJsonObject(Constants.DATA))
-                                .put(Constants.DATABASE_COLUMN_POLLED_AT, row.getString(Constants.DATABASE_COLUMN_POLLED_AT));
+                                .put(Constants.POLLED_AT, row.getString(Constants.POLLED_AT));
 
                         responseArray.add(responseData);
                     }
@@ -148,7 +148,7 @@ public class ProvisionService
                 {
                     logger.error("Failed to fetch provision data: {}", reply.cause().getMessage());
 
-                    context.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE, Constants.INTERNAL_SERVER_ERROR_MESSAGE).encode());
+                    context.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE, Constants.MESSAGE_INTERNAL_SERVER_ERROR).encode());
                 }
             });
         }
@@ -156,7 +156,7 @@ public class ProvisionService
         {
             logger.error("Invalid profileId: {}", discoveryProfileId);
 
-            context.response().setStatusCode(400).end("Invalid profileId. It must be a numeric value.");
+            context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
         }
     }
 
@@ -165,7 +165,7 @@ public class ProvisionService
     public void getAllProvisionData(RoutingContext context)
     {
         var request = new JsonObject()
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.OPERATION, Constants.SELECT)
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISION_DATA)
                 .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
@@ -217,7 +217,7 @@ public class ProvisionService
             {
                 logger.error(" Failed to fetch all provision data: {}", reply.cause().getMessage());
 
-                context.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE, Constants.INTERNAL_SERVER_ERROR_MESSAGE).encode());
+                context.response().setStatusCode(500).end(new JsonObject().put(Constants.MESSAGE, Constants.MESSAGE_INTERNAL_SERVER_ERROR).encode());
             }
         });
     }

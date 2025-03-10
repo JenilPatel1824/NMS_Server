@@ -62,7 +62,7 @@ public class DiscoveryHandler
 
                     if (requestBody.isEmpty())
                     {
-                        context.response().setStatusCode(400).end(Constants.HTTP_EMPTY_REQUEST);
+                        context.response().setStatusCode(400).end(Constants.MESSAGE_EMPTY_REQUEST);
 
                         return;
                     }
@@ -97,7 +97,7 @@ public class DiscoveryHandler
 
                     if (updateRequest.isEmpty())
                     {
-                        context.response().setStatusCode(400).end(Constants.HTTP_EMPTY_REQUEST);
+                        context.response().setStatusCode(400).end(Constants.MESSAGE_EMPTY_REQUEST);
 
                         return;
                     }

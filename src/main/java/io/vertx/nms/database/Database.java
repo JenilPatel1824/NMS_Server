@@ -77,7 +77,7 @@ public class Database extends AbstractVerticle
                 params = new JsonArray();
             }
 
-            boolean isInsertOrUpdate = query.trim().toLowerCase().startsWith(Constants.DATABASE_OPERATION_INSERT) || query.trim().toLowerCase().startsWith(Constants.DATABASE_OPERATION_UPDATE);
+            boolean isInsertOrUpdate = query.trim().toLowerCase().startsWith(Constants.INSERT) || query.trim().toLowerCase().startsWith(Constants.UPDATE);
 
             if (isInsertOrUpdate && !query.toLowerCase().contains("returning id"))
             {
@@ -92,7 +92,7 @@ public class Database extends AbstractVerticle
             {
                 var paramValue = params.getValue(i);
 
-                if (query.toLowerCase().contains("polled_at") && paramValue instanceof String)
+                if (query.toLowerCase().contains(Constants.POLLED_AT) && paramValue instanceof String)
                 {
                     tupleParams.addLocalDateTime(LocalDateTime.parse((String) paramValue, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 }
@@ -110,7 +110,7 @@ public class Database extends AbstractVerticle
 
                     var response = new JsonObject().put(Constants.STATUS, Constants.SUCCESS);
 
-                    if (finalQuery.trim().toLowerCase().startsWith(Constants.DATABASE_OPERATION_SELECT))
+                    if (finalQuery.trim().toLowerCase().startsWith(Constants.SELECT))
                     {
                         var resultData = StreamSupport.stream(rows.spliterator(), false)
                                 .map(row ->
@@ -122,7 +122,7 @@ public class Database extends AbstractVerticle
                                         var columnName = row.getColumnName(i);
                                         var value = row.getValue(i);
 
-                                        if ("polled_at".equalsIgnoreCase(columnName) && value instanceof LocalDateTime)
+                                        if (Constants.POLLED_AT.equalsIgnoreCase(columnName) && value instanceof LocalDateTime)
                                         {
                                             rowJson.put(columnName, ((LocalDateTime) value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                                         }
@@ -148,11 +148,11 @@ public class Database extends AbstractVerticle
                             response.put(Constants.ID, id);
                         }
 
-                        response.put(Constants.MESSAGE, "Query executed successfully");
+                        response.put(Constants.MESSAGE, Constants.MESSAGE_QUERY_SUCCESSFUL);
                     }
                     else
                     {
-                        response.put(Constants.MESSAGE, "Query executed successfully");
+                        response.put(Constants.MESSAGE, Constants.MESSAGE_QUERY_SUCCESSFUL);
                     }
 
                     message.reply(response);
@@ -161,7 +161,7 @@ public class Database extends AbstractVerticle
                 {
                     logger.error("Database query failed: {}", ar.cause().getMessage());
 
-                    message.fail(1, new JsonObject().put(Constants.STATUS, "fail").put(Constants.MESSAGE, ar.cause().getMessage()).encode());
+                    message.fail(1, new JsonObject().put(Constants.STATUS, Constants.FAIL).put(Constants.MESSAGE, ar.cause().getMessage()).encode());
                 }
             });
         });

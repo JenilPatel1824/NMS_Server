@@ -26,7 +26,7 @@ public class CredentialService
     {
         var request = new JsonObject()
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                .put(Constants.OPERATION, Constants.SELECT)
                 .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
         var queryResult = QueryBuilder.buildQuery(request);
@@ -41,7 +41,7 @@ public class CredentialService
                     {
                         logger.error("Failed to fetch credentials: {}", reply.cause().getMessage());
 
-                        context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                        context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
                     }
                 });
     }
@@ -57,7 +57,7 @@ public class CredentialService
 
             var request = new JsonObject()
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
-                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                    .put(Constants.OPERATION, Constants.SELECT)
                     .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN))
                     .put(Constants.CONDITION, new JsonObject().put(Constants.ID, credentialId));
 
@@ -75,7 +75,7 @@ public class CredentialService
                 {
                     logger.error("Failed to fetch credential by ID: {}", reply.cause().getMessage());
 
-                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
                 }
             });
         }
@@ -96,7 +96,7 @@ public class CredentialService
 
         var request = new JsonObject()
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_INSERT)
+                .put(Constants.OPERATION, Constants.INSERT)
                 .put(Constants.DATA, requestBody);
 
         var queryResult = QueryBuilder.buildQuery(request);
@@ -111,7 +111,7 @@ public class CredentialService
                     {
                         logger.error("Failed to create credential: {}", reply.cause().getMessage());
 
-                        context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                        context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
                     }
                 });
     }
@@ -129,7 +129,7 @@ public class CredentialService
 
             var request = new JsonObject()
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
-                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
+                    .put(Constants.OPERATION, Constants.UPDATE)
                     .put(Constants.DATA, requestBody)
                     .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
 
@@ -145,7 +145,7 @@ public class CredentialService
                 {
                     logger.error("Failed to update credential: {}", reply.cause().getMessage());
 
-                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
                 }
             });
         }
@@ -168,7 +168,7 @@ public class CredentialService
 
             var request = new JsonObject()
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
-                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_DELETE)
+                    .put(Constants.OPERATION, Constants.DELETE)
                     .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
 
             var queryResult = QueryBuilder.buildQuery(request);
@@ -183,7 +183,7 @@ public class CredentialService
                 {
                     logger.error("Failed to delete credential: {}", reply.cause().getMessage());
 
-                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
                 }
             });
         }
@@ -213,7 +213,7 @@ public class CredentialService
 
         var credentials = requestBody.getJsonObject(Constants.CREDENTIALS);
 
-        if ("SNMP".equalsIgnoreCase(systemType) && !credentials.containsKey(Constants.COMMUNITY) && !credentials.containsKey(Constants.VERSION))
+        if (Constants.SNMP.equalsIgnoreCase(systemType) && !credentials.containsKey(Constants.COMMUNITY) && !credentials.containsKey(Constants.VERSION))
         {
             context.response().setStatusCode(400).end("SNMP system type requires 'community and version' in credentials");
 

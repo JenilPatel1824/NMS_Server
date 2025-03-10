@@ -58,7 +58,7 @@ public class QueryBuilder
 
         switch (operation)
         {
-            case Constants.DATABASE_OPERATION_SELECT:
+            case Constants.SELECT:
 
                 query.append("SELECT ")
                         .append(columns.isEmpty() ? Constants.DATABASE_ALL_COLUMN : String.join(", ", columns.getList()))
@@ -68,7 +68,7 @@ public class QueryBuilder
 
                 break;
 
-            case Constants.DATABASE_OPERATION_INSERT:
+            case Constants.INSERT:
 
                 var keys = new ArrayList<>(data.fieldNames());
 
@@ -84,7 +84,7 @@ public class QueryBuilder
 
                 break;
 
-            case Constants.DATABASE_OPERATION_UPDATE:
+            case Constants.UPDATE:
 
                 query.append("UPDATE ").append(tableName).append(" SET ");
 
@@ -103,7 +103,7 @@ public class QueryBuilder
 
                 break;
 
-            case Constants.DATABASE_OPERATION_DELETE:
+            case Constants.DELETE:
 
                 query.append("DELETE FROM ").append(tableName);
 
