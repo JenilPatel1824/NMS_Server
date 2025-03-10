@@ -1,11 +1,5 @@
 package io.vertx.nms;
 
-
-//service
-//ping
-//getsnmp
-
-//todo constants,json object improvements,
 import io.vertx.core.Vertx;
 import io.vertx.nms.database.Database;
 import io.vertx.nms.engine.PollingEngine;
@@ -20,7 +14,7 @@ public class Main
 
     public static void main(String[] args)
     {
-        Vertx vertx = Vertx.vertx();
+        var vertx = Vertx.vertx();
 
         vertx.deployVerticle(new HttpServerVerticle())
                 .compose(httpId ->
@@ -51,7 +45,8 @@ public class Main
                 {
                     logger.error("One or more verticles failed to deploy: {}", err.getMessage());
 
-                    vertx.close(closeRes -> {
+                    vertx.close(closeRes ->
+                    {
                         if (closeRes.succeeded())
                         {
                             logger.error("Vert.x instance closed. Application stopped.");

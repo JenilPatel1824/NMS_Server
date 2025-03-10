@@ -21,165 +21,201 @@ public class CredentialService
     }
 
     // Fetches all credential profiles from the database.
-    // @param ctx The RoutingContext containing the request and response.
-    public void getAllCredentials(RoutingContext ctx)
+    // @param context The RoutingContext containing the request and response.
+    public void getAllCredentials(RoutingContext context)
     {
-        JsonObject request = new JsonObject()
+        var request = new JsonObject()
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
                 .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
                 .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
+        var queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+        eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
                 {
                     if (reply.succeeded())
                     {
-                        ctx.response().setStatusCode(200).end(reply.result().body().toString());
+                        context.response().setStatusCode(200).end(reply.result().body().toString());
                     }
                     else
                     {
                         logger.error("Failed to fetch credentials: {}", reply.cause().getMessage());
 
-                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                        context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
                     }
                 });
     }
 
     // Fetches specific credential profiles from the database.
     // @param credentialProfileName The name of the credential profile to fetch.
-    // @param ctx The RoutingContext containing the request and response.
-    public void getCredentialByName(String credentialProfileName, RoutingContext ctx)
+    // @param context The RoutingContext containing the request and response.
+    public void getCredentialById(String credentialProfileId, RoutingContext context)
     {
-        JsonObject request = new JsonObject()
-                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
-                .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN))
-                .put(Constants.CONDITION, new JsonObject().put(Constants.DATABASE_CREDENTIAL_PROFILE_NAME, credentialProfileName));
+        try
+        {
+            var credentialId = Long.parseLong(credentialProfileId);
 
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
+            var request = new JsonObject()
+                    .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
+                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                    .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN))
+                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, credentialId));
 
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+            var queryResult = QueryBuilder.buildQuery(request);
+
+            eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject()
+                    .put(Constants.QUERY, queryResult.getQuery())
+                    .put(Constants.PARAMS, queryResult.getParams()), reply ->
+            {
+                if (reply.succeeded())
                 {
-                    if (reply.succeeded())
-                    {
-                        ctx.response().setStatusCode(200).end(reply.result().body().toString());
-                    }
-                    else
-                    {
-                        logger.error("Failed to fetch credential by name: {}", reply.cause().getMessage());
+                    context.response().setStatusCode(200).end(reply.result().body().toString());
+                }
+                else
+                {
+                    logger.error("Failed to fetch credential by ID: {}", reply.cause().getMessage());
 
-                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
-                    }
-                });
+                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                }
+            });
+        }
+        catch (NumberFormatException e)
+        {
+            logger.error("Invalid credential profile ID format: {}", credentialProfileId);
+
+            context.response().setStatusCode(400).end("Invalid credential profile ID format.");
+        }
     }
 
     // Creates new credential profile
     // @param requestBody The JSON object containing the credential profile details.
-    // @param ctx The RoutingContext containing the request and response.
-    public void createCredential(JsonObject requestBody, RoutingContext ctx)
+    // @param context The RoutingContext containing the request and response.
+    public void createCredential(JsonObject requestBody, RoutingContext context)
     {
-        if (isValidRequestBody(requestBody, ctx)) return;
+        if (isValidRequestBody(requestBody, context)) return;
 
-        JsonObject request = new JsonObject()
+        var request = new JsonObject()
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
                 .put(Constants.OPERATION, Constants.DATABASE_OPERATION_INSERT)
                 .put(Constants.DATA, requestBody);
 
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
+        var queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+        eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
                 {
                     if (reply.succeeded())
                     {
-                        ctx.response().setStatusCode(201).end(reply.result().body().toString());
+                        context.response().setStatusCode(201).end(reply.result().body().toString());
                     }
                     else
                     {
                         logger.error("Failed to create credential: {}", reply.cause().getMessage());
 
-                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                        context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
                     }
                 });
     }
 
     //Updates credential profile to database.
-    // @param credentialProfileName The name of the credential profile to update.
+    // @param credentialProfileId The id of the credential profile to update.
     // @param requestBody The JSON object containing the updated credential profile details.
-    // @param ctx The RoutingContext containing the request and response.
-    public void updateCredential(String credentialProfileName, JsonObject requestBody, RoutingContext ctx)
+    // @param context The RoutingContext containing the request and response.
+    public void updateCredential(String credentialProfileId, JsonObject requestBody, RoutingContext context)
     {
-        JsonObject request = new JsonObject()
-                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
-                .put(Constants.DATA, requestBody)
-                .put(Constants.CONDITION, new JsonObject().put(Constants.DATABASE_CREDENTIAL_PROFILE_NAME, credentialProfileName));
-
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
-
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+        try
         {
-                    if (reply.succeeded())
-                    {
-                        ctx.response().setStatusCode(200).end(reply.result().body().toString());
-                    }
-                    else
-                    {
-                        logger.error("Failed to update credential: {}", reply.cause().getMessage());
+            var profileId = Long.parseLong(credentialProfileId);
 
-                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
-                    }
-                });
+
+            var request = new JsonObject()
+                    .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
+                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
+                    .put(Constants.DATA, requestBody)
+                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
+
+            var queryResult = QueryBuilder.buildQuery(request);
+
+            eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+            {
+                if (reply.succeeded())
+                {
+                    context.response().setStatusCode(200).end(reply.result().body().toString());
+                }
+                else
+                {
+                    logger.error("Failed to update credential: {}", reply.cause().getMessage());
+
+                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                }
+            });
+        }
+        catch (NumberFormatException e)
+        {
+            logger.error("Invalid credentialProfileId: {}", credentialProfileId);
+
+            context.response().setStatusCode(400).end("Invalid credentialProfileId. It must be a numeric value.");
+        }
     }
 
     // Deletes credential profile from the database.
-    // @param credentialProfileName The name of the credential profile to delete.
-    // @param ctx The RoutingContext containing the request and response.
-    public void deleteCredential(String credentialProfileName, RoutingContext ctx)
+    // @param credentialProfileId The id of the credential profile to delete.
+    // @param context The RoutingContext containing the request and response.
+    public void deleteCredential(String credentialProfileId, RoutingContext context)
     {
-        JsonObject request = new JsonObject()
-                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_DELETE)
-                .put(Constants.CONDITION, new JsonObject().put(Constants.DATABASE_CREDENTIAL_PROFILE_NAME, credentialProfileName));
-
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
-
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+        try
         {
-                    if (reply.succeeded())
-                    {
-                        ctx.response().setStatusCode(204).end();
-                    }
-                    else
-                    {
-                        logger.error("Failed to delete credential: {}", reply.cause().getMessage());
+            var profileId = Long.parseLong(credentialProfileId);
 
-                        ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
-                    }
-                });
+            var request = new JsonObject()
+                    .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
+                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_DELETE)
+                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
+
+            var queryResult = QueryBuilder.buildQuery(request);
+
+            eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+            {
+                if (reply.succeeded())
+                {
+                    context.response().setStatusCode(204).end();
+                }
+                else
+                {
+                    logger.error("Failed to delete credential: {}", reply.cause().getMessage());
+
+                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                }
+            });
+        }
+        catch (NumberFormatException e)
+        {
+            logger.error("Invalid credentialProfileId: {}", credentialProfileId);
+
+            context.response().setStatusCode(400).end("Invalid credentialProfileId. It must be a numeric value.");
+        }
     }
 
     // Validates the request body for required fields.
     // @param requestBody The JSON object containing the request body.
-    // @param ctx The RoutingContext containing the request and response.
-    private boolean isValidRequestBody(JsonObject requestBody, RoutingContext ctx)
+    // @param context The RoutingContext containing the request and response.
+    private boolean isValidRequestBody(JsonObject requestBody, RoutingContext context)
     {
         if (!requestBody.containsKey(Constants.DATABASE_CREDENTIAL_PROFILE_NAME) || requestBody.getString(Constants.DATABASE_CREDENTIAL_PROFILE_NAME).isEmpty() ||
                 !requestBody.containsKey(Constants.SYSTEM_TYPE) || requestBody.getString(Constants.SYSTEM_TYPE).isEmpty() ||
                 !requestBody.containsKey(Constants.CREDENTIALS) || requestBody.getJsonObject(Constants.CREDENTIALS).isEmpty()) {
 
-            ctx.response().setStatusCode(400).end("Required fields: credential_profile_name, system_type, credentials");
+            context.response().setStatusCode(400).end("Required fields: credential_profile_name, system_type, credentials");
 
             return true;
         }
 
-        String systemType = requestBody.getString(Constants.SYSTEM_TYPE);
+        var systemType = requestBody.getString(Constants.SYSTEM_TYPE);
 
-        JsonObject credentials = requestBody.getJsonObject(Constants.CREDENTIALS);
+        var credentials = requestBody.getJsonObject(Constants.CREDENTIALS);
 
         if ("SNMP".equalsIgnoreCase(systemType) && !credentials.containsKey(Constants.COMMUNITY) && !credentials.containsKey(Constants.VERSION))
         {
-            ctx.response().setStatusCode(400).end("SNMP system type requires 'community_version' in credentials");
+            context.response().setStatusCode(400).end("SNMP system type requires 'community and version' in credentials");
 
             return true;
         }

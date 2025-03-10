@@ -17,9 +17,9 @@ public class ProvisionHandler
 
     private final ProvisionService provisionService;
 
-    private static final String PROVISION_STATUS_URL = "/:discoveryProfileName/:status";
+    private static final String PROVISION_STATUS_URL = "/:discoveryProfileId/:status";
 
-    private static final String PROVISION_DATA_URL = "/data/:discoveryProfileName";
+    private static final String PROVISION_DATA_URL = "/data/:discoveryProfileId";
 
     private static final String PROVISION_ALL_DATA_URL = "/data";
 
@@ -32,7 +32,7 @@ public class ProvisionHandler
 
     public Router createRouter()
     {
-        Router provisionRouter = Router.router(vertx);
+        var provisionRouter = Router.router(vertx);
 
         provisionRouter.route().handler(BodyHandler.create());
 
@@ -45,51 +45,51 @@ public class ProvisionHandler
         return provisionRouter;
     }
 
-    private void handleUpdateProvision(RoutingContext ctx)
+    private void handleUpdateProvision(RoutingContext context)
     {
-        logger.debug("ProvisionHandler PUT /:discoveryProfileName/:status");
+        logger.debug("ProvisionHandler PUT /:discoveryProfileId/:status");
 
-        String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
+        var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
-        String status = ctx.pathParam(Constants.STATUS);
+        var status = context.pathParam(Constants.STATUS);
 
-        if (discoveryProfileName == null || discoveryProfileName.isEmpty())
+        if (discoveryProfileId == null || discoveryProfileId.isEmpty())
         {
-            ctx.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_NAME);
+            context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID);
 
             return;
         }
 
         if (status == null || status.isEmpty())
         {
-            ctx.response().setStatusCode(400).end("Parameter 'status' is required.");
+            context.response().setStatusCode(400).end("Parameter 'status' is required.");
 
             return;
         }
 
-        provisionService.updateProvisionStatus(discoveryProfileName, status, ctx);
+        provisionService.updateProvisionStatus(discoveryProfileId, status, context);
     }
 
-    private void handleGetProvisionData(RoutingContext ctx)
+    private void handleGetProvisionData(RoutingContext context)
     {
         logger.debug("ProvisionHandler GET /data/:discoveryProfileName");
 
-        String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
+        var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
-        if (discoveryProfileName == null || discoveryProfileName.isEmpty())
+        if (discoveryProfileId == null || discoveryProfileId.isEmpty())
         {
-            ctx.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_NAME);
+            context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID);
 
             return;
         }
 
-        provisionService.getProvisionData(discoveryProfileName, ctx);
+        provisionService.getProvisionData(discoveryProfileId, context);
     }
 
-    private void handleGetAllProvisionData(RoutingContext ctx)
+    private void handleGetAllProvisionData(RoutingContext context)
     {
         logger.debug("ProvisionHandler GET /data");
 
-        provisionService.getAllProvisionData(ctx);
+        provisionService.getAllProvisionData(context);
     }
 }

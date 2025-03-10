@@ -24,7 +24,7 @@ public class HttpServerVerticle extends AbstractVerticle
     @Override
     public void start()
     {
-        Router mainRouter = Router.router(vertx);
+        var mainRouter = Router.router(vertx);
 
         mainRouter.route(HTTP_PATH_CREDENTIAL).subRouter( new CredentialHandler(vertx).createRouter());
 

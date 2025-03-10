@@ -40,21 +40,21 @@ public class QueryBuilder
 // @return QueryResult containing the constructed query string and parameters.
     public static QueryResult buildQuery(JsonObject request)
     {
-        String operation = request.getString(Constants.OPERATION, "").toLowerCase();
+        var operation = request.getString(Constants.OPERATION, "").toLowerCase();
 
-        String tableName = request.getString(Constants.TABLE_NAME);
+        var tableName = request.getString(Constants.TABLE_NAME);
 
-        JsonArray columns = request.getJsonArray(Constants.COLUMNS, new JsonArray());
+        var columns = request.getJsonArray(Constants.COLUMNS, new JsonArray());
 
-        JsonObject data = request.getJsonObject(Constants.DATA, new JsonObject());
+        var data = request.getJsonObject(Constants.DATA, new JsonObject());
 
-        JsonObject condition = request.getJsonObject(Constants.CONDITION, new JsonObject());
+        var condition = request.getJsonObject(Constants.CONDITION, new JsonObject());
 
-        StringBuilder query = new StringBuilder();
+        var query = new StringBuilder();
 
-        List<Object> parameters = new ArrayList<>();
+        var parameters = new ArrayList<Object>();
 
-        AtomicInteger paramIndex = new AtomicInteger(1);
+        var paramIndex = new AtomicInteger(1);
 
         switch (operation)
         {
@@ -70,9 +70,9 @@ public class QueryBuilder
 
             case Constants.DATABASE_OPERATION_INSERT:
 
-                List<String> keys = new ArrayList<>(data.fieldNames());
+                var keys = new ArrayList<>(data.fieldNames());
 
-                String placeholders = keys.stream()
+                var placeholders = keys.stream()
                         .map(k -> "$" + paramIndex.getAndIncrement())
                         .collect(Collectors.joining(", "));
 
@@ -88,7 +88,7 @@ public class QueryBuilder
 
                 query.append("UPDATE ").append(tableName).append(" SET ");
 
-                List<String> setClauses = new ArrayList<>();
+                var setClauses = new ArrayList<String>();
 
                 for (String key : data.fieldNames())
                 {
@@ -125,7 +125,7 @@ public class QueryBuilder
         {
             query.append(" WHERE ");
 
-            List<String> conditions = new ArrayList<>();
+            var conditions = new ArrayList<String>();
 
             condition.forEach(entry ->
             {

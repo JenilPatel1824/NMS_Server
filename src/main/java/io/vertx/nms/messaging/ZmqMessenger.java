@@ -24,9 +24,9 @@ public class ZmqMessenger extends AbstractVerticle
 
     private static final int RESPONSE_CHECK_INTERVAL_MS = 500;
 
-    private static final long REQUEST_TIMEOUT_MS = 28_000;
+    private static final long REQUEST_TIMEOUT_MS = 265000;
 
-    private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 1000;
+    private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 2000;
 
     private Map<String, PendingRequest> pendingRequests = new HashMap<>();
 
@@ -87,9 +87,9 @@ public class ZmqMessenger extends AbstractVerticle
     {
         logger.info("{} zmq.send request {}", Thread.currentThread().getName(), message.body());
 
-        JsonObject request = message.body();
+        var request = message.body();
 
-        String requestId =  UUID.randomUUID().toString();
+        var requestId =  UUID.randomUUID().toString();
 
         request.put(REQUEST_ID, requestId);
 
@@ -116,9 +116,9 @@ public class ZmqMessenger extends AbstractVerticle
 
              try
              {
-                 JsonObject replyJson = new JsonObject(response);
+                 var replyJson = new JsonObject(response);
 
-                 String requestId = replyJson.getString(REQUEST_ID);
+                 var requestId = replyJson.getString(REQUEST_ID);
 
                  replyJson.remove(REQUEST_ID);
 
@@ -148,15 +148,15 @@ public class ZmqMessenger extends AbstractVerticle
     // Removes the timed-out request from the pending requests map.
     private void checkTimeouts()
     {
-        long now = System.currentTimeMillis();
+        var now = System.currentTimeMillis();
 
-        Iterator<Map.Entry<String, PendingRequest>> iterator = pendingRequests.entrySet().iterator();
+        var iterator = pendingRequests.entrySet().iterator();
 
         while (iterator.hasNext())
         {
-            Map.Entry<String, PendingRequest> entry = iterator.next();
+            var entry = iterator.next();
 
-            PendingRequest pendingRequest = entry.getValue();
+            var pendingRequest = entry.getValue();
 
             if (now - pendingRequest.timestamp >= REQUEST_TIMEOUT_MS)
             {
@@ -181,6 +181,7 @@ public class ZmqMessenger extends AbstractVerticle
         {
             context.close();
         }
+
         stopPromise.complete();
     }
 }

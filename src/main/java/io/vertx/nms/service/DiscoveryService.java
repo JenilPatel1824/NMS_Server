@@ -28,7 +28,7 @@ public class DiscoveryService
     {
         VALID_FIELDS.add(Constants.DATABASE_DISCOVERY_PROFILE_NAME);
 
-        VALID_FIELDS.add(Constants.DATABASE_CREDENTIAL_PROFILE_NAME);
+        VALID_FIELDS.add(Constants.DATABASE_CREDENTIAL_PROFILE_ID);
 
         VALID_FIELDS.add(Constants.IP);
     }
@@ -41,15 +41,15 @@ public class DiscoveryService
     }
 
     // Fetches all discovery profiles from the database.
-    // @param ctx The RoutingContext containing the request and response.
-    public void getAllDiscoveries(RoutingContext ctx)
+    // @param context The RoutingContext containing the request and response.
+    public void getAllDiscoveries(RoutingContext context)
     {
-        JsonObject request = new JsonObject()
+        var request = new JsonObject()
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                 .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
                 .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
+        var queryResult = QueryBuilder.buildQuery(request);
 
         eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject()
                 .put(Constants.QUERY, queryResult.getQuery())
@@ -57,295 +57,319 @@ public class DiscoveryService
         {
             if (reply.succeeded())
             {
-                ctx.response().setStatusCode(200).end(reply.result().body().toString());
+                context.response().setStatusCode(200).end(reply.result().body().toString());
             }
             else
             {
                 logger.error("Failed to process GET all discoveries request {}", reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
             }
         });
     }
 
     // Fetches a specific discovery profile from the database.
-    // @param profileName The name of the discovery profile to fetch.
-    // @param ctx The RoutingContext containing the request and response.
-    public void getDiscoveryByProfileName(String profileName, RoutingContext ctx)
+    // @param discoveryProfileId The id of the discovery profile to fetch.
+    // @param context The RoutingContext containing the request and response.
+    public void getDiscoveryById(String discoveryProfileId, RoutingContext context)
     {
-        if (profileName == null || profileName.isEmpty())
+        try
         {
-            ctx.response().setStatusCode(400).end("Invalid Request: Profile name is required");
+            var profileId = Long.parseLong(discoveryProfileId);
 
-            return;
+            var request = new JsonObject()
+                    .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
+                    .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN))
+                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
+
+            var queryResult = QueryBuilder.buildQuery(request);
+
+            eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+            {
+                if (reply.succeeded())
+                {
+                    context.response().setStatusCode(200).end(reply.result().body().toString());
+                }
+                else
+                {
+                    logger.error(" Failed to process GET by profile name request: {}", reply.cause().getMessage());
+
+                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                }
+            });
         }
-
-        JsonObject request = new JsonObject()
-                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_SELECT)
-                .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN))
-                .put(Constants.CONDITION, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME, profileName));
-
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
-
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()), reply ->
+        catch (NumberFormatException e)
         {
-            if (reply.succeeded())
-            {
-                ctx.response().setStatusCode(200).end(reply.result().body().toString());
-            }
-            else
-            {
-                logger.error("[{}] Failed to process GET by profile name request: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+            logger.error("Invalid profileId: {}", discoveryProfileId);
 
-                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE+reply.cause().getMessage());
-            }
-        });
+            context.response().setStatusCode(400).end("Invalid profileId. It must be a numeric value.");
+        }
     }
 
     // Creates a new discovery profile in the database.
     // @param requestBody The JSON object containing the discovery profile details.
-    // @param ctx The RoutingContext containing the request and response.
-    public void createDiscovery(JsonObject requestBody, RoutingContext ctx)
+    // @param context The RoutingContext containing the request and response.
+    public void createDiscovery(JsonObject requestBody, RoutingContext context)
     {
         if(!isValidDiscoveryRequest(requestBody))
         {
-            ctx.response().setStatusCode(400).end("invalid fields");
+            context.response().setStatusCode(400).end("invalid fields");
 
             return;
-
         }
-        JsonObject request = new JsonObject()
+
+        var request = new JsonObject()
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                 .put(Constants.OPERATION, Constants.DATABASE_OPERATION_INSERT)
                 .put(Constants.DATA, requestBody);
 
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
+        var queryResult = QueryBuilder.buildQuery(request);
 
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()), reply ->
+        eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()), reply ->
         {
             if (reply.succeeded())
             {
-                ctx.response().setStatusCode(201).end("Discovery Created Successfully");
+                context.response().setStatusCode(201).end(reply.result().body().toString());
             }
             else
             {
-                logger.error("[{}] Failed to create discovery: {}", Thread.currentThread().getName(), reply.cause().getMessage());
+                logger.error(" Failed to create discovery: {}", reply.cause().getMessage());
 
-                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE+reply.cause().getMessage());
+                context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE+reply.cause().getMessage());
             }
         });
     }
 
     // Updates an existing discovery profile in the database.
-    // @param profileName The name of the discovery profile to update.
+    // @param discoveryProfileId The id of the discovery profile to update.
     // @param updateRequest The JSON object containing the updated discovery profile details.
-    // @param ctx The RoutingContext containing the request and response.
-    public void updateDiscovery(String profileName, JsonObject updateRequest, RoutingContext ctx)
+    // @param context The RoutingContext containing the request and response.
+    public void updateDiscovery(String discoveryProfileId, JsonObject updateRequest, RoutingContext context)
     {
-        if (profileName == null || profileName.isEmpty())
-        {
-            ctx.response().setStatusCode(400).end("Invalid Request: Profile name is required");
-
-            return;
-        }
-
         if(!isValidUpdateRequest(updateRequest)) return;
 
-        JsonObject request = new JsonObject()
-                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
-                .put(Constants.DATA, updateRequest)
-                .put(Constants.CONDITION, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME, profileName));
-
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
-
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()), reply ->
+        try
         {
-            if (reply.succeeded())
-            {
-                ctx.response().setStatusCode(200).end("Discovery Updated Successfully");
-            }
-            else
-            {
-                logger.error(" Failed to update discovery {}", reply.cause().getMessage());
+            var profileId = Long.parseLong(discoveryProfileId);
 
-                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE +reply.cause().getMessage());
-            }
-        });
+            var request = new JsonObject()
+                    .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
+                    .put(Constants.DATA, updateRequest)
+                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
+
+            var queryResult = QueryBuilder.buildQuery(request);
+
+            eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+            {
+                if (reply.succeeded())
+                {
+                    context.response().setStatusCode(200).end(reply.result().body().toString());
+                }
+                else
+                {
+                    logger.error(" Failed to update discovery {}", reply.cause().getMessage());
+
+                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                }
+            });
+        }
+        catch (NumberFormatException e)
+        {
+            logger.error("Invalid profileId: {}", discoveryProfileId);
+
+            context.response().setStatusCode(400).end("Invalid profileId. It must be a numeric value.");
+        }
     }
 
     // Deletes a discovery profile from the database.
-    // @param discoveryProfileName The name of the discovery profile to delete.
-    public void deleteDiscovery(String discoveryProfileName, RoutingContext ctx)
+    // @param discoveryProfileId The id of the discovery profile to delete.
+    public void deleteDiscovery(String discoveryProfileId, RoutingContext context)
     {
-        if (discoveryProfileName == null || discoveryProfileName.isEmpty())
+        try
         {
-            ctx.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_NAME);
+            var profileId = Long.parseLong(discoveryProfileId);
 
-            return;
+            var request = new JsonObject()
+                    .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_DELETE)
+                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
+
+            var queryResult = QueryBuilder.buildQuery(request);
+
+            eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
+            {
+                if (reply.succeeded())
+                {
+                    context.response().setStatusCode(200).end("Discovery Deleted Successfully");
+                }
+                else
+                {
+                    logger.error(" Failed to delete discovery: {}", reply.cause().getMessage());
+
+                    context.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE + reply.cause().getMessage());
+                }
+            });
         }
-
-        JsonObject request = new JsonObject()
-                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_DELETE)
-                .put(Constants.CONDITION, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME, discoveryProfileName)); // Correctly formatted condition
-
-        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
-
-
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()), reply ->
+        catch (NumberFormatException e)
         {
-            if (reply.succeeded())
-            {
-                ctx.response().setStatusCode(200).end("Discovery Deleted Successfully");
-            }
-            else
-            {
-                logger.error(" Failed to delete discovery: {}", reply.cause().getMessage());
+            logger.error("Invalid profileId: {}", discoveryProfileId);
 
-                ctx.response().setStatusCode(500).end(Constants.INTERNAL_SERVER_ERROR_MESSAGE+ reply.cause().getMessage());
-            }
-        });
+            context.response().setStatusCode(400).end("Invalid profileId. It must be a numeric value.");
+        }
     }
 
     // Runs a discovery for the given discovery profile.
     // This method is responsible for running a discovery for a given discovery profile.
     // It fetches the discovery profile from the database, pings the target IP, and sends a ZMQ request to the ZMQ server.
     // The ZMQ server responds with the discovery data, which is then updated in the database.
-    // @param discoveryProfileName The name of the discovery profile to run.
-    // @param ctx The RoutingContext containing the request and response.
-    public void runDiscovery(String discoveryProfileName, RoutingContext ctx)
+    // @param discoveryProfileId The id of the discovery profile to run.
+    // @param context The RoutingContext containing the request and response.
+    public void runDiscovery(String discoveryProfileId, RoutingContext context)
     {
-        String queryForDiscovery = "SELECT dp.ip, dp.discovery_profile_name, cp.system_type, cp.credentials " +
-                "FROM discovery_profiles dp " +
-                "JOIN credential_profile cp ON dp.credential_profile_name = cp.credential_profile_name " +
-                "WHERE dp.discovery_profile_name = $1";
-
-        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY,queryForDiscovery).put(Constants.PARAMS,new JsonArray().add(discoveryProfileName)), fetchResult ->
+        try
         {
-            if (fetchResult.failed())
+            var profileId = Long.parseLong(discoveryProfileId);
+
+            var queryForDiscovery = "SELECT dp.id, dp.ip, dp.discovery_profile_name, cp.id, cp.system_type, cp.credentials " +
+                    "FROM discovery_profiles dp " +
+                    "JOIN credential_profile cp ON dp.credential_profile_id = cp.id " +
+                    "WHERE dp.id = $1";
+
+            eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryForDiscovery).put(Constants.PARAMS, new JsonArray().add(profileId)), fetchResult ->
             {
-                logger.error("Failed to fetch discovery for profile name: {}", discoveryProfileName);
-
-                ctx.response().setStatusCode(500).end("Internal server error");
-
-                return;
-            }
-
-            JsonObject result = (JsonObject) fetchResult.result().body();
-
-            JsonArray dataArray = result.getJsonArray(Constants.DATA);
-
-            if (dataArray == null || dataArray.isEmpty())
-            {
-                logger.error("No discovery data found for profile name: {}", discoveryProfileName);
-
-                ctx.response().setStatusCode(404).end("Discovery not found");
-
-                return;
-            }
-
-            JsonObject discovery = dataArray.getJsonObject(0);
-
-            String targetIp = discovery.getString(Constants.IP);
-
-            if (targetIp == null || targetIp.isEmpty())
-            {
-                ctx.response().setStatusCode(400).end("Target IP not found in discovery data");
-
-                return;
-            }
-
-            logger.info("Found IP for request: {}", targetIp);
-
-            vertx.executeBlocking(promise ->
-            {
-                boolean isReachable = ConnectivityTester.ping(targetIp);
-
-                promise.complete(isReachable);
-            }, res ->
-            {
-                if (res.succeeded() && (Boolean) res.result())
+                if (fetchResult.failed())
                 {
-                    String deviceType = discovery.getString(Constants.SYSTEM_TYPE);
+                    logger.error("Failed to fetch discovery for profile id: {}", discoveryProfileId);
 
-                    if(!deviceType.equalsIgnoreCase("snmp"))
+                    context.response().setStatusCode(500).end("Internal server error");
+
+                    return;
+                }
+
+                var result = fetchResult.result().body();
+
+                var dataArray = result.getJsonArray(Constants.DATA);
+
+                if (dataArray == null || dataArray.isEmpty())
+                {
+                    logger.error("No discovery data found for profile id: {}", discoveryProfileId);
+
+                    context.response().setStatusCode(404).end("Discovery not found");
+
+                    return;
+                }
+
+                var discovery = dataArray.getJsonObject(0);
+
+                var targetIp = discovery.getString(Constants.IP);
+
+                if (targetIp == null || targetIp.isEmpty())
+                {
+                    context.response().setStatusCode(400).end("Target IP not found in discovery data");
+
+                    return;
+                }
+
+                logger.info("Found IP for request: {}", targetIp);
+
+                vertx.executeBlocking(promise ->
+                {
+                    var isReachable = ConnectivityTester.ping(targetIp);
+
+                    promise.complete(isReachable);
+
+                }, res ->
+                {
+                    if (res.succeeded() && (Boolean) res.result())
                     {
-                        ctx.response().setStatusCode(400).end("Invalid device type, discovery is not supported for this device type");
+                        var deviceType = discovery.getString(Constants.SYSTEM_TYPE);
 
-                        return;
-                    }
-
-                    JsonObject credentials = discovery.getJsonObject(Constants.CREDENTIALS);
-
-                    if (credentials == null)
-                    {
-                        ctx.response().setStatusCode(500).end("Invalid credentials format");
-
-                        return;
-                    }
-
-                    JsonObject zmqRequest = new JsonObject()
-                            .put(Constants.IP, targetIp)
-                            .put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
-                            .put(Constants.VERSION, credentials.getString(Constants.VERSION))
-                            .put(Constants.PLUGIN_TYPE, deviceType)
-                            .put(Constants.REQUEST_TYPE, Constants.DISCOVERY);
-
-                    eventBus.<JsonObject>request(Constants.EVENTBUS_ZMQ_ADDRESS, zmqRequest, zmqResult ->
-                    {
-                        if (zmqResult.failed())
+                        if (!deviceType.equalsIgnoreCase("snmp"))
                         {
-                            logger.info("No response from ZMQ server");
-
-                            ctx.response().setStatusCode(504).end("No response from ZMQ server");
+                            context.response().setStatusCode(400).end("Invalid device type, discovery is not supported for this device type");
 
                             return;
                         }
 
-                        JsonObject zmqResponseJson = zmqResult.result().body();
+                        var credentials = discovery.getJsonObject(Constants.CREDENTIALS);
 
-                        boolean isSuccess = Constants.SUCCESS.equalsIgnoreCase(zmqResponseJson.getString(Constants.STATUS));
+                        if (credentials == null)
+                        {
+                            context.response().setStatusCode(500).end("Invalid credentials format");
 
-                        JsonObject request = new JsonObject()
-                                .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
-                                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
-                                .put(Constants.DATA, new JsonObject().put(Constants.DISCOVERY, isSuccess))
-                                .put(Constants.CONDITION, new JsonObject().put(Constants.DATABASE_DISCOVERY_PROFILE_NAME, discoveryProfileName));
+                            return;
+                        }
 
-                        QueryBuilder.QueryResult queryResult = QueryBuilder.buildQuery(request);
+                        var zmqRequest = new JsonObject()
+                                .put(Constants.IP, targetIp)
+                                .put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
+                                .put(Constants.VERSION, credentials.getString(Constants.VERSION))
+                                .put(Constants.PLUGIN_TYPE, deviceType)
+                                .put(Constants.REQUEST_TYPE, Constants.DISCOVERY);
 
-                        eventBus.request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY,queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()), updateResult ->
-                         {
-                             if (updateResult.succeeded())
-                             {
-                                 if (isSuccess)
-                                 {
-                                     ctx.response().setStatusCode(200).end("Discovery run successful. System name: " + zmqResponseJson.getJsonObject("data").getString("systemName"));
-                                 }
-                                 else
-                                 {
-                                     ctx.response().setStatusCode(500).end("Discovery failed for IP: " + targetIp);
-                                 }
-                             }
-                             else
-                             {
-                                 logger.error("Failed to update discovery status for profile name: {}", discoveryProfileName);
+                        eventBus.<JsonObject>request(Constants.EVENTBUS_ZMQ_ADDRESS, zmqRequest, zmqResult ->
+                        {
+                            if (zmqResult.failed())
+                            {
+                                logger.info("No response from ZMQ server");
 
-                                 ctx.response().setStatusCode(500).end("Failed to update discovery status");
-                             }
-                         });
-                    });
-                }
-                else
-                {
-                    logger.error("Ping failed for IP: {}", targetIp);
+                                context.response().setStatusCode(504).end("No response from ZMQ server");
 
-                    ctx.response().setStatusCode(400).end("Ping failed");
-                }
+                                return;
+                            }
+
+                            var zmqResponseJson = zmqResult.result().body();
+
+                            var isSuccess = Constants.SUCCESS.equalsIgnoreCase(zmqResponseJson.getString(Constants.STATUS));
+
+                            var request = new JsonObject()
+                                    .put(Constants.OPERATION, Constants.DATABASE_OPERATION_UPDATE)
+                                    .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
+                                    .put(Constants.DATA, new JsonObject().put(Constants.DISCOVERY, isSuccess))
+                                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, discoveryProfileId));
+
+                            var queryResult = QueryBuilder.buildQuery(request);
+
+                            eventBus.<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), updateResult ->
+                            {
+                                if (updateResult.succeeded())
+                                {
+                                    if (isSuccess)
+                                    {
+                                        context.response().setStatusCode(200).end("Discovery run successful. System name: " + zmqResponseJson.getJsonObject("data").getString("systemName"));
+                                    }
+                                    else
+                                    {
+                                        context.response().setStatusCode(500).end("Discovery failed for IP: " + targetIp);
+                                    }
+                                }
+                                else
+                                {
+                                    logger.error("Failed to update discovery status for profile name: {}", discoveryProfileId);
+
+                                    context.response().setStatusCode(500).end("Failed to update discovery status");
+                                }
+                            });
+                        });
+                    }
+                    else
+                    {
+                        logger.error("Ping failed for IP: {}", targetIp);
+
+                        context.response().setStatusCode(400).end("Ping failed");
+                    }
+                });
             });
-        });
+        }
+         catch (NumberFormatException e)
+            {
+                logger.error("Invalid discoveryProfileName: {}", discoveryProfileId);
+
+                context.response().setStatusCode(400).end("Invalid discoveryProfileName. It must be a numeric value.");
+
+            }
     }
 
     // Validates the discovery request body for required fields.
@@ -361,14 +385,14 @@ public class DiscoveryService
             }
         }
         return requestBody.containsKey(Constants.DATABASE_DISCOVERY_PROFILE_NAME) &&
-                requestBody.containsKey(Constants.DATABASE_CREDENTIAL_PROFILE_NAME) &&
+                requestBody.containsKey(Constants.DATABASE_CREDENTIAL_PROFILE_ID) &&
                 requestBody.containsKey(Constants.IP);
     }
 
     // Validates the update request body for valid fields.
     private boolean isValidUpdateRequest(JsonObject updateRequest)
     {
-        for (String key : updateRequest.fieldNames())
+        for (var key : updateRequest.fieldNames())
         {
             if (!VALID_FIELDS.contains(key))
             {

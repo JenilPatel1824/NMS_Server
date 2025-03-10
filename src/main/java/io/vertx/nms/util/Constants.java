@@ -45,9 +45,13 @@ public class Constants
 
     public static final String DATA = "data";
 
+    public static final String ID = "id";
+
     public static final String DATABASE_CREDENTIAL_PROFILE_NAME = "credential_profile_name";
 
     public static final String DATABASE_DISCOVERY_PROFILE_NAME = "discovery_profile_name";
+
+    public static final String DATABASE_DISCOVERY_PROFILE_ID = "discovery_profile_id";
 
     public static final String QUERY = "query";
 
@@ -87,14 +91,19 @@ public class Constants
 
     public static final String COLUMNS = "columns";
 
-    public static final String DISCOVERY_PROFILE_NAME = "discoveryProfileName";
+    public static final String DISCOVERY_PROFILE_ID = "discoveryProfileId";
 
-    public static final String BAD_REQUEST_INVALID_JSON = "Bad Request: Invalid JSON";
+    public static final String MESSAGE_INVALID_JSON = "Bad Request: Invalid JSON";
 
-    public static final String HTTP_REQUIRED_BODY  = "Request body is required.";
+    public static final String MESSAGE_REQUIRED_BODY  = "Request body is required.";
 
-    public static final String MESSAGE_REQUIRED_DISCOVERY_PROFILE_NAME = " DiscoveryProfileName is required";
+    public static final String MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID = " DiscoveryProfileId is required";
 
     public static final String HTTP_EMPTY_REQUEST = "Bad request: Empty message body";
 
+    public static final String RETURNING = "returning";
+
+    public static final String DATABASE_CREDENTIAL_PROFILE_ID = "credential_profile_id";
+
+    public static final String POLLED_AT = "polled_at";
 }

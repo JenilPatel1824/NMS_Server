@@ -16,9 +16,9 @@ public class DiscoveryHandler
 
     private final DiscoveryService discoveryService;
 
-    private static final String DISCOVERY_PROFILE_NAME_PARAM = "/:discoveryProfileName";
+    private static final String DISCOVERY_PROFILE_ID_URL = "/:discoveryProfileId";
 
-    private static final String DISCOVERY_RUN_URL = "/:discoveryProfileName/run";
+    private static final String DISCOVERY_RUN_URL = "/:discoveryProfileId/run";
 
     public DiscoveryHandler(Vertx vertx)
     {
@@ -30,101 +30,118 @@ public class DiscoveryHandler
     //Creates and returns a router for handling discovery-related HTTP requests.
     public Router createRouter()
     {
-        Router discoveryRouter = Router.router(vertx);
+        var discoveryRouter = Router.router(vertx);
 
-        discoveryRouter.get(DISCOVERY_PROFILE_NAME_PARAM).handler(ctx ->
+        discoveryRouter.get(DISCOVERY_PROFILE_ID_URL).handler(context ->
         {
-            String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
+            var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
             logger.info("Discovery Get/:");
 
-            if (discoveryProfileName == null || discoveryProfileName.isEmpty())
+            if (discoveryProfileId == null || discoveryProfileId.isEmpty())
             {
-                ctx.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_NAME);
+                context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID);
 
                 return;
             }
 
-            discoveryService.getDiscoveryByProfileName(discoveryProfileName, ctx);
+            discoveryService.getDiscoveryById(discoveryProfileId, context);
         });
 
         discoveryRouter.get().handler(discoveryService::getAllDiscoveries);
 
-        discoveryRouter.post("/").handler(ctx ->
+        discoveryRouter.post("/").handler(context ->
         {
             logger.info("Discovery Post/:");
 
-            ctx.request().bodyHandler(buffer ->
+            context.request().bodyHandler(buffer ->
             {
-                JsonObject requestBody;
                 try
                 {
-                    requestBody = buffer.toJsonObject();
+                    var requestBody = buffer.toJsonObject();
+
+                    if (requestBody.isEmpty())
+                    {
+                        context.response().setStatusCode(400).end(Constants.HTTP_EMPTY_REQUEST);
+
+                        return;
+                    }
+
+                    discoveryService.createDiscovery(requestBody, context);
                 }
                 catch (Exception e)
                 {
-                    ctx.response().setStatusCode(400).end(Constants.BAD_REQUEST_INVALID_JSON);
-
-                    return;
+                    context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_JSON);
                 }
-
-                if (requestBody.isEmpty())
-                {
-                    ctx.response().setStatusCode(400).end(Constants.HTTP_EMPTY_REQUEST);
-
-                    return;
-                }
-
-                discoveryService.createDiscovery(requestBody, ctx);
             });
         });
 
-        discoveryRouter.put(DISCOVERY_PROFILE_NAME_PARAM).handler(ctx ->
+        discoveryRouter.put(DISCOVERY_PROFILE_ID_URL).handler(context ->
         {
             logger.info("Discovery Put/:");
 
-            String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
+            var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
-            ctx.request().bodyHandler(buffer ->
+            if (discoveryProfileId == null || discoveryProfileId.isEmpty())
             {
-                JsonObject updateRequest;
+                context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID);
+
+                return;
+            }
+
+            context.request().bodyHandler(buffer ->
+            {
                 try
                 {
-                    updateRequest = buffer.toJsonObject();
+                    var updateRequest = buffer.toJsonObject();
+
+                    if (updateRequest.isEmpty())
+                    {
+                        context.response().setStatusCode(400).end(Constants.HTTP_EMPTY_REQUEST);
+
+                        return;
+                    }
+
+                    discoveryService.updateDiscovery(discoveryProfileId, updateRequest, context);
                 }
                 catch (Exception e)
                 {
-                    ctx.response().setStatusCode(400).end(Constants.BAD_REQUEST_INVALID_JSON);
-                    return;
+                    context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_JSON);
                 }
-
-                if (updateRequest.isEmpty())
-                {
-                    ctx.response().setStatusCode(400).end(Constants.HTTP_EMPTY_REQUEST);
-
-                    return;
-                }
-
-                discoveryService.updateDiscovery(discoveryProfileName, updateRequest, ctx);
             });
+
         });
 
-        discoveryRouter.delete(DISCOVERY_PROFILE_NAME_PARAM).handler(ctx ->
+        discoveryRouter.delete(DISCOVERY_PROFILE_ID_URL).handler(context ->
         {
             logger.info("Discovery Delete/:");
 
-            String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
+            var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
-            discoveryService.deleteDiscovery(discoveryProfileName, ctx);
+            if (discoveryProfileId == null || discoveryProfileId.isEmpty())
+            {
+                context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID);
+
+                return;
+            }
+
+            discoveryService.deleteDiscovery(discoveryProfileId, context);
         });
 
-        discoveryRouter.post(DISCOVERY_RUN_URL).handler(ctx ->
+        discoveryRouter.post(DISCOVERY_RUN_URL).handler(context ->
         {
             logger.info("Discovery Run/:");
 
-            String discoveryProfileName = ctx.pathParam(Constants.DISCOVERY_PROFILE_NAME);
+            var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
-            discoveryService.runDiscovery(discoveryProfileName, ctx);
+            if (discoveryProfileId == null || discoveryProfileId.isEmpty())
+            {
+                context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID);
+
+                return;
+            }
+
+            discoveryService.runDiscovery(discoveryProfileId, context);
         });
 
         return discoveryRouter;

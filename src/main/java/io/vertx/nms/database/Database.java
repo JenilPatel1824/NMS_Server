@@ -3,18 +3,20 @@ package io.vertx.nms.database;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.nms.util.Constants;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
-import io.vertx.sqlclient.Row;
-import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 public class Database extends AbstractVerticle
 {
@@ -27,14 +29,14 @@ public class Database extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        PgConnectOptions connectOptions = new PgConnectOptions()
+        var connectOptions = new PgConnectOptions()
                 .setHost(Constants.DB_HOST)
                 .setPort(Constants.DB_PORT)
                 .setDatabase(Constants.DB_NAME)
                 .setUser(Constants.DB_USER)
                 .setPassword(Constants.DB_PASSWORD);
 
-        PoolOptions poolOptions = new PoolOptions().setMaxSize(10);
+        var poolOptions = new PoolOptions().setMaxSize(10);
 
         pgClient = PgPool.pool(vertx, connectOptions, poolOptions);
 
@@ -58,50 +60,95 @@ public class Database extends AbstractVerticle
     }
     private void setupEventBusConsumer()
     {
-        EventBus eventBus = vertx.eventBus();
+        var eventBus = vertx.eventBus();
 
         eventBus.<JsonObject>localConsumer(Constants.EVENTBUS_DATABASE_ADDRESS, message ->
         {
-            JsonObject request =  message.body();
+            var request = message.body();
 
-            String query = request.getString(Constants.QUERY);
+            var query = request.getString(Constants.QUERY);
 
-            JsonArray params = request.getJsonArray(Constants.PARAMS);
+            logger.info("Executing query: {}", query);
+
+            var params = request.getJsonArray(Constants.PARAMS);
 
             if (params == null)
             {
                 params = new JsonArray();
             }
 
-            logger.info("Executing Query: {}", query);
+            boolean isInsertOrUpdate = query.trim().toLowerCase().startsWith(Constants.DATABASE_OPERATION_INSERT) || query.trim().toLowerCase().startsWith(Constants.DATABASE_OPERATION_UPDATE);
 
-            String finalQuery = query;
+            if (isInsertOrUpdate && !query.toLowerCase().contains("returning id"))
+            {
+                query += " RETURNING id";
+            }
 
-            pgClient.preparedQuery(query).execute(Tuple.tuple(params.getList()), ar ->
+            var finalQuery = query;
+
+            var tupleParams = Tuple.tuple();
+
+            for (int i = 0; i < params.size(); i++)
+            {
+                var paramValue = params.getValue(i);
+
+                if (query.toLowerCase().contains("polled_at") && paramValue instanceof String)
+                {
+                    tupleParams.addLocalDateTime(LocalDateTime.parse((String) paramValue, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                }
+                else
+                {
+                    tupleParams.addValue(paramValue);
+                }
+            }
+
+            pgClient.preparedQuery(query).execute(tupleParams, ar ->
             {
                 if (ar.succeeded())
                 {
-                    RowSet<Row> rows = ar.result();
+                    var rows = ar.result();
 
-                    JsonArray resultData = new JsonArray();
-
-                    for (Row row : rows)
-                    {
-                        JsonObject rowJson = new JsonObject();
-
-                        for (int i = 0; i < row.size(); i++)
-                        {
-                            rowJson.put(row.getColumnName(i), row.getValue(i));
-                        }
-
-                        resultData.add(rowJson);
-                    }
-
-                    JsonObject response = new JsonObject().put(Constants.STATUS, Constants.SUCCESS);
+                    var response = new JsonObject().put(Constants.STATUS, Constants.SUCCESS);
 
                     if (finalQuery.trim().toLowerCase().startsWith(Constants.DATABASE_OPERATION_SELECT))
                     {
+                        var resultData = StreamSupport.stream(rows.spliterator(), false)
+                                .map(row ->
+                                {
+                                    var rowJson = new JsonObject();
+
+                                    IntStream.range(0, row.size()).forEach(i ->
+                                    {
+                                        var columnName = row.getColumnName(i);
+                                        var value = row.getValue(i);
+
+                                        if ("polled_at".equalsIgnoreCase(columnName) && value instanceof LocalDateTime)
+                                        {
+                                            rowJson.put(columnName, ((LocalDateTime) value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                                        }
+                                        else
+                                        {
+                                            rowJson.put(columnName, value);
+                                        }
+                                    });
+
+                                    return rowJson;
+                                })
+                                .collect(JsonArray::new, JsonArray::add, JsonArray::addAll);
+
                         response.put(Constants.DATA, resultData);
+                    }
+
+                    else if (isInsertOrUpdate)
+                    {
+                        if (rows.iterator().hasNext())
+                        {
+                            var id = rows.iterator().next().getInteger(Constants.ID);
+
+                            response.put(Constants.ID, id);
+                        }
+
+                        response.put(Constants.MESSAGE, "Query executed successfully");
                     }
                     else
                     {
@@ -114,7 +161,7 @@ public class Database extends AbstractVerticle
                 {
                     logger.error("Database query failed: {}", ar.cause().getMessage());
 
-                    message.fail(1, String.valueOf(new JsonObject().put(Constants.STATUS, "fail").put(Constants.MESSAGE, ar.cause().getMessage())));
+                    message.fail(1, new JsonObject().put(Constants.STATUS, "fail").put(Constants.MESSAGE, ar.cause().getMessage()).encode());
                 }
             });
         });
@@ -122,36 +169,36 @@ public class Database extends AbstractVerticle
         logger.info("DatabaseService is listening on eventbus address: database.query.execute");
     }
 
-    private Future<Void> init()
+    private Future<Object> init()
     {
-        Promise<Void> promise = Promise.promise();
+        var promise = Promise.promise();
 
-        String createTablesQuery = """
-            CREATE TABLE IF NOT EXISTS credential_profile (
-                id SERIAL PRIMARY KEY,
-                credential_profile_name TEXT UNIQUE NOT NULL,
-                system_type TEXT NOT NULL,
-                credentials JSONB NOT NULL
-            );
+        var createTablesQuery = """
+    CREATE TABLE IF NOT EXISTS credential_profile (
+        id SERIAL PRIMARY KEY,
+        credential_profile_name TEXT UNIQUE NOT NULL,
+        system_type TEXT NOT NULL,
+        credentials JSONB NOT NULL
+    );
 
-            CREATE TABLE IF NOT EXISTS discovery_profiles (
-                id SERIAL PRIMARY KEY,
-                discovery_profile_name TEXT UNIQUE NOT NULL,
-                credential_profile_name TEXT NOT NULL,
-                ip INET NOT NULL,
-                discovery BOOLEAN,
-                provision BOOLEAN,
-                FOREIGN KEY (credential_profile_name) REFERENCES credential_profile(credential_profile_name) ON DELETE CASCADE
-            );
+    CREATE TABLE IF NOT EXISTS discovery_profiles (
+        id SERIAL PRIMARY KEY,
+        discovery_profile_name TEXT UNIQUE NOT NULL,
+        credential_profile_id INT NOT NULL,
+        ip INET NOT NULL,
+        discovery BOOLEAN,
+        provision BOOLEAN,
+        FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE CASCADE
+    );
 
-            CREATE TABLE IF NOT EXISTS provision_data (
-                id SERIAL PRIMARY KEY,
-                discovery_profile_name TEXT NOT NULL,
-                data JSONB NOT NULL,
-                polled_at TEXT,
-                FOREIGN KEY (discovery_profile_name) REFERENCES discovery_profiles(discovery_profile_name) ON DELETE CASCADE
-            );
-        """;
+    CREATE TABLE IF NOT EXISTS provision_data (
+        id SERIAL PRIMARY KEY,
+        discovery_profile_id INT NOT NULL,
+        data JSONB NOT NULL,
+        polled_at TEXT,
+        FOREIGN KEY (discovery_profile_id) REFERENCES discovery_profiles(id) ON DELETE CASCADE
+    );
+""";
 
         pgClient.query(createTablesQuery).execute(ar ->
         {

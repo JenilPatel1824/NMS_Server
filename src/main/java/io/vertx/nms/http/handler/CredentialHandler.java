@@ -18,15 +18,15 @@ public class CredentialHandler
 
     private final Vertx vertx;
 
-    private static final String CREDENTIAL_PROFILE_NAME = "credentialProfileName";
+    private static final String CREDENTIAL_PROFILE_ID = "credentialProfileId";
 
-    public static final String CREDENTIAL_PROFILE_NAME_URL = "/:credentialProfileName";
+    public static final String CREDENTIAL_PROFILE_ID_URL = "/:credentialProfileId";
 
-    private static final String MESSAGE_REQUIRED_CREDENTIAL_PROFILE_NAME = "credentialProfileName is required.";
+    private static final String MESSAGE_REQUIRED_CREDENTIAL_PROFILE_ID = "credential profile id is required.";
 
     public CredentialHandler(Vertx vertx)
     {
-        EventBus eventBus = vertx.eventBus();
+        var eventBus = vertx.eventBus();
 
         this.vertx = vertx;
 
@@ -36,99 +36,100 @@ public class CredentialHandler
     //Creates and returns a router for handling credential-related HTTP requests.
     public Router createRouter()
     {
-        Router credentialRouter = Router.router(vertx);
+        var credentialRouter = Router.router(vertx);
 
-        credentialRouter.get(CREDENTIAL_PROFILE_NAME_URL).handler(ctx ->
+        credentialRouter.post("/").handler(context ->
+        {
+            logger.debug("CredentialHandler Post");
+
+            context.request().bodyHandler(buffer ->
+            {
+                if (buffer == null || buffer.length() == 0)
+                {
+                    context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_BODY);
+
+                    return;
+                }
+                try
+                {
+                    var requestBody = buffer.toJsonObject();
+
+                    credentialService.createCredential(requestBody, context);
+                }
+                catch (DecodeException e)
+                {
+                    context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_JSON);
+                }
+            });
+        });
+
+        credentialRouter.get(CREDENTIAL_PROFILE_ID_URL).handler(context ->
         {
             logger.debug("CredentialHandler Get/:");
 
-            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME);
+            var credentialProfileId = context.pathParam(CREDENTIAL_PROFILE_ID);
 
-            if (credentialProfileName == null || credentialProfileName.isEmpty())
+            if (credentialProfileId == null || credentialProfileId.isEmpty())
             {
-                ctx.response().setStatusCode(400).end(MESSAGE_REQUIRED_CREDENTIAL_PROFILE_NAME);
+                context.response().setStatusCode(400).end(MESSAGE_REQUIRED_CREDENTIAL_PROFILE_ID);
 
                 return;
             }
-            credentialService.getCredentialByName(credentialProfileName, ctx);
+            credentialService.getCredentialById(credentialProfileId, context);
         });
 
         credentialRouter.get().handler(credentialService::getAllCredentials);
 
-        credentialRouter.post("/").handler(ctx ->
-        {
-            logger.debug("CredentialHandler Post");
-
-            ctx.request().bodyHandler(buffer ->
-            {
-                if (buffer == null || buffer.length() == 0)
-                {
-                    ctx.response().setStatusCode(400).end(Constants.HTTP_REQUIRED_BODY);
-
-                    return;
-                }
-                try
-                {
-                    JsonObject requestBody = buffer.toJsonObject();
-
-                    credentialService.createCredential(requestBody, ctx);
-                }
-                catch (DecodeException e)
-                {
-                    ctx.response().setStatusCode(400).end(Constants.BAD_REQUEST_INVALID_JSON);
-                }
-            });
-        });
-
-        credentialRouter.put(CREDENTIAL_PROFILE_NAME_URL).handler(ctx ->
+        credentialRouter.put(CREDENTIAL_PROFILE_ID_URL).handler(context ->
         {
             logger.debug("CredentialHandler Put/:");
 
-            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME);
+            var credentialProfileId = context.pathParam(CREDENTIAL_PROFILE_ID);
 
-            if (credentialProfileName == null || credentialProfileName.isEmpty())
+            if (credentialProfileId == null || credentialProfileId.isEmpty())
             {
-                ctx.response().setStatusCode(400).end(MESSAGE_REQUIRED_CREDENTIAL_PROFILE_NAME);
+                context.response().setStatusCode(400).end(MESSAGE_REQUIRED_CREDENTIAL_PROFILE_ID);
 
                 return;
             }
 
-            ctx.request().bodyHandler(buffer ->
+            context.request().bodyHandler(buffer ->
             {
                 if (buffer == null || buffer.length() == 0)
                 {
-                    ctx.response().setStatusCode(400).end(Constants.HTTP_REQUIRED_BODY);
+                    context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_BODY);
 
                     return;
                 }
 
                 try
                 {
-                    JsonObject requestBody = buffer.toJsonObject();
+                     var requestBody = buffer.toJsonObject();
 
-                    credentialService.updateCredential(credentialProfileName, requestBody, ctx);
+                    credentialService.updateCredential(credentialProfileId, requestBody, context);
                 }
 
                 catch (DecodeException e)
                 {
-                    ctx.response().setStatusCode(400).end(Constants.BAD_REQUEST_INVALID_JSON);
+                    context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_JSON);
                 }
             });
         });
 
-        credentialRouter.delete(CREDENTIAL_PROFILE_NAME_URL).handler(ctx ->
+        credentialRouter.delete(CREDENTIAL_PROFILE_ID_URL).handler(context ->
         {
             logger.debug("CredentialHandler Delete");
 
-            String credentialProfileName = ctx.pathParam(CREDENTIAL_PROFILE_NAME);
+            var credentialProfileId = context.pathParam(CREDENTIAL_PROFILE_ID);
 
-            if (credentialProfileName == null || credentialProfileName.isEmpty())
+            if (credentialProfileId == null || credentialProfileId.isEmpty())
             {
-                ctx.response().setStatusCode(400).end(MESSAGE_REQUIRED_CREDENTIAL_PROFILE_NAME);
+                context.response().setStatusCode(400).end(MESSAGE_REQUIRED_CREDENTIAL_PROFILE_ID);
 
                 return;
             }
-            credentialService.deleteCredential(credentialProfileName, ctx);
+
+            credentialService.deleteCredential(credentialProfileId, context);
         });
 
         return credentialRouter;

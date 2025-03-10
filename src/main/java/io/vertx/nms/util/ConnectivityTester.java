@@ -12,11 +12,11 @@ public class ConnectivityTester
     {
         try
         {
-            ProcessBuilder processBuilder = new ProcessBuilder("ping", "-c", "3", ipAddress);
+            var processBuilder = new ProcessBuilder("ping", "-c", "3", ipAddress);
 
-            Process process = processBuilder.start();
+            var process = processBuilder.start();
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            var reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
             String line;
 
