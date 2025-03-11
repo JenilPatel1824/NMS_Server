@@ -24,6 +24,25 @@ public class DiscoveryService
 
     private static final Set<String> VALID_FIELDS = new HashSet<>();
 
+    private static final String DISCOVERY_DELETE_SUCCESSFUL = "Discovery Deleted Successfully";
+
+    private static final String DISCOVERY_NOT_FOUND = "Discovery not found";
+
+    private static final String IP_NOT_FOUND = "Target IP not found in discovery data";
+
+    private static final String INVALID_DEVICE_TYPE = "Target IP not found in discovery data";
+
+    private static final String INVALID_CREDENTIAL_FORMAT = "Invalid credentials format";
+
+    private static final String DISCOVERY_SUCCESSFUL = "Discovery run successful. System name: ";
+
+    private static final String DISCOVERY_FAIL = "Discovery failed for IP: ";
+
+    private static final String DISCOVERY_STATUS_FAIL = "Failed to update discovery status";
+
+    private static final String PING_FAIL = "Ping Failed ";
+
+
     static
     {
         VALID_FIELDS.add(Constants.DATABASE_DISCOVERY_PROFILE_NAME);
@@ -202,7 +221,7 @@ public class DiscoveryService
             {
                 if (reply.succeeded())
                 {
-                    context.response().setStatusCode(200).end("Discovery Deleted Successfully");
+                    context.response().setStatusCode(200).end(DISCOVERY_DELETE_SUCCESSFUL);
                 }
                 else
                 {
@@ -256,7 +275,7 @@ public class DiscoveryService
                 {
                     logger.error("No discovery data found for profile id: {}", discoveryProfileId);
 
-                    context.response().setStatusCode(404).end("Discovery not found");
+                    context.response().setStatusCode(404).end(DISCOVERY_NOT_FOUND);
 
                     return;
                 }
@@ -267,7 +286,7 @@ public class DiscoveryService
 
                 if (targetIp == null || targetIp.isEmpty())
                 {
-                    context.response().setStatusCode(400).end("Target IP not found in discovery data");
+                    context.response().setStatusCode(400).end(IP_NOT_FOUND);
 
                     return;
                 }
@@ -286,9 +305,9 @@ public class DiscoveryService
                     {
                         var deviceType = discovery.getString(Constants.SYSTEM_TYPE);
 
-                        if (!deviceType.equalsIgnoreCase("snmp"))
+                        if (!deviceType.equalsIgnoreCase(Constants.SNMP))
                         {
-                            context.response().setStatusCode(400).end("Invalid device type, discovery is not supported for this device type");
+                            context.response().setStatusCode(400).end(INVALID_DEVICE_TYPE);
 
                             return;
                         }
@@ -297,7 +316,7 @@ public class DiscoveryService
 
                         if (credentials == null)
                         {
-                            context.response().setStatusCode(500).end("Invalid credentials format");
+                            context.response().setStatusCode(500).end(INVALID_CREDENTIAL_FORMAT);
 
                             return;
                         }
@@ -313,9 +332,9 @@ public class DiscoveryService
                         {
                             if (zmqResult.failed())
                             {
-                                logger.info("No response from ZMQ server");
+                                logger.info(Constants.MESSAGE_ZMQ_NO_RESPONSE);
 
-                                context.response().setStatusCode(504).end("No response from ZMQ server");
+                                context.response().setStatusCode(504).end(Constants.MESSAGE_ZMQ_NO_RESPONSE);
 
                                 return;
                             }
@@ -338,18 +357,18 @@ public class DiscoveryService
                                 {
                                     if (isSuccess)
                                     {
-                                        context.response().setStatusCode(200).end("Discovery run successful. System name: " + zmqResponseJson.getJsonObject("data").getString("systemName"));
+                                        context.response().setStatusCode(200).end(DISCOVERY_SUCCESSFUL + zmqResponseJson.getJsonObject(Constants.DATA).getString(Constants.SYSTEM_NAME));
                                     }
                                     else
                                     {
-                                        context.response().setStatusCode(500).end("Discovery failed for IP: " + targetIp);
+                                        context.response().setStatusCode(500).end(DISCOVERY_FAIL + targetIp);
                                     }
                                 }
                                 else
                                 {
                                     logger.error("Failed to update discovery status for profile name: {}", discoveryProfileId);
 
-                                    context.response().setStatusCode(500).end("Failed to update discovery status");
+                                    context.response().setStatusCode(500).end(DISCOVERY_STATUS_FAIL);
                                 }
                             });
                         });
@@ -358,7 +377,7 @@ public class DiscoveryService
                     {
                         logger.error("Ping failed for IP: {}", targetIp);
 
-                        context.response().setStatusCode(400).end("Ping failed");
+                        context.response().setStatusCode(400).end(PING_FAIL);
                     }
                 });
             });
@@ -367,7 +386,7 @@ public class DiscoveryService
             {
                 logger.error("Invalid discoveryProfileName: {}", discoveryProfileId);
 
-                context.response().setStatusCode(400).end("Invalid discoveryProfileName. It must be a numeric value.");
+                context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
 
             }
     }

@@ -61,6 +61,8 @@ public class Constants
 
     public static final String SYSTEM_TYPE = "system_type";
 
+    public static final String SYSTEM_NAME = "systemName";
+
     public static final String CREDENTIALS = "credentials";
 
     public static final String COMMUNITY = "community";
@@ -110,5 +112,6 @@ public class Constants
 
     public static final String MESSAGE_QUERY_SUCCESSFUL = "Query executed successfully";
 
+    public static final String MESSAGE_ZMQ_NO_RESPONSE = "No response from ZMQ server";
 
 }

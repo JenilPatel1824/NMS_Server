@@ -1,5 +1,6 @@
 package io.vertx.nms.service;
 
+import com.sun.tools.jconsole.JConsoleContext;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.JsonArray;
@@ -21,6 +22,12 @@ public class ProvisionService
     private static final String NO = "no";
 
     private static final String PROVISION = "provision";
+
+    private static final String INVALID_STATUS = "Bad Request: Status must be either 'yes' or 'no'";
+
+    private static final String PROVISION_UPDATE_SUCCESSFUL = "Provision status updated successfully";
+
+    private static final String DATA_NOT_FOUND ="No data found for discoveryProfileId: ";
 
     public ProvisionService(Vertx vertx)
     {
@@ -45,7 +52,7 @@ public class ProvisionService
         }
         else
         {
-            context.response().setStatusCode(400).end("Bad Request: Status must be either 'yes' or 'no'");
+            context.response().setStatusCode(400).end(INVALID_STATUS);
 
             return;
         }
@@ -68,7 +75,7 @@ public class ProvisionService
             {
                 if (reply.succeeded())
                 {
-                    context.response().setStatusCode(200).end("Provision status updated successfully");
+                    context.response().setStatusCode(200).end(PROVISION_UPDATE_SUCCESSFUL);
                 }
                 else
                 {
@@ -115,7 +122,7 @@ public class ProvisionService
 
                     if (resultObject == null)
                     {
-                        context.response().setStatusCode(500).end("Unexpected response format from database service");
+                        context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
 
                         return;
                     }
@@ -124,7 +131,7 @@ public class ProvisionService
 
                     if (results == null || results.isEmpty())
                     {
-                        context.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE, "No data found for discoveryProfileName: " + discoveryProfileId).encode());
+                        context.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE, DATA_NOT_FOUND + discoveryProfileId).encode());
 
                         return;
                     }
@@ -183,7 +190,7 @@ public class ProvisionService
 
                 if (resultObject == null)
                 {
-                    context.response().setStatusCode(500).end("Unexpected response format from database service");
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
 
                     return;
                 }
@@ -192,7 +199,7 @@ public class ProvisionService
 
                 if (results == null || results.isEmpty())
                 {
-                    context.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE, "No data found").encode());
+                    context.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE, DATA_NOT_FOUND).encode());
 
                     return;
                 }

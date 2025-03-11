@@ -23,6 +23,8 @@ public class ProvisionHandler
 
     private static final String PROVISION_ALL_DATA_URL = "/data";
 
+    private static final String REQUIRED_STATUS = "Parameter 'status' is required.";
+
     public ProvisionHandler(Vertx vertx)
     {
         this.vertx = vertx;
@@ -62,7 +64,7 @@ public class ProvisionHandler
 
         if (status == null || status.isEmpty())
         {
-            context.response().setStatusCode(400).end("Parameter 'status' is required.");
+            context.response().setStatusCode(400).end(REQUIRED_STATUS);
 
             return;
         }

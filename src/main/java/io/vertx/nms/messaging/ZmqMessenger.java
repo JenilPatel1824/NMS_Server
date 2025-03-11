@@ -89,17 +89,15 @@ public class ZmqMessenger extends AbstractVerticle
     {
         logger.info("{} zmq.send request {}", Thread.currentThread().getName(), message.body());
 
-        var request = message.body();
-
         var requestId =  UUID.randomUUID().toString();
 
-        request.put(REQUEST_ID, requestId);
+        message.body().put(REQUEST_ID, requestId);
 
         pendingRequests.put(requestId, new PendingRequest(message, System.currentTimeMillis()));
 
         dealer.send("", ZMQ.SNDMORE);
 
-        dealer.send(request.toString());
+        dealer.send(message.body().toString());
     }
 
      // Checks for and processes any incoming responses from the ZMQ dealer socket.
@@ -152,24 +150,19 @@ public class ZmqMessenger extends AbstractVerticle
     {
         var now = System.currentTimeMillis();
 
-        var iterator = pendingRequests.entrySet().iterator();
-
-        while (iterator.hasNext())
+        var timedOutRequests = pendingRequests.entrySet().stream()
+                .filter(entry -> now - entry.getValue().timestamp >= REQUEST_TIMEOUT_MS)
+                .toList();
+        timedOutRequests.forEach(entry ->
         {
-            var entry = iterator.next();
+            logger.warn("Request {} timed out", entry.getKey());
 
-            var pendingRequest = entry.getValue();
+            entry.getValue().message.fail(408, "Request timed out");
 
-            if (now - pendingRequest.timestamp >= REQUEST_TIMEOUT_MS)
-            {
-                logger.warn("Request {} timed out", entry.getKey());
-
-                pendingRequest.message.fail(408, "Request timed out");
-
-                iterator.remove();
-            }
-        }
+            pendingRequests.remove(entry.getKey());
+        });
     }
+
 
     @Override
     public void stop(Promise<Void> stopPromise)

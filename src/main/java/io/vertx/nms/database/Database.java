@@ -24,8 +24,8 @@ public class Database extends AbstractVerticle
 
     private PgPool pgClient;
 
-// Initializes the database connection and ensures necessary tables exist.
-// Sets up an event bus consumer for handling database queries.
+    // Initializes the database connection and ensures necessary tables exist.
+    // Sets up an event bus consumer for handling database queries.
     @Override
     public void start(Promise<Void> startPromise)
     {
@@ -72,7 +72,7 @@ public class Database extends AbstractVerticle
 
             var params = request.getJsonArray(Constants.PARAMS);
 
-            if (params == null)
+            if (request.getJsonArray(Constants.PARAMS) == null)
             {
                 params = new JsonArray();
             }
@@ -112,29 +112,32 @@ public class Database extends AbstractVerticle
 
                     if (finalQuery.trim().toLowerCase().startsWith(Constants.SELECT))
                     {
-                        var resultData = StreamSupport.stream(rows.spliterator(), false)
-                                .map(row ->
+                        var rowJson = new JsonObject();
+
+                        var resultData = new JsonArray();
+
+                        rows.forEach(row ->
+                        {
+                            rowJson.clear();
+
+                            IntStream.range(0, row.size()).forEach(i ->
+                            {
+                                var columnName = row.getColumnName(i);
+
+                                var value = row.getValue(i);
+
+                                if (Constants.POLLED_AT.equalsIgnoreCase(columnName) && value instanceof LocalDateTime)
                                 {
-                                    var rowJson = new JsonObject();
+                                    rowJson.put(columnName, ((LocalDateTime) value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                                }
+                                else
+                                {
+                                    rowJson.put(columnName, value);
+                                }
+                            });
 
-                                    IntStream.range(0, row.size()).forEach(i ->
-                                    {
-                                        var columnName = row.getColumnName(i);
-                                        var value = row.getValue(i);
-
-                                        if (Constants.POLLED_AT.equalsIgnoreCase(columnName) && value instanceof LocalDateTime)
-                                        {
-                                            rowJson.put(columnName, ((LocalDateTime) value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                                        }
-                                        else
-                                        {
-                                            rowJson.put(columnName, value);
-                                        }
-                                    });
-
-                                    return rowJson;
-                                })
-                                .collect(JsonArray::new, JsonArray::add, JsonArray::addAll);
+                            resultData.add(rowJson.copy());
+                        });
 
                         response.put(Constants.DATA, resultData);
                     }
@@ -174,31 +177,31 @@ public class Database extends AbstractVerticle
         var promise = Promise.promise();
 
         var createTablesQuery = """
-    CREATE TABLE IF NOT EXISTS credential_profile (
-        id SERIAL PRIMARY KEY,
-        credential_profile_name TEXT UNIQUE NOT NULL,
-        system_type TEXT NOT NULL,
-        credentials JSONB NOT NULL
-    );
+            CREATE TABLE IF NOT EXISTS credential_profile (
+            id SERIAL PRIMARY KEY,
+            credential_profile_name TEXT UNIQUE NOT NULL,
+            system_type TEXT NOT NULL,
+            credentials JSONB NOT NULL
+            );
 
-    CREATE TABLE IF NOT EXISTS discovery_profiles (
-        id SERIAL PRIMARY KEY,
-        discovery_profile_name TEXT UNIQUE NOT NULL,
-        credential_profile_id INT NOT NULL,
-        ip INET NOT NULL,
-        discovery BOOLEAN,
-        provision BOOLEAN,
-        FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE CASCADE
-    );
+            CREATE TABLE IF NOT EXISTS discovery_profiles (
+            id SERIAL PRIMARY KEY,
+            discovery_profile_name TEXT UNIQUE NOT NULL,
+            credential_profile_id INT NOT NULL,
+            ip INET NOT NULL,
+            discovery BOOLEAN,
+            provision BOOLEAN,
+            FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE CASCADE
+            );
 
-    CREATE TABLE IF NOT EXISTS provision_data (
-        id SERIAL PRIMARY KEY,
-        discovery_profile_id INT NOT NULL,
-        data JSONB NOT NULL,
-        polled_at TEXT,
-        FOREIGN KEY (discovery_profile_id) REFERENCES discovery_profiles(id) ON DELETE CASCADE
-    );
-""";
+            CREATE TABLE IF NOT EXISTS provision_data (
+            id SERIAL PRIMARY KEY,
+            discovery_profile_id INT NOT NULL,
+            data JSONB NOT NULL,
+            polled_at TEXT,
+            FOREIGN KEY (discovery_profile_id) REFERENCES discovery_profiles(id) ON DELETE CASCADE
+            );
+        """;
 
         pgClient.query(createTablesQuery).execute(ar ->
         {

@@ -15,6 +15,10 @@ public class CredentialService
 
     private final EventBus eventBus;
 
+    private static final String INVALID_CREDENTIAL_ID = "Invalid credentialProfileId. It must be a numeric value.";
+
+    private static final String MISSING_REQUIRED_FIELD = "Required fields: credential_profile_name, system_type, credentials";
+
     public CredentialService(EventBus eventBus)
     {
         this.eventBus = eventBus;
@@ -83,7 +87,7 @@ public class CredentialService
         {
             logger.error("Invalid credential profile ID format: {}", credentialProfileId);
 
-            context.response().setStatusCode(400).end("Invalid credential profile ID format.");
+            context.response().setStatusCode(400).end(INVALID_CREDENTIAL_ID);
         }
     }
 
@@ -153,7 +157,7 @@ public class CredentialService
         {
             logger.error("Invalid credentialProfileId: {}", credentialProfileId);
 
-            context.response().setStatusCode(400).end("Invalid credentialProfileId. It must be a numeric value.");
+            context.response().setStatusCode(400).end(INVALID_CREDENTIAL_ID);
         }
     }
 
@@ -191,7 +195,7 @@ public class CredentialService
         {
             logger.error("Invalid credentialProfileId: {}", credentialProfileId);
 
-            context.response().setStatusCode(400).end("Invalid credentialProfileId. It must be a numeric value.");
+            context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
         }
     }
 
@@ -204,7 +208,7 @@ public class CredentialService
                 !requestBody.containsKey(Constants.SYSTEM_TYPE) || requestBody.getString(Constants.SYSTEM_TYPE).isEmpty() ||
                 !requestBody.containsKey(Constants.CREDENTIALS) || requestBody.getJsonObject(Constants.CREDENTIALS).isEmpty()) {
 
-            context.response().setStatusCode(400).end("Required fields: credential_profile_name, system_type, credentials");
+            context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD);
 
             return true;
         }
@@ -215,7 +219,7 @@ public class CredentialService
 
         if (Constants.SNMP.equalsIgnoreCase(systemType) && !credentials.containsKey(Constants.COMMUNITY) && !credentials.containsKey(Constants.VERSION))
         {
-            context.response().setStatusCode(400).end("SNMP system type requires 'community and version' in credentials");
+            context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD);
 
             return true;
         }
