@@ -1,7 +1,6 @@
 package io.vertx.nms.http.handler;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.nms.util.Constants;
 import org.slf4j.Logger;
@@ -36,7 +35,7 @@ public class DiscoveryHandler
         {
             var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
-            logger.info("Discovery Get/:");
+            logger.info("Discovery Get/: {}", discoveryProfileId);
 
             if (discoveryProfileId == null || discoveryProfileId.isEmpty())
             {
@@ -52,7 +51,7 @@ public class DiscoveryHandler
 
         discoveryRouter.post("/").handler(context ->
         {
-            logger.info("Discovery Post/:");
+            logger.info("Discovery Post/: ");
 
             context.request().bodyHandler(buffer ->
             {
@@ -78,9 +77,9 @@ public class DiscoveryHandler
 
         discoveryRouter.put(DISCOVERY_PROFILE_ID_URL).handler(context ->
         {
-            logger.info("Discovery Put/:");
-
             var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
+
+            logger.info("Discovery Put/:{}", discoveryProfileId);
 
             if (discoveryProfileId == null || discoveryProfileId.isEmpty())
             {
@@ -114,9 +113,9 @@ public class DiscoveryHandler
 
         discoveryRouter.delete(DISCOVERY_PROFILE_ID_URL).handler(context ->
         {
-            logger.info("Discovery Delete/:");
-
             var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
+
+            logger.info("Discovery Delete/: {}", discoveryProfileId);
 
             if (discoveryProfileId == null || discoveryProfileId.isEmpty())
             {
@@ -130,9 +129,9 @@ public class DiscoveryHandler
 
         discoveryRouter.post(DISCOVERY_RUN_URL).handler(context ->
         {
-            logger.info("Discovery Run/:");
-
             var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
+
+            logger.info("Discovery Run/:{}", discoveryProfileId);
 
             if (discoveryProfileId == null || discoveryProfileId.isEmpty())
             {

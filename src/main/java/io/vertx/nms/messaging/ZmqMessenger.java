@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,7 +27,7 @@ public class ZmqMessenger extends AbstractVerticle
 
     private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 2000;
 
-    private Map<String, PendingRequest> pendingRequests = new HashMap<>();
+    private final Map<String, PendingRequest> pendingRequests = new HashMap<>();
 
     private static final String REQUEST_ID = "request_id";
 
@@ -87,7 +86,7 @@ public class ZmqMessenger extends AbstractVerticle
     // @param message The incoming message containing the ZMQ request.
     private void handleRequest(Message<JsonObject> message)
     {
-        logger.info("{} zmq.send request {}", Thread.currentThread().getName(), message.body());
+        logger.debug("{} zmq.send request {}", Thread.currentThread().getName(), message.body());
 
         var requestId =  UUID.randomUUID().toString();
 
@@ -126,7 +125,7 @@ public class ZmqMessenger extends AbstractVerticle
 
                  if (pendingRequest != null)
                  {
-                     logger.info("{} Replying ", Thread.currentThread());
+                     logger.debug("{} Replying ", Thread.currentThread());
 
                      pendingRequest.message.reply(replyJson);
 

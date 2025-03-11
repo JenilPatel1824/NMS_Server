@@ -40,7 +40,7 @@ public class QueryBuilder
 // @return QueryResult containing the constructed query string and parameters.
     public static QueryResult buildQuery(JsonObject request)
     {
-        var operation = request.getString(Constants.OPERATION, "").toLowerCase();
+        var operation = request.getString(Constants.OPERATION).toLowerCase();
 
         var tableName = request.getString(Constants.TABLE_NAME);
 

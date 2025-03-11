@@ -1,9 +1,7 @@
 package io.vertx.nms.http.handler;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.json.DecodeException;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.nms.service.CredentialService;
 import io.vertx.nms.util.Constants;
@@ -40,7 +38,7 @@ public class CredentialHandler
 
         credentialRouter.post("/").handler(context ->
         {
-            logger.debug("CredentialHandler Post");
+            logger.info("CredentialHandler Post");
 
             context.request().bodyHandler(buffer ->
             {
@@ -65,9 +63,9 @@ public class CredentialHandler
 
         credentialRouter.get(CREDENTIAL_PROFILE_ID_URL).handler(context ->
         {
-            logger.debug("CredentialHandler Get/:");
-
             var credentialProfileId = context.pathParam(CREDENTIAL_PROFILE_ID);
+
+            logger.info("CredentialHandler Get/:{}", credentialProfileId);
 
             if (credentialProfileId == null || credentialProfileId.isEmpty())
             {
@@ -82,9 +80,9 @@ public class CredentialHandler
 
         credentialRouter.put(CREDENTIAL_PROFILE_ID_URL).handler(context ->
         {
-            logger.debug("CredentialHandler Put/:");
-
             var credentialProfileId = context.pathParam(CREDENTIAL_PROFILE_ID);
+
+            logger.info("CredentialHandler Put/:{}", credentialProfileId);
 
             if (credentialProfileId == null || credentialProfileId.isEmpty())
             {
@@ -118,9 +116,9 @@ public class CredentialHandler
 
         credentialRouter.delete(CREDENTIAL_PROFILE_ID_URL).handler(context ->
         {
-            logger.debug("CredentialHandler Delete");
-
             var credentialProfileId = context.pathParam(CREDENTIAL_PROFILE_ID);
+
+            logger.info("CredentialHandler Delete {}", credentialProfileId);
 
             if (credentialProfileId == null || credentialProfileId.isEmpty())
             {

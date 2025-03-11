@@ -49,11 +49,11 @@ public class ProvisionHandler
 
     private void handleUpdateProvision(RoutingContext context)
     {
-        logger.debug("ProvisionHandler PUT /:discoveryProfileId/:status");
-
         var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
         var status = context.pathParam(Constants.STATUS);
+
+        logger.info("ProvisionHandler PUT /:discoveryProfileId/:status {} {}", discoveryProfileId, status);
 
         if (discoveryProfileId == null || discoveryProfileId.isEmpty())
         {
@@ -74,9 +74,9 @@ public class ProvisionHandler
 
     private void handleGetProvisionData(RoutingContext context)
     {
-        logger.debug("ProvisionHandler GET /data/:discoveryProfileName");
-
         var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
+
+        logger.info("ProvisionHandler GET /data/:discoveryProfileName {}", discoveryProfileId);
 
         if (discoveryProfileId == null || discoveryProfileId.isEmpty())
         {
@@ -90,7 +90,7 @@ public class ProvisionHandler
 
     private void handleGetAllProvisionData(RoutingContext context)
     {
-        logger.debug("ProvisionHandler GET /data");
+        logger.info("ProvisionHandler GET /data");
 
         provisionService.getAllProvisionData(context);
     }

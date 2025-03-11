@@ -1,5 +1,7 @@
 package io.vertx.nms.engine;
 
+
+//todo - change periodic, remove 1lakh records, reduce batch size, change polling interval, reduce workers
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -30,7 +32,7 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 3000;
+    private static final long FETCH_DEVICE_INTERVAL = 300000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -108,9 +110,9 @@ public class PollingEngine extends AbstractVerticle
 
         vertx.<JsonObject>eventBus().<JsonObject>request(ZMQ_REQUEST_ADDRESS, device,new DeliveryOptions().setSendTimeout(270000),reply ->
         {
-            if (reply.succeeded() && reply.result().body().getString(Constants.STATUS).equalsIgnoreCase("success"))
+            if (reply.succeeded() && reply.result().body().getString(Constants.STATUS).equalsIgnoreCase(Constants.SUCCESS))
             {
-                addToBatch(reply.result().body().getJsonObject("data"), device.getLong(Constants.ID));
+                addToBatch(reply.result().body().getJsonObject(Constants.DATA), device.getLong(Constants.ID));
             }
             else
             {
