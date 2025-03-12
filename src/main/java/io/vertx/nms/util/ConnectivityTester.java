@@ -22,9 +22,9 @@ public class ConnectivityTester
 
             while ((line = reader.readLine()) != null)
             {
-                if (line.contains("0% packet loss"))
+                if (line.contains("100% packet loss"))
                 {
-                    return true;
+                    return false;
                 }
             }
             process.waitFor();
