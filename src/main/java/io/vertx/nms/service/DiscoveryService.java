@@ -347,7 +347,7 @@ public class DiscoveryService
                                     .put(Constants.OPERATION, Constants.UPDATE)
                                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                                     .put(Constants.DATA, new JsonObject().put(Constants.DISCOVERY, isSuccess))
-                                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, discoveryProfileId));
+                                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
 
                             var queryResult = QueryBuilder.buildQuery(request);
 
