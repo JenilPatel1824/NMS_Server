@@ -30,7 +30,7 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 30000000;
+    private static final long FETCH_DEVICE_INTERVAL = 3000000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 

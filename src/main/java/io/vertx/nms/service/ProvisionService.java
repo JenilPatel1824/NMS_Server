@@ -66,7 +66,7 @@ public class ProvisionService
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_DISCOVERY_PROFILE)
                     .put(Constants.DATA, new JsonObject().put(PROVISION, provisionStatus))
                     .put(Constants.CONDITION, new JsonObject()
-                            .put(Constants.DATABASE_DISCOVERY_PROFILE_ID, profileId)
+                            .put(Constants.ID, profileId)
                             .put(Constants.DISCOVERY, true));
 
             var queryResult = QueryBuilder.buildQuery(request);
