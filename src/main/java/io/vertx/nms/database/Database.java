@@ -188,7 +188,7 @@ public class Database extends AbstractVerticle
             id SERIAL PRIMARY KEY,
             discovery_profile_name TEXT UNIQUE NOT NULL,
             credential_profile_id INT NOT NULL,
-            ip INET NOT NULL,
+            ip text NOT NULL,
             discovery BOOLEAN,
             provision BOOLEAN,
             FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE CASCADE
@@ -198,7 +198,7 @@ public class Database extends AbstractVerticle
             id SERIAL PRIMARY KEY,
             discovery_profile_id INT NOT NULL,
             data JSONB NOT NULL,
-            polled_at TEXT,
+            polled_at TIMESTAMP WITHOUT TIME ZONE,
             FOREIGN KEY (discovery_profile_id) REFERENCES discovery_profiles(id) ON DELETE CASCADE
             );
         """;
