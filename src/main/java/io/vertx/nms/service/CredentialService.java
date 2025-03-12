@@ -17,7 +17,7 @@ public class CredentialService
 
     private static final String INVALID_CREDENTIAL_ID = "Invalid credentialProfileId. It must be a numeric value.";
 
-    private static final String MISSING_REQUIRED_FIELD = "Required fields: credential_profile_name, system_type, credentials";
+    private static final String MISSING_REQUIRED_FIELD = "Missing Required field or Invalid field value.";
 
     public CredentialService(EventBus eventBus)
     {
@@ -96,7 +96,7 @@ public class CredentialService
     // @param context The RoutingContext containing the request and response.
     public void createCredential(JsonObject requestBody, RoutingContext context)
     {
-        if (isValidRequestBody(requestBody, context)) return;
+        if (!isValidRequestBody(requestBody, context)) return;
 
         var request = new JsonObject()
                 .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
@@ -130,6 +130,12 @@ public class CredentialService
         {
             var profileId = Long.parseLong(credentialProfileId);
 
+            if(!isCompleteJson(requestBody))
+            {
+                context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD);
+
+                return;
+            }
 
             var request = new JsonObject()
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_CREDENTIAL_PROFILE)
@@ -204,25 +210,66 @@ public class CredentialService
     // @param context The RoutingContext containing the request and response.
     private boolean isValidRequestBody(JsonObject requestBody, RoutingContext context)
     {
-        if (!requestBody.containsKey(Constants.DATABASE_CREDENTIAL_PROFILE_NAME) || requestBody.getString(Constants.DATABASE_CREDENTIAL_PROFILE_NAME).isEmpty() ||
-                !requestBody.containsKey(Constants.SYSTEM_TYPE) || requestBody.getString(Constants.SYSTEM_TYPE).isEmpty() ||
-                !requestBody.containsKey(Constants.CREDENTIALS) || requestBody.getJsonObject(Constants.CREDENTIALS).isEmpty()) {
-
+        if (!requestBody.containsKey(Constants.DATABASE_CREDENTIAL_PROFILE_NAME) ||
+                requestBody.getString(Constants.DATABASE_CREDENTIAL_PROFILE_NAME) == null || requestBody.getString(Constants.DATABASE_CREDENTIAL_PROFILE_NAME).isEmpty() ||
+                !requestBody.containsKey(Constants.SYSTEM_TYPE) ||
+                requestBody.getString(Constants.SYSTEM_TYPE) == null || requestBody.getString(Constants.SYSTEM_TYPE).isEmpty() ||
+                !requestBody.containsKey(Constants.CREDENTIALS) ||
+                requestBody.getJsonObject(Constants.CREDENTIALS) == null || requestBody.getJsonObject(Constants.CREDENTIALS).isEmpty())
+        {
             context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD);
 
-            return true;
+            return false;
         }
 
         var systemType = requestBody.getString(Constants.SYSTEM_TYPE);
 
         var credentials = requestBody.getJsonObject(Constants.CREDENTIALS);
 
-        if (Constants.SNMP.equalsIgnoreCase(systemType) && !credentials.containsKey(Constants.COMMUNITY) && !credentials.containsKey(Constants.VERSION))
+        if (systemType == null || credentials == null)
         {
             context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD);
 
-            return true;
+            return false;
         }
-        return false;
+
+        if (Constants.SNMP.equalsIgnoreCase(systemType) &&
+                (!credentials.containsKey(Constants.COMMUNITY) || credentials.getString(Constants.COMMUNITY) == null ||
+                        !credentials.containsKey(Constants.VERSION) || credentials.getString(Constants.VERSION) == null))
+        {
+            context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD);
+
+            return false;
+        }
+        else if(!isCompleteJson(credentials))
+        {
+            context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isCompleteJson(JsonObject jsonObject)
+    {
+        for (String key : jsonObject.fieldNames())
+        {
+            Object value = jsonObject.getValue(key);
+
+            if (value == null)
+            {
+                return false;
+            }
+
+            if (value instanceof JsonObject)
+            {
+                if (!isCompleteJson((JsonObject) value))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }

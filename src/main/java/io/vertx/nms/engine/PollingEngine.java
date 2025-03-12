@@ -1,6 +1,4 @@
 package io.vertx.nms.engine;
-
-
 //todo - change periodic, remove 1lakh records, reduce batch size, change polling interval, reduce workers
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -32,7 +30,7 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 300000;
+    private static final long FETCH_DEVICE_INTERVAL = 3000000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
