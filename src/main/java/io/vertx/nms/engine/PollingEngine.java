@@ -1,5 +1,9 @@
 package io.vertx.nms.engine;
-//todo - change periodic, remove 1lakh records, reduce batch size, change polling interval, reduce workers
+//todo - change periodic, remove 1lakh records, reduce batch size, change polling interval, reduce workers, change timeout in go
+//todo, databsae change -done ,check from scratch test everything - done refactor- comments-space- var,
+
+// todo ppt, schema change, diagram change, extra feature, test case, cache,indexing
+//comment strings var,
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -30,7 +34,7 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 3000000;
+    private static final long FETCH_DEVICE_INTERVAL = 3000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -53,14 +57,15 @@ public class PollingEngine extends AbstractVerticle
     {
         var request = new JsonObject()
                 .put(Constants.OPERATION, Constants.SELECT)
-                .put(Constants.TABLE_NAME, "discovery_profiles d JOIN credential_profile c ON d.credential_profile_id = c.id")
+                .put(Constants.TABLE_NAME, "provisioning_jobs p " +
+                        "JOIN credential_profile c ON p.credential_profile_id = c.id")
                 .put(Constants.COLUMNS, new JsonArray()
-                        .add("d.id")
-                        .add("d.ip")
+                        .add("p.id AS job_id")
+                        .add("p.ip")
                         .add("c.system_type")
                         .add("c.credentials"))
                 .put(Constants.CONDITION, new JsonObject()
-                        .put("d.provision", true));
+                        .put("p.status", true));
 
         var queryResult = QueryBuilder.buildQuery(request);
 
@@ -101,17 +106,17 @@ public class PollingEngine extends AbstractVerticle
     {
         var credentials = device.getJsonObject(Constants.CREDENTIALS);
 
-                 device.put(Constants.IP, device.getString(Constants.IP)).put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
+        var request = new JsonObject().put(Constants.IP, device.getString(Constants.IP)).put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
                 .put(Constants.VERSION, credentials.getString(Constants.VERSION))
                 .put(Constants.REQUEST_TYPE, Constants.POLLING)
                 .put(Constants.PLUGIN_TYPE, device.getString(Constants.SYSTEM_TYPE));
 
-        vertx.<JsonObject>eventBus().<JsonObject>request(ZMQ_REQUEST_ADDRESS, device,new DeliveryOptions().setSendTimeout(270000),reply ->
+        vertx.<JsonObject>eventBus().<JsonObject>request(ZMQ_REQUEST_ADDRESS, request,new DeliveryOptions().setSendTimeout(270000),reply ->
         {
             if (reply.succeeded() && reply.result().body().getString(Constants.STATUS).equalsIgnoreCase(Constants.SUCCESS))
             {
-                addToBatch(reply.result().body().getJsonObject(Constants.DATA), device.getLong(Constants.ID));
-            }
+                addToBatch(reply.result().body().getJsonObject(Constants.DATA),
+                        device.getLong("job_id"));            }
             else
             {
                 logger.error("Failed to get SNMP response: {}", reply.cause().getMessage());
@@ -123,14 +128,14 @@ public class PollingEngine extends AbstractVerticle
     // If the batch size reaches the predefined limit, it triggers a flush operation.
     // @param snmpData The JSON object containing SNMP response data for the device.
     // @param discoveryProfileName The name of the discovery profile associated with the device.
-    private void addToBatch(JsonObject snmpData, long discoveryProfileId)
+    private void addToBatch(JsonObject snmpData, long jobId)
     {
         var istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
 
         var timestamp = istTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         var entry = new JsonObject()
-                .put(Constants.DATABASE_DISCOVERY_PROFILE_ID, discoveryProfileId)
+                .put(Constants.JOB_ID, jobId)
                 .put(Constants.DATA, snmpData)
                 .put(Constants.POLLED_AT, timestamp);
 
@@ -177,7 +182,7 @@ public class PollingEngine extends AbstractVerticle
 
          logger.info("Storing {} SNMP records in batch...", snmpDataList.size());
 
-         var queryBuilder = new StringBuilder("INSERT INTO provision_data (discovery_profile_id, data, polled_at) VALUES ");
+         var queryBuilder = new StringBuilder("INSERT INTO provision_data (job_id, data, polled_at) VALUES ");
 
          var params = new JsonArray();
 
@@ -187,7 +192,7 @@ public class PollingEngine extends AbstractVerticle
          {
              queryBuilder.append("($").append(index++).append(", $").append(index++).append(", $").append(index++).append("),");
 
-             params.add(data.getLong(Constants.DATABASE_DISCOVERY_PROFILE_ID))
+             params.add(data.getLong(Constants.JOB_ID))
                      .add(data.getJsonObject(Constants.DATA))
                      .add(data.getString(Constants.POLLED_AT));
          }

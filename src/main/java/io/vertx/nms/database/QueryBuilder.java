@@ -90,7 +90,7 @@ public class QueryBuilder
 
                 var setClauses = new ArrayList<String>();
 
-                for (String key : data.fieldNames())
+                for (var key : data.fieldNames())
                 {
                     setClauses.add(key + " = $" + paramIndex.getAndIncrement());
 

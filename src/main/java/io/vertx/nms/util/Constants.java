@@ -1,6 +1,7 @@
 package io.vertx.nms.util;
 
 import javax.swing.plaf.PanelUI;
+import java.util.Set;
 
 public class Constants
 {
@@ -22,6 +23,8 @@ public class Constants
     public static final String DATABASE_TABLE_CREDENTIAL_PROFILE = "credential_profile";
 
     public static final String DATABASE_TABLE_PROVISION_DATA = "provision_data";
+
+    public static final String DATABASE_TABLE_PROVISIONING_JOBS = "provisioning_jobs";
 
     public static final String DATABASE_ALL_COLUMN = "*";
 
@@ -97,6 +100,8 @@ public class Constants
 
     public static final String FAIL = "fail";
 
+    public static final String JOB_ID = "job_id";
+
 
     public static final String MESSAGE_EMPTY_REQUEST = "Bad request: Empty message body";
 
@@ -114,4 +119,10 @@ public class Constants
 
     public static final String MESSAGE_ZMQ_NO_RESPONSE = "No response from ZMQ server";
 
+    public static final String MESSAGE_BAD_REQUEST = "Bad Request";
+
+
+    public static final Set<String> REQUIRED_FIELDS_CREDENTIAL = Set.of(DATABASE_CREDENTIAL_PROFILE_NAME, SYSTEM_TYPE, CREDENTIALS);
+
+    public static final Set<String> REQUIRED_FIELDS_DISCOVERY = Set.of(DATABASE_DISCOVERY_PROFILE_NAME, IP, DATABASE_CREDENTIAL_PROFILE_ID);
 }

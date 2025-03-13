@@ -162,7 +162,6 @@ public class ZmqMessenger extends AbstractVerticle
         });
     }
 
-
     @Override
     public void stop(Promise<Void> stopPromise)
     {

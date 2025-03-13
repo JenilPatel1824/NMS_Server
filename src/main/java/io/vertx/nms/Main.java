@@ -3,39 +3,78 @@ package io.vertx.nms;
 import io.vertx.core.Vertx;
 import io.vertx.nms.database.Database;
 import io.vertx.nms.engine.PollingEngine;
-import io.vertx.nms.http.HttpServerVerticle;
+import io.vertx.nms.http.ApiServer;
 import io.vertx.nms.messaging.ZmqMessenger;
+import io.vertx.nms.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zeromq.ZMQ;
 
 public class Main
 {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
+    private static final String HEALTH_CHECK = "health_check";
+
+    private static final String OK = "ok";
+
     public static void main(String[] args)
     {
+        try (var context = ZMQ.context(1);
+             var socket = context.socket(ZMQ.REQ))
+        {
+            socket.connect(Constants.ZMQ_ADDRESS);
+
+            socket.send(HEALTH_CHECK, ZMQ.NOBLOCK);
+
+            socket.setReceiveTimeOut(500);
+
+            var response = socket.recvStr();
+
+            if (response == null)
+            {
+                logger.error("ZMQ server is not responding.");
+
+                socket.close();
+
+                System.exit(1);
+            }
+            else if (response.equals(OK))
+            {
+                logger.info("ZMQ server is available. Starting Vert.x application...");
+            }
+        }
+        catch (Exception e)
+        {
+            logger.error("Failed to connect to ZMQ server: {}", e.getMessage());
+
+            logger.error("ZMQ server is not available. Exiting application.");
+
+            return;
+        }
+
         var vertx = Vertx.vertx();
 
-        vertx.deployVerticle(new HttpServerVerticle())
-                .compose(httpId ->
+        vertx.deployVerticle(new ApiServer(vertx))
+                .compose(apiRes ->
                 {
-                    logger.info("HTTP server verticle deployed ");
+                    logger.info("HTTP server verticle deployed");
 
                     return vertx.deployVerticle(new Database());
                 })
-                .compose(dbId ->
+                .compose(dbRes ->
                 {
                     logger.info("Database verticle deployed");
 
                     return vertx.deployVerticle(new ZmqMessenger());
                 })
-                .compose(zmqId ->
+                .compose(zmqRes ->
                 {
-                    logger.info("ZMQ verticle deployed ");
+                    logger.info("ZMQ Messenger verticle deployed");
 
                     return vertx.deployVerticle(new PollingEngine());
                 })
-                .onSuccess(pollingId ->
+                .onSuccess(pollingRes ->
                 {
                     logger.info("Polling engine verticle deployed");
 
@@ -43,19 +82,9 @@ public class Main
                 })
                 .onFailure(err ->
                 {
-                    logger.error("One or more verticles failed to deploy: {}", err.getMessage());
+                    logger.error("Failed to deploy verticles: {}", err.getMessage());
 
-                    vertx.close(closeRes ->
-                    {
-                        if (closeRes.succeeded())
-                        {
-                            logger.error("Vert.x instance closed. Application stopped.");
-                        }
-                        else
-                        {
-                            logger.error("Failed to close Vert.x: {}", closeRes.cause().getMessage());
-                        }
-                    });
+                    vertx.close();
                 });
     }
 }

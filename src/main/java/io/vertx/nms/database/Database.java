@@ -92,7 +92,7 @@ public class Database extends AbstractVerticle
             {
                 var paramValue = params.getValue(i);
 
-                if (query.toLowerCase().contains(Constants.POLLED_AT) && paramValue instanceof String)
+                if ((query.toLowerCase().contains(Constants.POLLED_AT) && paramValue instanceof String) || (query.toLowerCase().contains("updated_at") && paramValue instanceof String))
                 {
                     tupleParams.addLocalDateTime(LocalDateTime.parse((String) paramValue, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 }
@@ -178,29 +178,34 @@ public class Database extends AbstractVerticle
 
         var createTablesQuery = """
             CREATE TABLE IF NOT EXISTS credential_profile (
-            id SERIAL PRIMARY KEY,
-            credential_profile_name TEXT UNIQUE NOT NULL,
-            system_type TEXT NOT NULL,
-            credentials JSONB NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS discovery_profiles (
-            id SERIAL PRIMARY KEY,
-            discovery_profile_name TEXT UNIQUE NOT NULL,
-            credential_profile_id INT NOT NULL,
-            ip text NOT NULL,
-            discovery BOOLEAN,
-            provision BOOLEAN,
-            FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE CASCADE
-            );
-
-            CREATE TABLE IF NOT EXISTS provision_data (
-            id SERIAL PRIMARY KEY,
-            discovery_profile_id INT NOT NULL,
-            data JSONB NOT NULL,
-            polled_at TIMESTAMP WITHOUT TIME ZONE,
-            FOREIGN KEY (discovery_profile_id) REFERENCES discovery_profiles(id) ON DELETE CASCADE
-            );
+                      id SERIAL PRIMARY KEY,
+                      credential_profile_name TEXT UNIQUE NOT NULL,
+                      system_type TEXT NOT NULL,
+                      credentials JSONB NOT NULL
+                  );
+                  
+                  CREATE TABLE IF NOT EXISTS discovery_profiles (
+                      id SERIAL PRIMARY KEY,
+                      discovery_profile_name TEXT UNIQUE NOT NULL,
+                      credential_profile_id INT,
+                      ip TEXT NOT NULL,
+                      FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
+                  );
+                  
+                  CREATE TABLE IF NOT EXISTS provisioning_jobs (
+                      id SERIAL PRIMARY KEY,
+                      credential_profile_id INT,
+                      ip TEXT NOT NULL,
+                      status BOOLEAN NOT NULL,
+                      FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
+                  );
+                  
+                  CREATE TABLE IF NOT EXISTS provision_data (
+                      id SERIAL PRIMARY KEY,
+                      job_id INT NOT NULL REFERENCES provisioning_jobs(id) ON DELETE CASCADE,
+                      data JSONB NOT NULL,
+                      polled_at TIMESTAMP
+                  );
         """;
 
         pgClient.query(createTablesQuery).execute(ar ->
