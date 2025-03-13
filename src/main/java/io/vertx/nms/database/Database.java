@@ -110,7 +110,7 @@ public class Database extends AbstractVerticle
 
                     var response = new JsonObject().put(Constants.STATUS, Constants.SUCCESS);
 
-                    if (finalQuery.trim().toLowerCase().startsWith(Constants.SELECT))
+                    if (finalQuery.trim().toLowerCase().startsWith(Constants.SELECT) || finalQuery.trim().toLowerCase().startsWith(Constants.WITH))
                     {
                         var rowJson = new JsonObject();
 
@@ -157,7 +157,6 @@ public class Database extends AbstractVerticle
                     {
                         response.put(Constants.MESSAGE, Constants.MESSAGE_QUERY_SUCCESSFUL);
                     }
-
                     message.reply(response);
                 }
                 else

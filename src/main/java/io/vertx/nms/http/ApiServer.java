@@ -37,6 +37,12 @@ public class ApiServer extends AbstractVerticle
 
     private static final String PROVISION_DATA_URL = "/data/:discoveryProfileId";
 
+    private static final String PROVISION_TOP_ERROR_URL = "/topError";
+
+    private static final String PROVISION_TOP_SPEED_URL = "/topSpeed";
+
+    private static final String PROVISION_TOP_UPTIME_URL = "/topRestarts";
+
     private static final String CREDENTIAL_PROFILE_ID = "credentialProfileId";
 
     private static final String REQUIRED_STATUS = "Parameter 'status' is required.";
@@ -333,6 +339,22 @@ public class ApiServer extends AbstractVerticle
             service.getProvisionData(discoveryProfileId, context);
         });
 
+        provisionRouter.get(PROVISION_TOP_ERROR_URL).handler(context->
+        {
+            service.getInterfacesByError(context);
+        });
+
+        provisionRouter.get(PROVISION_TOP_SPEED_URL).handler(context->
+        {
+            service.getInterfacesBySpeed(context);
+        });
+
+        provisionRouter.get(PROVISION_TOP_UPTIME_URL).handler(context->
+        {
+            service.getInterfacesByUptime(context);
+        });
+
         return provisionRouter;
+
     }
 }

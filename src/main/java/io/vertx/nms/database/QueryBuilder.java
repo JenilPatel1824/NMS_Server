@@ -52,7 +52,7 @@ public class QueryBuilder
 
         var query = new StringBuilder();
 
-        var parameters = new ArrayList<Object>();
+        var parameters = new ArrayList<>();
 
         var paramIndex = new AtomicInteger(1);
 

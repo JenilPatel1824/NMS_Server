@@ -2,8 +2,8 @@ package io.vertx.nms.engine;
 //todo - change periodic, remove 1lakh records, reduce batch size, change polling interval, reduce workers, change timeout in go
 //todo, databsae change -done ,check from scratch test everything - done refactor- comments-space- var,
 
-// todo ppt, schema change, diagram change, extra feature, test case, cache,indexing
-//comment strings var,
+// todo ppt, schema change, diagram change, test case -done , cache -na ,indexing -done
+// final comment spacing var
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -34,7 +34,7 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 3000;
+    private static final long FETCH_DEVICE_INTERVAL = 30000000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 

@@ -1,9 +1,6 @@
 package io.vertx.nms.service;
 
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -13,16 +10,7 @@ import io.vertx.nms.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-public class Service
-{
+public class Service {
     private static final Logger logger = LoggerFactory.getLogger(Service.class);
 
     private final Vertx vertx;
@@ -47,16 +35,13 @@ public class Service
 
     private static final String NO = "no";
 
-    private static final String PROVISION = "provision";
-
     private static final String INVALID_STATUS = "Bad Request: Status must be either 'yes' or 'no'";
 
     private static final String PROVISION_UPDATE_SUCCESSFUL = "Provision status updated successfully";
 
-    private static final String DATA_NOT_FOUND ="No data found for discoveryProfileId: ";
+    private static final String DATA_NOT_FOUND = "No data found for ProfileId: ";
 
-    public Service(Vertx vertx)
-    {
+    public Service(Vertx vertx) {
         this.vertx = vertx;
     }
 
@@ -119,7 +104,7 @@ public class Service
         {
             var profileId = Long.parseLong(id);
 
-            if (!Util.isValidRequest( requestBody, context))
+            if (!Util.isValidRequest(requestBody, context))
             {
                 return;
             }
@@ -229,8 +214,7 @@ public class Service
     // The ZMQ server responds with the discovery data, which is then updated in the database.
     // @param discoveryProfileId The id of the discovery profile to run.
     // @param context The RoutingContext containing the request and response.
-    public void runDiscovery(String discoveryProfileId, RoutingContext context)
-    {
+    public void runDiscovery(String discoveryProfileId, RoutingContext context) {
         try
         {
             var profileId = Long.parseLong(discoveryProfileId);
@@ -246,8 +230,7 @@ public class Service
                             .put(Constants.PARAMS, new JsonArray().add(profileId)),
                     fetchResult ->
                     {
-                        if (fetchResult.failed())
-                        {
+                        if (fetchResult.failed()) {
                             logger.error("Failed to fetch discovery for profile id: {}", discoveryProfileId);
 
                             context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
@@ -259,8 +242,7 @@ public class Service
 
                         var dataArray = result.getJsonArray(Constants.DATA);
 
-                        if (dataArray == null || dataArray.isEmpty())
-                        {
+                        if (dataArray == null || dataArray.isEmpty()) {
                             logger.error("No discovery data found or credential profile deleted for profile id: {}", discoveryProfileId);
 
                             context.response().setStatusCode(404).end(DISCOVERY_NOT_FOUND);
@@ -272,8 +254,7 @@ public class Service
 
                         var targetIp = discovery.getString(Constants.IP);
 
-                        if (targetIp == null || targetIp.isEmpty())
-                        {
+                        if (targetIp == null || targetIp.isEmpty()) {
                             context.response().setStatusCode(400).end(IP_NOT_FOUND);
 
                             return;
@@ -288,12 +269,10 @@ public class Service
                             promise.complete(isReachable);
                         }, res ->
                         {
-                            if (res.succeeded() && (Boolean) res.result())
-                            {
+                            if (res.succeeded() && (Boolean) res.result()) {
                                 var deviceType = discovery.getString(Constants.SYSTEM_TYPE);
 
-                                if (!deviceType.equalsIgnoreCase(Constants.SNMP))
-                                {
+                                if (!deviceType.equalsIgnoreCase(Constants.SNMP)) {
                                     context.response().setStatusCode(400).end(INVALID_DEVICE_TYPE);
 
                                     return;
@@ -301,8 +280,7 @@ public class Service
 
                                 var credentials = discovery.getJsonObject(Constants.CREDENTIALS);
 
-                                if (credentials == null)
-                                {
+                                if (credentials == null) {
                                     context.response().setStatusCode(500).end(INVALID_CREDENTIAL_FORMAT);
 
                                     return;
@@ -317,8 +295,7 @@ public class Service
 
                                 vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_ZMQ_ADDRESS, zmqRequest, zmqResult ->
                                 {
-                                    if (zmqResult.failed())
-                                    {
+                                    if (zmqResult.failed()) {
                                         logger.info(Constants.MESSAGE_ZMQ_NO_RESPONSE);
 
                                         context.response().setStatusCode(504).end(Constants.MESSAGE_ZMQ_NO_RESPONSE);
@@ -332,8 +309,7 @@ public class Service
 
                                     var isSuccess = Constants.SUCCESS.equalsIgnoreCase(zmqResponseJson.getString(Constants.STATUS));
 
-                                    if (!isSuccess)
-                                    {
+                                    if (!isSuccess) {
                                         context.response().setStatusCode(500).end(DISCOVERY_FAIL + targetIp);
 
                                         return;
@@ -347,8 +323,7 @@ public class Service
                                                     .put(Constants.PARAMS, new JsonArray().add(targetIp)),
                                             checkResult ->
                                             {
-                                                if (checkResult.failed())
-                                                {
+                                                if (checkResult.failed()) {
                                                     logger.error("Failed to check existing provisioning job for profile id: {}", discoveryProfileId);
 
                                                     context.response().setStatusCode(500).end(DISCOVERY_STATUS_FAIL);
@@ -358,23 +333,20 @@ public class Service
 
                                                 var existingDataArray = checkResult.result().body().getJsonArray(Constants.DATA);
 
-                                                if (existingDataArray != null && !existingDataArray.isEmpty())
-                                                {
+                                                if (existingDataArray != null && !existingDataArray.isEmpty()) {
                                                     var existingId = existingDataArray.getJsonObject(0).getLong(Constants.ID);
 
-                                                    if(existingDataArray.getJsonObject(0).getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID)==null)
-                                                    {
+                                                    if (existingDataArray.getJsonObject(0).getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID) == null) {
                                                         var request = new JsonObject().put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS)
                                                                 .put(Constants.OPERATION, Constants.UPDATE)
-                                                                .put(Constants.DATA,new JsonObject().put(Constants.DATABASE_CREDENTIAL_PROFILE_ID,dataArray.getJsonObject(0).getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID)))
+                                                                .put(Constants.DATA, new JsonObject().put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, dataArray.getJsonObject(0).getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID)))
                                                                 .put(Constants.CONDITION, new JsonObject().put(Constants.ID, existingId));
 
                                                         var queryResult = QueryBuilder.buildQuery(request);
 
-                                                        vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,new JsonObject().put(Constants.QUERY,queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()),reply->
+                                                        vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()), reply ->
                                                         {
-                                                            if(!reply.succeeded())
-                                                            {
+                                                            if (!reply.succeeded()) {
                                                                 logger.error("Failed to update provisioning job for profile id: {}", discoveryProfileId);
 
                                                                 context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
@@ -407,15 +379,12 @@ public class Service
                                                                 .put(Constants.PARAMS, queryResult.getParams()),
                                                         updateResult ->
                                                         {
-                                                            if (updateResult.succeeded())
-                                                            {
+                                                            if (updateResult.succeeded()) {
                                                                 var insertedId = updateResult.result().body().getLong(Constants.ID);
 
                                                                 context.response().setStatusCode(200).end(DISCOVERY_SUCCESSFUL + insertedId);
 
-                                                            }
-                                                            else
-                                                            {
+                                                            } else {
                                                                 logger.error("Failed to insert provisioning job for profile id: {}", discoveryProfileId);
 
                                                                 context.response().setStatusCode(500).end(DISCOVERY_STATUS_FAIL);
@@ -423,9 +392,7 @@ public class Service
                                                         });
                                             });
                                 });
-                            }
-                            else
-                            {
+                            } else {
                                 logger.error("Ping failed for IP: {}", targetIp);
 
                                 context.response().setStatusCode(400).end(PING_FAIL);
@@ -441,17 +408,16 @@ public class Service
         }
     }
 
-    public void updateProvisionStatus(String provisionId, String status, RoutingContext context)
-    {
+    public void updateProvisionStatus(String provisionId, String status, RoutingContext context) {
         try
         {
             boolean statusForDatabase;
 
-            if(status.equalsIgnoreCase(YES))
+            if (status.equalsIgnoreCase(YES))
             {
                 statusForDatabase = true;
             }
-            else if(status.equalsIgnoreCase(NO))
+            else if (status.equalsIgnoreCase(NO))
             {
                 statusForDatabase = false;
             }
@@ -461,9 +427,10 @@ public class Service
 
                 return;
             }
+
             var profileId = Long.parseLong(provisionId);
 
-            var request= new JsonObject()
+            var request = new JsonObject()
                     .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS)
                     .put(Constants.OPERATION, Constants.UPDATE)
                     .put(Constants.DATA, new JsonObject().put(Constants.STATUS, statusForDatabase))
@@ -475,23 +442,17 @@ public class Service
                     new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()),
                     reply ->
                     {
-                        if (reply.succeeded())
-                        {
+                        if (reply.succeeded()) {
                             var result = reply.result().body();
 
                             logger.info("Update result: {}", result);
 
-                            if (result.getLong(Constants.ID)==null)
-                            {
+                            if (result.getLong(Constants.ID) == null) {
                                 context.response().setStatusCode(404).end("No monitor found");
+                            } else {
+                                context.response().setStatusCode(200).end(PROVISION_UPDATE_SUCCESSFUL);
                             }
-                            else
-                            {
-                                context.response().setStatusCode(200).end("Provision status updated");
-                            }
-                        }
-                        else
-                        {
+                        } else {
                             logger.error("Operation failed: {}", reply.cause().getMessage());
 
                             context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
@@ -530,12 +491,10 @@ public class Service
 
             vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, fetchRequest, reply ->
             {
-                if (reply.succeeded())
-                {
+                if (reply.succeeded()) {
                     var resultObject = reply.result().body();
 
-                    if (resultObject == null)
-                    {
+                    if (resultObject == null) {
                         context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
 
                         return;
@@ -543,9 +502,8 @@ public class Service
 
                     var results = resultObject.getJsonArray(Constants.DATA);
 
-                    if (results == null || results.isEmpty())
-                    {
-                        context.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE, "No data found for job ID: " + jobId).encode());
+                    if (results == null || results.isEmpty()) {
+                        context.response().setStatusCode(404).end(new JsonObject().put(Constants.MESSAGE, DATA_NOT_FOUND + jobId).encode());
 
                         return;
                     }
@@ -577,5 +535,119 @@ public class Service
 
             context.response().setStatusCode(400).end(new JsonObject().put(Constants.MESSAGE, Constants.MESSAGE_INVALID_PROFILE_ID).encode());
         }
+    }
+
+    public void getInterfacesByError(RoutingContext context)
+    {
+        var query = "WITH error_data AS ( "
+                + "SELECT pj.ip, "
+                + "       interface->>'interface.name' AS interface_name, "
+                + "       SUM( "
+                + "           (interface->>'interface.sent.error.packets')::INT + "
+                + "           (interface->>'interface.received.error.packets')::INT "
+                + "       ) AS total_errors "
+                + "FROM provision_data pd "
+                + "JOIN provisioning_jobs pj ON pd.job_id = pj.id "
+                + "CROSS JOIN jsonb_array_elements(pd.data->'interfaces') AS interface "
+                + "WHERE pd.polled_at >= NOW() - INTERVAL '24 HOURS' "
+                + "GROUP BY pj.ip, interface->>'interface.name' "
+                + ") "
+                + "SELECT ip, "
+                + "       interface_name, "
+                + "       total_errors, "
+                + "       DENSE_RANK() OVER (ORDER BY total_errors DESC) AS rank "
+                + "FROM error_data "
+                + "ORDER BY total_errors DESC "
+                + "LIMIT 10;";
+
+        executeAndRespond(context, query);
+
+    }
+
+    public void getInterfacesBySpeed(RoutingContext context)
+    {
+        var query = """
+                WITH error_data AS ( 
+                    SELECT pj.ip, 
+                           interface->>'interface.name' AS interface_name, 
+                           SUM( 
+                               (interface->>'interface.sent.error.packets')::INT + 
+                               (interface->>'interface.received.error.packets')::INT 
+                           ) AS total_errors 
+                    FROM provision_data pd 
+                    JOIN provisioning_jobs pj ON pd.job_id = pj.id 
+                    CROSS JOIN jsonb_array_elements(pd.data->'interfaces') AS interface 
+                    WHERE pd.polled_at >= NOW() - INTERVAL '24 HOURS' 
+                    GROUP BY pj.ip, interface->>'interface.name' 
+                ) 
+                SELECT ip, 
+                       interface_name, 
+                       total_errors, 
+                       DENSE_RANK() OVER (ORDER BY total_errors DESC) AS rank 
+                FROM error_data 
+                ORDER BY total_errors DESC 
+                LIMIT 10;
+        """;
+
+        executeAndRespond(context, query);
+
+    }
+
+    public void getInterfacesByUptime(RoutingContext context)
+    {
+        var query = """
+    WITH uptime_seconds AS (
+        SELECT 
+            job_id,
+            polled_at,
+            COALESCE(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' days, ', 1)::INT, 0) * 86400 +
+            COALESCE(SPLIT_PART(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' days, ', 2), ' hours, ', 1)::INT, 0) * 3600 +
+            COALESCE(SPLIT_PART(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' hours, ', 2), ' minutes, ', 1)::INT, 0) * 60 +
+            COALESCE(SPLIT_PART(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' minutes, ', 2), ' seconds', 1)::INT, 0) AS total_seconds
+        FROM provision_data
+        WHERE polled_at >= NOW() - INTERVAL '7 days'
+    ),
+    reboot_detection AS (
+        SELECT 
+            job_id,
+            total_seconds,
+            LAG(total_seconds) OVER (PARTITION BY job_id ORDER BY polled_at) AS prev_total_seconds
+        FROM uptime_seconds
+    ),
+    reboot_counts AS (
+        SELECT 
+            pj.ip AS device_ip,
+            COUNT(*) FILTER (WHERE total_seconds < prev_total_seconds) AS reboot_count
+        FROM reboot_detection rd
+        JOIN provisioning_jobs pj ON rd.job_id = pj.id
+        GROUP BY pj.ip
+    )
+    SELECT 
+        device_ip,
+        reboot_count,
+        DENSE_RANK() OVER (ORDER BY reboot_count DESC) AS rank
+    FROM reboot_counts
+    ORDER BY reboot_count DESC
+    LIMIT 10;
+""";
+        executeAndRespond(context, query);
+    }
+
+    private void executeAndRespond(RoutingContext context, String query)
+    {
+        vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
+                new JsonObject().put(Constants.QUERY, query).put(Constants.PARAMS,new JsonArray()), reply ->
+                {
+                    if (reply.succeeded())
+                    {
+                        context.response().setStatusCode(200).end(reply.result().body().toString());
+                    }
+                    else
+                    {
+                        logger.error("Database operation failed: {}", reply.cause().getMessage());
+
+                        context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
+                    }
+                });
     }
 }

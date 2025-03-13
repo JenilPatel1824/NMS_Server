@@ -45,6 +45,27 @@
             <artifactId>vertx-web</artifactId>
         </dependency>
 
+        <!-- Vert.x JUnit 5 Integration -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-junit5</artifactId>
+            <version>4.5.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit 5 -->
+
+
+        <!-- Vert.x WebClient for HTTP Testing -->
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-client</artifactId>
+            <version>4.5.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- JUnit Engine -->
+
         <!-- Vert.x Pg Client for PostgreSQL -->
         <dependency>
             <groupId>io.vertx</groupId>
@@ -114,6 +135,13 @@
             <version>4.4.4</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>1.0.2</version>
+        </dependency>
+
     </dependencies>
 
     <build>

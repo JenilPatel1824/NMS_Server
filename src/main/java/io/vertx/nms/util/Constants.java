@@ -32,8 +32,6 @@ public class Constants
 
     public static final String DATABASE_DISCOVERY_PROFILE_NAME = "discovery_profile_name";
 
-    public static final String DATABASE_DISCOVERY_PROFILE_ID = "discovery_profile_id";
-
     public static final String DATABASE_CREDENTIAL_PROFILE_ID = "credential_profile_id";
 
 
@@ -43,6 +41,8 @@ public class Constants
 
 
     public static final String CONDITION = "condition";
+
+    public static final String WITH = "with";
 
     public static final String DATA = "data";
 
@@ -63,8 +63,6 @@ public class Constants
     public static final String PARAMS = "params";
 
     public static final String SYSTEM_TYPE = "system_type";
-
-    public static final String SYSTEM_NAME = "systemName";
 
     public static final String CREDENTIALS = "credentials";
 
