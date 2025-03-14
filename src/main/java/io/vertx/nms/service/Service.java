@@ -39,6 +39,9 @@ public class Service
         this.vertx = vertx;
     }
 
+    // Creates a new record in the database.
+    // @param requestBody The JSON request body containing the data to insert.
+    // @param context The RoutingContext containing the request and response.
     public void create(JsonObject requestBody, RoutingContext context)
     {
         if (!Util.isValidRequest(requestBody, context))
@@ -54,6 +57,9 @@ public class Service
         executeQuery(context, request, 201);
     }
 
+    // Fetches a record by ID from the database.
+    // @param id The ID of the record to fetch.
+    // @param context The RoutingContext containing the request and response.
     public void getById(String id, RoutingContext context)
     {
         var tableName = Util.getTableNameFromContext(context);
@@ -83,6 +89,10 @@ public class Service
         }
     }
 
+    // Updates a record in the database.
+    // @param id The ID of the record to update.
+    // @param requestBody The JSON request body containing the data to update.
+    // @param context The RoutingContext containing the request and response.
     public void update(String id, JsonObject requestBody, RoutingContext context)
     {
         var tableName = Util.getTableNameFromContext(context);
@@ -117,6 +127,8 @@ public class Service
         }
     }
 
+    // Fetches all records from the database.
+    // @param context The RoutingContext containing the request and response.
     public void getAll(RoutingContext context)
     {
         var tableName = Util.getTableNameFromContext(context);
@@ -143,6 +155,9 @@ public class Service
         }
     }
 
+    // Deletes a record from the database.
+    // @param id The ID of the record to delete.
+    // @param context The RoutingContext containing the request and response.
     public void delete(String id, RoutingContext context)
     {
         var tableName = Util.getTableNameFromContext(context);
@@ -182,6 +197,9 @@ public class Service
         }
     }
 
+    // Checks if a credential profile is in use before deleting it.
+    // @param credentialId The ID of the credential profile to check.
+    // @param context The RoutingContext containing the request and response.
     private void checkCredentialUsage(long credentialId, RoutingContext context)
     {
         var query = "SELECT in_use_by FROM credential_profile WHERE id = $1";
@@ -214,7 +232,9 @@ public class Service
         });
     }
 
-
+    // Performs the delete operation on the database.
+    // @param id The ID of the record to delete.
+    // @param tableName The name of the table to delete from.
     private void performDelete(long id, String tableName, RoutingContext context)
     {
         var request = new JsonObject()
@@ -225,7 +245,10 @@ public class Service
         executeQuery(context, request, 204);
     }
 
-
+    // Executes a query on the database.
+    // @param context The RoutingContext containing the request and response.
+    // @param request The JSON object containing the query details.
+    // @param successStatusCode The HTTP status code to return on success.
     private void executeQuery(RoutingContext context, JsonObject request, int successStatusCode)
     {
         var queryResult = QueryBuilder.buildQuery(request);
@@ -246,11 +269,8 @@ public class Service
                 });
     }
 
-    // Runs a discovery for the given discovery profile.
-    // This method is responsible for running a discovery for a given discovery profile.
-    // It fetches the discovery profile from the database, pings the target IP, and sends a ZMQ request to the ZMQ server.
-    // The ZMQ server responds with the discovery data, which is then updated in the database.
-    // @param discoveryProfileId The id of the discovery profile to run.
+    // Runs a discovery operation on a device.
+    // @param discoveryProfileId The ID of the discovery profile to run.
     // @param context The RoutingContext containing the request and response.
     public void runDiscovery(String discoveryProfileId, RoutingContext context)
     {
@@ -406,6 +426,9 @@ public class Service
         }
     }
 
+    // Updates the provision status for a discovery profile.
+    // @param discoveryProfileId The ID of the discovery profile to update.
+    // @param context The RoutingContext containing the request and response.
     public void updateProvisionStatus(String discoveryProfileId, RoutingContext context) {
         try {
             var profileId = Long.parseLong(discoveryProfileId);
@@ -520,8 +543,8 @@ public class Service
         }
     }
 
-    // Fetches provision data for a specific discovery profile.
-    // @param discoveryProfileId The id of the discovery profile to fetch data for.
+    // Fetches provision data for a given job ID.
+    // @param jobId The ID of the job to fetch data for.
     // @param context The RoutingContext containing the request and response.
     public void getProvisionData(String jobId, RoutingContext context)
     {
@@ -592,6 +615,8 @@ public class Service
         }
     }
 
+    // Fetches the top 10 devices with the most errors in the last 24 hours.
+    // @param context The RoutingContext containing the request and response.
     public void getInterfacesByError(RoutingContext context)
     {
         var query = "WITH error_data AS ( "
@@ -619,6 +644,8 @@ public class Service
 
     }
 
+    // Fetches the top 10 devices with the most speed in last 24 hours
+    // @param context The RoutingContext containing the request and response.
     public void getInterfacesBySpeed(RoutingContext context)
     {
         var query = """
@@ -648,6 +675,8 @@ public class Service
 
     }
 
+    // Fetches the top 10 devices with the most reboots in the last 7 days.
+    // @param context The RoutingContext containing the request and response.
     public void getInterfacesByUptime(RoutingContext context)
     {
         var query = """
@@ -688,6 +717,9 @@ public class Service
         executeAndRespond(context, query);
     }
 
+    // Executes a query and responds with the result.
+    // @param context The RoutingContext containing the request and response.
+    // @param query The query to execute
     private void executeAndRespond(RoutingContext context, String query)
     {
         vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
@@ -706,6 +738,9 @@ public class Service
                 });
     }
 
+    // Deletes a provisioning job and updates the credential profile usage count.
+    // @param jobId The ID of the job to delete.
+    // @param context The RoutingContext containing the request and response.
     public void deleteProvisioningJob(String jobId, RoutingContext context)
     {
         if (jobId == null || jobId.trim().isEmpty()) {

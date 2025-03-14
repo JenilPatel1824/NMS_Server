@@ -16,13 +16,12 @@ public class Util
 
     private static final String MISSING_REQUIRED_FIELD = "Missing or empty required field: ";
 
-    /**
-     * Validate a JSON request by determining the table name and required fields dynamically.
-     *
-     * @param requestBody The JSON request body.
-     * @param context     The routing context for sending responses.
-     * @return true if valid, false if validation fails.
-     */
+    // Validates the request body based on the table name.
+    // Ensures that all required fields are present and not empty.
+    // Ensures that the 'ip' field is not updated in discovery_profiles.
+    // Ensures that 'credential.community' and 'credential.version' are present for system_type 'snmp'.
+    // @param requestBody The JSON object containing the request body.
+    // @param context The routing context containing the request details.
     public static boolean isValidRequest(JsonObject requestBody, RoutingContext context)
     {
         var tableName = getTableNameFromContext(context);
@@ -128,9 +127,8 @@ public class Util
         return true;
     }
 
-    /**
-     * Determines the table name from the request endpoint.
-     */
+    // Returns the table name based on the request path.
+    // @param context The routing context containing the request details.
     public static String getTableNameFromContext(RoutingContext context)
     {
         String path = context.request().path();
@@ -141,13 +139,11 @@ public class Util
 
         if (path.startsWith("/provision")) return Constants.DATABASE_TABLE_PROVISIONING_JOBS;
 
-
         return null;
     }
 
-    /**
-     * Returns required fields based on the table name.
-     */
+    // Returns the required fields for the given table.
+    // @param tableName The name of the table.
     private static Set<String> getRequiredFieldsForTable(String tableName)
     {
         return switch (tableName)

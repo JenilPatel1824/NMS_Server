@@ -1,8 +1,4 @@
 package io.vertx.nms.engine;
-//todo - change periodic, remove 1lakh records, reduce batch size, change polling interval, reduce workers, change timeout in go
-//todo, databsae change -done ,check from scratch test everything - done refactor- comments-space- var,
-
-// final comment spacing var
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -33,7 +29,7 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 3000000000L;
+    private static final long FETCH_DEVICE_INTERVAL = 30000000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -49,7 +45,7 @@ public class PollingEngine extends AbstractVerticle
         startPromise.complete();
     }
 
-    // Fetches provision enabled devices from the database and send them for process.
+    // Fetches provision jobs from the database and send them for process.
     // Constructs a query to retrieve relevant device details and sends it via the event bus.
     // On success, processes the retrieved device data; on failure, logs an error.
     private void fetchProvisionedDevices()
@@ -124,7 +120,7 @@ public class PollingEngine extends AbstractVerticle
     // Adds SNMP data to the batch for bulk insertion.
     // If the batch size reaches the predefined limit, it triggers a flush operation.
     // @param snmpData The JSON object containing SNMP response data for the device.
-    // @param discoveryProfileName The name of the discovery profile associated with the device.
+    // @param jobId The ID of the job associated with the device.
     private void addToBatch(JsonObject snmpData, long jobId)
     {
         var istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));

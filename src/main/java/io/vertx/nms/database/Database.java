@@ -56,8 +56,9 @@ public class Database extends AbstractVerticle
                 startPromise.fail(ar.cause());
             }
         });
-
     }
+
+    // Sets up an event bus consumer for handling database queries.
     private void setupEventBusConsumer()
     {
         var eventBus = vertx.eventBus();
@@ -171,6 +172,7 @@ public class Database extends AbstractVerticle
         logger.info("DatabaseService is listening on eventbus address: database.query.execute");
     }
 
+    // Initializes the database connection and ensures necessary tables exist.
     private Future<Object> init()
     {
         var promise = Promise.promise();

@@ -131,7 +131,6 @@ public class Constants
     public static final String MESSAGE_JOB_NOT_FOUND = "Provisioning job not found.";
 
 
-
     public static final Set<String> REQUIRED_FIELDS_CREDENTIAL = Set.of(DATABASE_CREDENTIAL_PROFILE_NAME, SYSTEM_TYPE, CREDENTIALS);
 
     public static final Set<String> REQUIRED_FIELDS_DISCOVERY = Set.of(DATABASE_DISCOVERY_PROFILE_NAME, IP, DATABASE_CREDENTIAL_PROFILE_ID);

@@ -73,6 +73,7 @@ public class ApiServer extends AbstractVerticle
         });
     }
 
+    // Creates a router for handling credential operations.
     private Router createCredentialRouter()
     {
         var credentialRouter = Router.router(vertx);
@@ -173,6 +174,7 @@ public class ApiServer extends AbstractVerticle
         return credentialRouter;
     }
 
+    // Creates a router for handling discovery operations.
     public Router createDiscoveryRouter()
     {
         var discoveryRouter = Router.router(vertx);
@@ -292,6 +294,7 @@ public class ApiServer extends AbstractVerticle
         return discoveryRouter;
     }
 
+    // Creates a router for handling provisioning operations.
     public Router createProvisionRouter()
     {
         var provisionRouter = Router.router(vertx);

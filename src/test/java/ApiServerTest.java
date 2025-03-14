@@ -59,10 +59,11 @@ class ApiServerTest
                 });
     }
 
+    //Test case for getting a credential profile
     @Test
     void testCredentialProfileGet(VertxTestContext testContext)
     {
-        var testProfileId = "3";
+        var testProfileId = "67";
 
         webClient.get(8080, "localhost", "/credential/" + testProfileId)
                 .send(response ->
@@ -81,7 +82,7 @@ class ApiServerTest
     @Test
     void testCredentialProfileUpdate(VertxTestContext testContext)
     {
-        var testProfileId = "3";
+        var testProfileId = "67";
 
         var updatedRequestBody = new JsonObject()
                 .put("credential_profile_name", faker.lorem().word())
@@ -103,7 +104,7 @@ class ApiServerTest
     {
         var requestBody = new JsonObject()
                 .put("discovery_profile_name", faker.name().firstName())
-                .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, 3)
+                .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, 67)
                 .put("ip", faker.internet().ipV4Address());
 
         webClient.post(8080, "localhost", "/discovery/")
@@ -146,8 +147,7 @@ class ApiServerTest
 
         var updatedRequestBody = new JsonObject()
                 .put("discovery_profile_name", faker.name().firstName())
-                .put("ip", "192.168.228.223")
-                .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID,3);
+                .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID,67);
 
         webClient.put(8080, "localhost", "/discovery/" + testProfileId)
                 .sendJsonObject(updatedRequestBody, response ->
@@ -160,32 +160,28 @@ class ApiServerTest
                 });
     }
 
+    //Test case for updating provision status
     @Test
     void testUpdateProvisionStatus(VertxTestContext testContext)
     {
-        var monitorId = "61";
+        var discoveryId = "200089";
 
-        var status = "yes";
-
-        var requestBody = new JsonObject()
-                .put("status", status);
-
-        webClient.post(8080, "localhost", "/provision/" + monitorId + "/" + status)
-                .sendJsonObject(requestBody, response ->
+        webClient.post(8080, "localhost", "/provision/start"  + "/" +discoveryId)
+                .send( response ->
                 {
-                    assertEquals(200, response.result().statusCode(), "Expected status code 200");
+                    assertEquals(400, response.result().statusCode(), "Expected status code 400");
 
                     testContext.completeNow();
                 });
     }
 
-    // Test Case for GET /data/:discoveryProfileId (Retrieve Provision Data)
+    // Test Case for GET polled data
     @Test
     void testGetProvisionData(VertxTestContext testContext)
     {
-        var discoveryProfileId = "61";
+        var jobId = "10147";
 
-        webClient.get(8080, "localhost", "/provision/data/" + discoveryProfileId)
+        webClient.get(8080, "localhost", "/provision/data/" + jobId)
                 .send(response ->
                 {
                     assertEquals(200, response.result().statusCode(), "Expected status code 200");
@@ -198,7 +194,7 @@ class ApiServerTest
                 });
     }
 
-    //Test Case for GET /top/error (Retrieve Interfaces with Errors)
+    //Test Case for GET /toperror (Retrieve Interfaces with Errors)
     @Test
     void testGetInterfacesByError(VertxTestContext testContext)
     {
@@ -215,7 +211,7 @@ class ApiServerTest
                 });
     }
 
-    // Test Case for GET /top/speed (Retrieve Interfaces by Speed)
+    // Test Case for GET /topspeed (Retrieve Interfaces by Speed)
     @Test
     void testGetInterfacesBySpeed(VertxTestContext testContext)
     {
@@ -232,7 +228,7 @@ class ApiServerTest
                 });
     }
 
-    // Test Case for GET /top/uptime (Retrieve Interfaces by Uptime)
+    // Test Case for GET /toprestarts (Retrieve Interfaces by restarts)
     @Test
     void testGetInterfacesByUptime(VertxTestContext testContext)
     {
@@ -249,6 +245,7 @@ class ApiServerTest
                 });
     }
 
+    //Test case for running a discovery
     @Test
     void testDiscoveryRun(VertxTestContext testContext)
     {
