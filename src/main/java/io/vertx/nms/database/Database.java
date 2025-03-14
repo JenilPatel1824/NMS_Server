@@ -176,36 +176,39 @@ public class Database extends AbstractVerticle
         var promise = Promise.promise();
 
         var createTablesQuery = """
-            CREATE TABLE IF NOT EXISTS credential_profile (
-                      id SERIAL PRIMARY KEY,
-                      credential_profile_name TEXT UNIQUE NOT NULL,
-                      system_type TEXT NOT NULL,
-                      credentials JSONB NOT NULL
-                  );
-                  
-                  CREATE TABLE IF NOT EXISTS discovery_profiles (
-                      id SERIAL PRIMARY KEY,
-                      discovery_profile_name TEXT UNIQUE NOT NULL,
-                      credential_profile_id INT,
-                      ip TEXT NOT NULL,
-                      FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
-                  );
-                  
-                  CREATE TABLE IF NOT EXISTS provisioning_jobs (
-                      id SERIAL PRIMARY KEY,
-                      credential_profile_id INT,
-                      ip TEXT NOT NULL,
-                      status BOOLEAN NOT NULL,
-                      FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
-                  );
-                  
-                  CREATE TABLE IF NOT EXISTS provision_data (
-                      id SERIAL PRIMARY KEY,
-                      job_id INT NOT NULL REFERENCES provisioning_jobs(id) ON DELETE CASCADE,
-                      data JSONB NOT NULL,
-                      polled_at TIMESTAMP
-                  );
-        """;
+    CREATE TABLE IF NOT EXISTS credential_profile (
+                id SERIAL PRIMARY KEY,
+                credential_profile_name TEXT UNIQUE NOT NULL,
+                system_type TEXT NOT NULL,
+                credentials JSONB NOT NULL,
+                in_use_by INT DEFAULT 0
+            );
+            
+            CREATE TABLE IF NOT EXISTS discovery_profiles (
+                id SERIAL PRIMARY KEY,
+                discovery_profile_name TEXT UNIQUE NOT NULL,
+                credential_profile_id INT,
+                ip TEXT NOT NULL,
+                status BOOLEAN,
+                FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
+            );
+            
+            CREATE TABLE IF NOT EXISTS provisioning_jobs (
+                id SERIAL PRIMARY KEY,
+                credential_profile_id INT,
+                ip TEXT NOT NULL,
+                FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
+            );
+            
+            CREATE TABLE IF NOT EXISTS provision_data (
+                id SERIAL PRIMARY KEY,
+                job_id INT NOT NULL REFERENCES provisioning_jobs(id) ON DELETE CASCADE,
+                data JSONB NOT NULL,
+                polled_at TIMESTAMP
+            );
+            
+""";
+
 
         pgClient.query(createTablesQuery).execute(ar ->
         {

@@ -33,9 +33,11 @@ public class ApiServer extends AbstractVerticle
 
     private static final String DISCOVERY_RUN_URL = "/:discoveryProfileId/run";
 
-    private static final String PROVISION_STATUS_URL = "/:discoveryProfileId/:status";
+    private static final String PROVISION_START_URL = "/start/:discoveryProfileId";
 
     private static final String PROVISION_DATA_URL = "/data/:discoveryProfileId";
+
+    private static final String PROVISION_DELETE_URL = "/:discoveryProfileId";
 
     private static final String PROVISION_TOP_ERROR_URL = "/topError";
 
@@ -44,8 +46,6 @@ public class ApiServer extends AbstractVerticle
     private static final String PROVISION_TOP_UPTIME_URL = "/topRestarts";
 
     private static final String CREDENTIAL_PROFILE_ID = "credentialProfileId";
-
-    private static final String REQUIRED_STATUS = "Parameter 'status' is required.";
 
     private static final String MESSAGE_REQUIRED_CREDENTIAL_PROFILE_ID = "credential profile id is required.";
 
@@ -298,13 +298,11 @@ public class ApiServer extends AbstractVerticle
 
         provisionRouter.route().handler(BodyHandler.create());
 
-        provisionRouter.post(PROVISION_STATUS_URL).handler(context ->
+        provisionRouter.post(PROVISION_START_URL).handler(context ->
         {
             var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
-            var status = context.pathParam(Constants.STATUS);
-
-            logger.info("ProvisionHandler PUT /:discoveryProfileId/:status {} {}", discoveryProfileId, status);
+            logger.info("ProvisionHandler PUT /:discoveryProfileId/:status {}", discoveryProfileId);
 
             if (discoveryProfileId == null || discoveryProfileId.isEmpty())
             {
@@ -313,21 +311,14 @@ public class ApiServer extends AbstractVerticle
                 return;
             }
 
-            if (status == null || status.isEmpty())
-            {
-                context.response().setStatusCode(400).end(REQUIRED_STATUS);
-
-                return;
-            }
-
-            service.updateProvisionStatus(discoveryProfileId, status, context);
+            service.updateProvisionStatus(discoveryProfileId, context);
         });
 
         provisionRouter.get(PROVISION_DATA_URL).handler(context->
         {
             var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
-            logger.info("ProvisionHandler GET /data/:discoveryProfileName {}", discoveryProfileId);
+            logger.info("ProvisionHandler GET /data/:discoveryProfileID {}", discoveryProfileId);
 
             if (discoveryProfileId == null || discoveryProfileId.isEmpty())
             {
@@ -339,6 +330,21 @@ public class ApiServer extends AbstractVerticle
             service.getProvisionData(discoveryProfileId, context);
         });
 
+        provisionRouter.delete(PROVISION_DELETE_URL).handler(context->
+        {
+            var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
+
+            logger.info("ProvisionHandler delete /:discoveryProfileId {}", discoveryProfileId);
+
+            if (discoveryProfileId == null || discoveryProfileId.isEmpty())
+            {
+                context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID);
+
+                return;
+            }
+
+            service.deleteProvisioningJob(discoveryProfileId, context);
+        });
         provisionRouter.get(PROVISION_TOP_ERROR_URL).handler(context->
         {
             service.getInterfacesByError(context);

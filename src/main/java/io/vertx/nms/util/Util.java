@@ -34,10 +34,28 @@ public class Util
             return false;
         }
 
+        var isUpdateRequest = context.request().method().name().equalsIgnoreCase(Constants.PUT);
+
+        logger.info("up: "+isUpdateRequest+ requestBody);
+
+        if (Constants.DATABASE_TABLE_DISCOVERY_PROFILE.equals(tableName))
+        {
+            if (isUpdateRequest && requestBody.containsKey(Constants.IP))
+            {
+                context.response().setStatusCode(400).end("Field 'ip' cannot be updated in discovery_profiles");
+
+                return false;
+            }
+        }
+
         var requiredFields = getRequiredFieldsForTable(tableName);
 
         for (var field : requiredFields)
         {
+            if (isUpdateRequest && field.equals(Constants.IP))
+            {
+                continue;
+            }
             if (!requestBody.containsKey(field) || requestBody.getValue(field) == null)
             {
                 context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD + field);
@@ -121,6 +139,9 @@ public class Util
 
         if (path.startsWith("/discovery")) return Constants.DATABASE_TABLE_DISCOVERY_PROFILE;
 
+        if (path.startsWith("/provision")) return Constants.DATABASE_TABLE_PROVISIONING_JOBS;
+
+
         return null;
     }
 
@@ -139,7 +160,7 @@ public class Util
         };
     }
 
-    // Pings the given IP address using fping to check its reachability.
+    // Pings the given IP address using ping to check its reachability.
     // @param ipAddress The IP address to ping.
     // @return true if the IP is reachable, false otherwise.
     public static boolean ping(String ipAddress)

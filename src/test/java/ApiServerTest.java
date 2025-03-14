@@ -5,6 +5,7 @@ import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.nms.Main;
+import io.vertx.nms.util.Constants;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -102,7 +103,7 @@ class ApiServerTest
     {
         var requestBody = new JsonObject()
                 .put("discovery_profile_name", faker.name().firstName())
-                .put("credential_profile_id", 3)
+                .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, 3)
                 .put("ip", faker.internet().ipV4Address());
 
         webClient.post(8080, "localhost", "/discovery/")
@@ -146,7 +147,7 @@ class ApiServerTest
         var updatedRequestBody = new JsonObject()
                 .put("discovery_profile_name", faker.name().firstName())
                 .put("ip", "192.168.228.223")
-                .put("credential_profile_id",3);
+                .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID,3);
 
         webClient.put(8080, "localhost", "/discovery/" + testProfileId)
                 .sendJsonObject(updatedRequestBody, response ->

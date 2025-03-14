@@ -1,6 +1,5 @@
 package io.vertx.nms.util;
 
-import javax.swing.plaf.PanelUI;
 import java.util.Set;
 
 public class Constants
@@ -72,6 +71,8 @@ public class Constants
 
     public static final String IP = "ip";
 
+    public static final String PUT = "put";
+
     public static final String PLUGIN_TYPE = "pluginType";
 
     public static final String REQUEST_TYPE = "requestType";
@@ -119,8 +120,24 @@ public class Constants
 
     public static final String MESSAGE_BAD_REQUEST = "Bad Request";
 
+    public static final String MESSAGE_CREDENTIAL_IN_USE = "Credential profile is in use cant delete";
+
+    public static final String MESSAGE_IP_NOT_DISCOVERED = "IP not discovered.";
+
+    public static final String MESSAGE_NULL_CREDENTIAL_ID = "credential profile id is null";
+
+    public static final String MESSAGE_POLLING_STARTED = "Polling already started";
+
+    public static final String MESSAGE_JOB_NOT_FOUND = "Provisioning job not found.";
+
+
 
     public static final Set<String> REQUIRED_FIELDS_CREDENTIAL = Set.of(DATABASE_CREDENTIAL_PROFILE_NAME, SYSTEM_TYPE, CREDENTIALS);
 
     public static final Set<String> REQUIRED_FIELDS_DISCOVERY = Set.of(DATABASE_DISCOVERY_PROFILE_NAME, IP, DATABASE_CREDENTIAL_PROFILE_ID);
+
+    public static final String MESSAGE_NOT_FOUND = "Not found";
+
+    public static final String DATABASE_IN_USE_BY = "in_use_by";
+
 }
