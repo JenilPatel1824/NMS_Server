@@ -147,6 +147,7 @@ class ApiServerTest
 
         var updatedRequestBody = new JsonObject()
                 .put("discovery_profile_name", faker.name().firstName())
+                .put("ip","172.16.12.211")
                 .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID,67);
 
         webClient.put(8080, "localhost", "/discovery/" + testProfileId)
@@ -249,7 +250,7 @@ class ApiServerTest
     @Test
     void testDiscoveryRun(VertxTestContext testContext)
     {
-        var discoveryProfileId = "210129";
+        var discoveryProfileId = "210147";
 
         webClient.post(8080, "localhost", "/discovery/" + discoveryProfileId + "/run")
                 .send(response ->

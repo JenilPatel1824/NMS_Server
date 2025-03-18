@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="ApiServerTest" time="3.279" tests="12" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="ApiServerTest" time="3.291" tests="12" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="17"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="IN"/>
     <property name="sun.boot.library.path" value="/usr/lib/jvm/java-17-openjdk-amd64/lib"/>
-    <property name="sun.java.command" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250314160557124_3.jar /home/jenil/Documents/NMS_Server/target/surefire 2025-03-14T16-05-57_038-jvmRun1 surefire-20250314160557124_1tmp surefire_0-20250314160557124_2tmp"/>
+    <property name="sun.java.command" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250318141123606_3.jar /home/jenil/Documents/NMS_Server/target/surefire 2025-03-18T14-11-23_521-jvmRun1 surefire-20250318141123606_1tmp surefire_0-20250318141123606_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="/home/jenil/Documents/NMS_Server/target/test-classes:/home/jenil/Documents/NMS_Server/target/classes:/home/jenil/.m2/repository/io/vertx/vertx-core/4.5.8/vertx-core-4.5.8.jar:/home/jenil/.m2/repository/io/netty/netty-common/4.1.110.Final/netty-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-buffer/4.1.110.Final/netty-buffer-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport/4.1.110.Final/netty-transport-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler/4.1.110.Final/netty-handler-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec/4.1.110.Final/netty-codec-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler-proxy/4.1.110.Final/netty-handler-proxy-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-socks/4.1.110.Final/netty-codec-socks-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http/4.1.110.Final/netty-codec-http-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http2/4.1.110.Final/netty-codec-http2-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver/4.1.110.Final/netty-resolver-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver-dns/4.1.110.Final/netty-resolver-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-dns/4.1.110.Final/netty-codec-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.16.1/jackson-core-2.16.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-web/4.5.8/vertx-web-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-common/4.5.8/vertx-web-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-auth-common/4.5.8/vertx-auth-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-bridge-common/4.5.8/vertx-bridge-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-junit5/4.5.1/vertx-junit5-4.5.1.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.8.2/junit-jupiter-params-5.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-client/4.5.1/vertx-web-client-4.5.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-uri-template/4.5.8/vertx-uri-template-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-pg-client/4.5.8/vertx-pg-client-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-sql-client/4.5.8/vertx-sql-client-4.5.8.jar:/home/jenil/.m2/repository/org/zeromq/jeromq/0.5.2/jeromq-0.5.2.jar:/home/jenil/.m2/repository/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.16.1/jackson-annotations-2.16.1.jar:/home/jenil/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.8.2/junit-jupiter-api-5.8.2.jar:/home/jenil/.m2/repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-commons/1.8.2/junit-platform-commons-1.8.2.jar:/home/jenil/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.8.2/junit-jupiter-engine-5.8.2.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-engine/1.8.2/junit-platform-engine-1.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-unit/4.4.4/vertx-unit-4.4.4.jar:/home/jenil/.m2/repository/com/github/javafaker/javafaker/1.0.2/javafaker-1.0.2.jar:/home/jenil/.m2/repository/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar:/home/jenil/.m2/repository/org/yaml/snakeyaml/1.23/snakeyaml-1.23-android.jar:/home/jenil/.m2/repository/com/github/mifmif/generex/1.0.2/generex-1.0.2.jar:/home/jenil/.m2/repository/dk/brics/automaton/automaton/1.11-8/automaton-1.11-8.jar:"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -28,7 +28,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
-    <property name="surefire.real.class.path" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250314160557124_3.jar"/>
+    <property name="surefire.real.class.path" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250318141123606_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="17.0.14+7-Ubuntu-120.04"/>
     <property name="user.name" value="jenil"/>
@@ -53,138 +53,30 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="61.0"/>
   </properties>
-  <testcase name="testDiscoveryRun(VertxTestContext)" classname="ApiServerTest" time="2.661">
-    <system-out><![CDATA[2025-03-14 16:05:58 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - ZMQ server is available. Starting Vert.x application...
-2025-03-14 16:05:58 [vert.x-eventloop-thread-1] WARN  io.vertx.core.impl.VertxImpl - You're already on a Vert.x context, are you sure you want to create a new Vertx instance?
-2025-03-14 16:05:58 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - HTTP Server is listening on port 8080
-2025-03-14 16:05:58 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - HTTP server verticle deployed
-2025-03-14 16:05:58 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Checked and ensured tables exist.
-2025-03-14 16:05:58 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - DatabaseService is listening on eventbus address: database.query.execute
-2025-03-14 16:05:58 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - DatabaseVerticle Eventbus is ready to listen
-2025-03-14 16:05:58 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - Database verticle deployed
-2025-03-14 16:05:58 [vert.x-eventloop-thread-3] DEBUG io.vertx.nms.messaging.ZmqMessenger - vert.x-eventloop-thread-3 zmq message verticle 
-2025-03-14 16:05:58 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - ZMQ Messenger verticle deployed
-2025-03-14 16:05:58 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - Polling engine verticle deployed
-2025-03-14 16:05:58 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - All verticles deployed successfully.
-2025-03-14 16:05:58 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - Discovery Run/:200089
-2025-03-14 16:05:58 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: SELECT dp.id, dp.ip, dp.discovery_profile_name, cp.id as credential_profile_id, cp.system_type, cp.credentials FROM discovery_profiles dp JOIN credential_profile cp ON dp.credential_profile_id = cp.id WHERE dp.id = $1
-2025-03-14 16:05:58 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.service.Service - Found IP for request: 192.168.228.223
-2025-03-14 16:06:00 [vert.x-eventloop-thread-3] DEBUG io.vertx.nms.messaging.ZmqMessenger - vert.x-eventloop-thread-3 zmq.send request {"ip":"192.168.228.223","community":"public","version":"2c","pluginType":"snmp","requestType":"discovery"}
-2025-03-14 16:06:00 [vert.x-eventloop-thread-3] DEBUG io.vertx.nms.messaging.ZmqMessenger - Thread[vert.x-eventloop-thread-3,5,main] Replying 
-2025-03-14 16:06:00 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.service.Service - ZMQ Response: {"community":"public","data":{"systemName":"jenil-ThinkPad-T14s-Gen-1"},"ip":"192.168.228.223","pluginType":"snmp","requestType":"discovery","status":"success","version":"2c"}
-2025-03-14 16:06:00 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: UPDATE discovery_profiles SET status = true WHERE id = $2
+  <testcase name="testDiscoveryRun(VertxTestContext)" classname="ApiServerTest" time="2.523">
+    <system-out><![CDATA[2025-03-18 14:11:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - ZMQ server is available. Starting Vert.x application...
+2025-03-18 14:11:24 [vert.x-eventloop-thread-1] WARN  io.vertx.core.impl.VertxImpl - You're already on a Vert.x context, are you sure you want to create a new Vertx instance?
+2025-03-18 14:11:24 [vert.x-eventloop-thread-0] ERROR io.vertx.nms.http.ApiServer - Failed to start HTTP server: Address already in use
+2025-03-18 14:11:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - HTTP server verticle deployed
+2025-03-18 14:11:24 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Checked and ensured tables exist.
+2025-03-18 14:11:24 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - DatabaseService is listening on eventbus address: database.query.execute
+2025-03-18 14:11:24 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - DatabaseVerticle Eventbus is ready to listen
+2025-03-18 14:11:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - Database verticle deployed
+2025-03-18 14:11:24 [vert.x-eventloop-thread-3] DEBUG io.vertx.nms.messaging.ZmqMessenger - vert.x-eventloop-thread-3 zmq message verticle 
+2025-03-18 14:11:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - ZMQ Messenger verticle deployed
+2025-03-18 14:11:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - Polling engine verticle deployed
+2025-03-18 14:11:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.Main - All verticles deployed successfully.
 ]]></system-out>
   </testcase>
-  <testcase name="testGetInterfacesByUptime(VertxTestContext)" classname="ApiServerTest" time="0.019">
-    <system-out><![CDATA[2025-03-14 16:06:00 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query:     WITH uptime_seconds AS (
-        SELECT
-            job_id,
-            polled_at,
-            COALESCE(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' days, ', 1)::INT, 0) * 86400 +
-            COALESCE(SPLIT_PART(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' days, ', 2), ' hours, ', 1)::INT, 0) * 3600 +
-            COALESCE(SPLIT_PART(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' hours, ', 2), ' minutes, ', 1)::INT, 0) * 60 +
-            COALESCE(SPLIT_PART(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' minutes, ', 2), ' seconds', 1)::INT, 0) AS total_seconds
-        FROM provision_data
-        WHERE polled_at >= NOW() - INTERVAL '7 days'
-    ),
-    reboot_detection AS (
-        SELECT
-            job_id,
-            total_seconds,
-            LAG(total_seconds) OVER (PARTITION BY job_id ORDER BY polled_at) AS prev_total_seconds
-        FROM uptime_seconds
-    ),
-    reboot_counts AS (
-        SELECT
-            pj.ip AS device_ip,
-            COUNT(*) FILTER (WHERE total_seconds < prev_total_seconds) AS reboot_count
-        FROM reboot_detection rd
-        JOIN provisioning_jobs pj ON rd.job_id = pj.id
-        GROUP BY pj.ip
-    )
-    SELECT
-        device_ip,
-        reboot_count,
-        DENSE_RANK() OVER (ORDER BY reboot_count DESC) AS rank
-    FROM reboot_counts
-    ORDER BY reboot_count DESC
-    LIMIT 10;
-
-]]></system-out>
-  </testcase>
-  <testcase name="testCredentialProfileGet(VertxTestContext)" classname="ApiServerTest" time="0.012">
-    <system-out><![CDATA[2025-03-14 16:06:00 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - CredentialHandler Get/:67
-2025-03-14 16:06:00 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: SELECT * FROM credential_profile WHERE id = $1
-]]></system-out>
-  </testcase>
-  <testcase name="testGetInterfacesByError(VertxTestContext)" classname="ApiServerTest" time="0.006">
-    <system-out><![CDATA[2025-03-14 16:06:00 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: WITH error_data AS ( SELECT pj.ip,        interface->>'interface.name' AS interface_name,        SUM(            (interface->>'interface.sent.error.packets')::INT +            (interface->>'interface.received.error.packets')::INT        ) AS total_errors FROM provision_data pd JOIN provisioning_jobs pj ON pd.job_id = pj.id CROSS JOIN jsonb_array_elements(pd.data->'interfaces') AS interface WHERE pd.polled_at >= NOW() - INTERVAL '24 HOURS' GROUP BY pj.ip, interface->>'interface.name' ) SELECT ip,        interface_name,        total_errors,        DENSE_RANK() OVER (ORDER BY total_errors DESC) AS rank FROM error_data ORDER BY total_errors DESC LIMIT 10;
-]]></system-out>
-  </testcase>
-  <testcase name="testGetInterfacesBySpeed(VertxTestContext)" classname="ApiServerTest" time="0.005">
-    <system-out><![CDATA[2025-03-14 16:06:00 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query:         WITH error_data AS (
-            SELECT pj.ip,
-                   interface->>'interface.name' AS interface_name,
-                   SUM(
-                       (interface->>'interface.sent.error.packets')::INT +
-                       (interface->>'interface.received.error.packets')::INT
-                   ) AS total_errors
-            FROM provision_data pd
-            JOIN provisioning_jobs pj ON pd.job_id = pj.id
-            CROSS JOIN jsonb_array_elements(pd.data->'interfaces') AS interface
-            WHERE pd.polled_at >= NOW() - INTERVAL '24 HOURS'
-            GROUP BY pj.ip, interface->>'interface.name'
-        )
-        SELECT ip,
-               interface_name,
-               total_errors,
-               DENSE_RANK() OVER (ORDER BY total_errors DESC) AS rank
-        FROM error_data
-        ORDER BY total_errors DESC
-        LIMIT 10;
-
-]]></system-out>
-  </testcase>
-  <testcase name="testCredentialProfileCreate(VertxTestContext)" classname="ApiServerTest" time="0.124">
-    <system-out><![CDATA[2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - CredentialHandler Post
-2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.util.Util - up: false{"credential_profile_name":"Mi","system_type":"snmp","credentials":{"community":"public","version":"2c"}}
-2025-03-14 16:06:01 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: INSERT INTO credential_profile (credential_profile_name, system_type, credentials) VALUES ($1, $2, $3)
-]]></system-out>
-  </testcase>
-  <testcase name="testCredentialProfileUpdate(VertxTestContext)" classname="ApiServerTest" time="0.017">
-    <system-out><![CDATA[2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - CredentialHandler Put/:67
-2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.util.Util - up: true{"credential_profile_name":"neque","system_type":"snmp","credentials":{"community":"public","version":"2c"}}
-2025-03-14 16:06:01 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: UPDATE credential_profile SET credential_profile_name = $1, system_type = $2, credentials = $3 WHERE id = $4
-]]></system-out>
-  </testcase>
-  <testcase name="testUpdateProvisionStatus(VertxTestContext)" classname="ApiServerTest" time="0.01">
-    <system-out><![CDATA[2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - ProvisionHandler PUT /:discoveryProfileId/:status 200089
-2025-03-14 16:06:01 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: SELECT dp.status, dp.ip, dp.credential_profile_id FROM discovery_profiles dp WHERE dp.id = 200089
-2025-03-14 16:06:01 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: INSERT INTO provisioning_jobs (credential_profile_id, ip) VALUES ($1, $2)
-2025-03-14 16:06:01 [vert.x-eventloop-thread-2] ERROR io.vertx.nms.database.Database - Database query failed: ERROR: duplicate key value violates unique constraint "provisioning_jobs_ip_key" (23505)
-2025-03-14 16:06:01 [vert.x-eventloop-thread-0] ERROR io.vertx.nms.service.Service - Provisioning insert failed: {"status":"fail","message":"ERROR: duplicate key value violates unique constraint \"provisioning_jobs_ip_key\" (23505)"}
-]]></system-out>
-  </testcase>
-  <testcase name="testDiscoveryProfileGet(VertxTestContext)" classname="ApiServerTest" time="0.007">
-    <system-out><![CDATA[2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - Discovery Get/: 200089
-2025-03-14 16:06:01 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: SELECT * FROM discovery_profiles WHERE id = $1
-]]></system-out>
-  </testcase>
-  <testcase name="testDiscoveryProfileCreate(VertxTestContext)" classname="ApiServerTest" time="0.036">
-    <system-out><![CDATA[2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - Discovery Post/: 
-2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.util.Util - up: false{"discovery_profile_name":"September","credential_profile_id":67,"ip":"168.43.135.168"}
-2025-03-14 16:06:01 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: INSERT INTO discovery_profiles (discovery_profile_name, credential_profile_id, ip) VALUES ($1, $2, $3)
-]]></system-out>
-  </testcase>
-  <testcase name="testGetProvisionData(VertxTestContext)" classname="ApiServerTest" time="0.007">
-    <system-out><![CDATA[2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - ProvisionHandler GET /data/:discoveryProfileID 10147
-2025-03-14 16:06:01 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: SELECT data, polled_at FROM provision_data WHERE job_id = $1 ORDER BY polled_at DESC
-]]></system-out>
-  </testcase>
-  <testcase name="testDiscoveryProfileUpdate(VertxTestContext)" classname="ApiServerTest" time="0.034">
-    <system-out><![CDATA[2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.http.ApiServer - Discovery Put/:200089
-2025-03-14 16:06:01 [vert.x-eventloop-thread-0] INFO  io.vertx.nms.util.Util - up: true{"discovery_profile_name":"Eusebio","credential_profile_id":67}
-2025-03-14 16:06:01 [vert.x-eventloop-thread-2] INFO  io.vertx.nms.database.Database - Executing query: UPDATE discovery_profiles SET discovery_profile_name = $1, credential_profile_id = $2 WHERE id = $3
-]]></system-out>
-  </testcase>
+  <testcase name="testGetInterfacesByUptime(VertxTestContext)" classname="ApiServerTest" time="0.211"/>
+  <testcase name="testCredentialProfileGet(VertxTestContext)" classname="ApiServerTest" time="0.012"/>
+  <testcase name="testGetInterfacesByError(VertxTestContext)" classname="ApiServerTest" time="0.007"/>
+  <testcase name="testGetInterfacesBySpeed(VertxTestContext)" classname="ApiServerTest" time="0.02"/>
+  <testcase name="testCredentialProfileCreate(VertxTestContext)" classname="ApiServerTest" time="0.115"/>
+  <testcase name="testCredentialProfileUpdate(VertxTestContext)" classname="ApiServerTest" time="0.016"/>
+  <testcase name="testUpdateProvisionStatus(VertxTestContext)" classname="ApiServerTest" time="0.006"/>
+  <testcase name="testDiscoveryProfileGet(VertxTestContext)" classname="ApiServerTest" time="0.005"/>
+  <testcase name="testDiscoveryProfileCreate(VertxTestContext)" classname="ApiServerTest" time="0.033"/>
+  <testcase name="testGetProvisionData(VertxTestContext)" classname="ApiServerTest" time="0.012"/>
+  <testcase name="testDiscoveryProfileUpdate(VertxTestContext)" classname="ApiServerTest" time="0.028"/>
 </testsuite>

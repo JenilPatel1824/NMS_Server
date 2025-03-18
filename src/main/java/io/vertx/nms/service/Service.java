@@ -711,7 +711,7 @@ public class Service
                         WHERE pd.job_id = pj.id
                         AND pd.data->'interfaces' IS NOT NULL  -- Ensure 'interfaces' exists
                         ORDER BY pd.polled_at DESC
-                        LIMIT 1  -- Pick only the latest polling data
+                        LIMIT 1
                     ) latest_pd ON true
                     CROSS JOIN jsonb_array_elements(latest_pd.interfaces->'interfaces') AS interface
                 )
@@ -734,6 +734,7 @@ public class Service
     // Fetches the top 10 devices with the most speed in latest polling
     // @param context The RoutingContext containing the request and response.
     public void getInterfacesBySpeed(RoutingContext context) {
+
         var query = """
                 WITH latest_polling AS (
                     SELECT
@@ -747,7 +748,7 @@ public class Service
                         WHERE pd.job_id = pj.id
                         AND pd.data->'interfaces' IS NOT NULL  -- Ensure 'interfaces' field exists
                         ORDER BY pd.polled_at DESC
-                        LIMIT 1  -- Pick only the latest polling data
+                        LIMIT 1
                     ) latest_pd ON true
                     CROSS JOIN jsonb_array_elements(latest_pd.interfaces) AS interface
                     WHERE (interface->>'interface.speed') IS NOT NULL
