@@ -99,7 +99,7 @@ public class Constants
 
     public static final String FAIL = "fail";
 
-    public static final String JOB_ID = "job_id";
+    public static final String DATABASE_JOB_ID = "job_id";
 
 
     public static final String MESSAGE_EMPTY_REQUEST = "Bad request: Empty message body";
@@ -109,6 +109,8 @@ public class Constants
     public static final String MESSAGE_REQUIRED_BODY  = "Request body is required.";
 
     public static final String MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID = " DiscoveryProfileId is required";
+
+    public static final String MESSAGE_REQUIRED_JOB_ID = " JobId is required";
 
     public static final String MESSAGE_INVALID_PROFILE_ID = "Invalid profileId. It must be a numeric value.";
 

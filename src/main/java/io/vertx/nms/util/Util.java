@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class Util
 {
@@ -33,28 +34,10 @@ public class Util
             return false;
         }
 
-        var isUpdateRequest = context.request().method().name().equalsIgnoreCase(Constants.PUT);
-
-        logger.info("up: "+isUpdateRequest+ requestBody);
-
-        if (Constants.DATABASE_TABLE_DISCOVERY_PROFILE.equals(tableName))
-        {
-            if (isUpdateRequest && requestBody.containsKey(Constants.IP))
-            {
-                context.response().setStatusCode(400).end("Field 'ip' cannot be updated in discovery_profiles");
-
-                return false;
-            }
-        }
-
         var requiredFields = getRequiredFieldsForTable(tableName);
 
         for (var field : requiredFields)
         {
-            if (isUpdateRequest && field.equals(Constants.IP))
-            {
-                continue;
-            }
             if (!requestBody.containsKey(field) || requestBody.getValue(field) == null)
             {
                 context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD + field);
@@ -69,6 +52,18 @@ public class Util
                 context.response().setStatusCode(400).end("Field '" + field + "' cannot be empty");
 
                 return false;
+            }
+
+            if (Constants.IP.equals(field))
+            {
+                var ip = requestBody.getString(Constants.IP, "").trim();
+
+                if (!isValidIpv4(ip))
+                {
+                    context.response().setStatusCode(400).end("Invalid IPv4 format for field 'ip'");
+
+                    return false;
+                }
             }
 
             if (Constants.DATABASE_TABLE_CREDENTIAL_PROFILE.equals(tableName) && Constants.CREDENTIALS.equals(field))
@@ -104,20 +99,17 @@ public class Util
                 }
                 else
                 {
-                    if(credentialJson.isEmpty())
+                    if (credentialJson.isEmpty())
                     {
                         context.response().setStatusCode(400).end("Field 'credential' cannot be empty");
-
                         return false;
                     }
                     for (var key : credentialJson.fieldNames())
                     {
                         var innerValue = credentialJson.getValue(key);
-
                         if (innerValue == null || (innerValue instanceof String && ((String) innerValue).trim().isEmpty()))
                         {
                             context.response().setStatusCode(400).end("Field 'credential." + key + "' cannot be null or empty");
-
                             return false;
                         }
                     }
@@ -125,6 +117,15 @@ public class Util
             }
         }
         return true;
+    }
+
+    // function to validate IPv4
+    // @param ip is ip for validation
+    private static boolean isValidIpv4(String ip)
+    {
+        var ipv4Regex = "^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$";
+
+        return Pattern.compile(ipv4Regex).matcher(ip).matches();
     }
 
     // Returns the table name based on the request path.

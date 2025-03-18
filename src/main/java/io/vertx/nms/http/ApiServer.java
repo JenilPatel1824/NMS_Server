@@ -35,7 +35,7 @@ public class ApiServer extends AbstractVerticle
 
     private static final String PROVISION_START_URL = "/start/:discoveryProfileId";
 
-    private static final String PROVISION_DATA_URL = "/data/:discoveryProfileId";
+    private static final String PROVISION_DATA_URL = "/data/:job_id";
 
     private static final String PROVISION_DELETE_URL = "/:discoveryProfileId";
 
@@ -319,18 +319,18 @@ public class ApiServer extends AbstractVerticle
 
         provisionRouter.get(PROVISION_DATA_URL).handler(context->
         {
-            var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
+            var jobId = context.pathParam(Constants.DATABASE_JOB_ID);
 
-            logger.info("ProvisionHandler GET /data/:discoveryProfileID {}", discoveryProfileId);
+            logger.info("ProvisionHandler GET /data/:discoveryProfileID {}", jobId);
 
-            if (discoveryProfileId == null || discoveryProfileId.isEmpty())
+            if (jobId == null || jobId.isEmpty())
             {
-                context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_DISCOVERY_PROFILE_ID);
+                context.response().setStatusCode(400).end(Constants.MESSAGE_REQUIRED_JOB_ID);
 
                 return;
             }
 
-            service.getProvisionData(discoveryProfileId, context);
+            service.getProvisionData(jobId, context);
         });
 
         provisionRouter.delete(PROVISION_DELETE_URL).handler(context->

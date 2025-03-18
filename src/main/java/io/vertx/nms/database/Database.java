@@ -198,7 +198,7 @@ public class Database extends AbstractVerticle
             CREATE TABLE IF NOT EXISTS provisioning_jobs (
                 id SERIAL PRIMARY KEY,
                 credential_profile_id INT,
-                ip TEXT NOT NULL,
+                ip TEXT NOT NULL UNIQUE ,
                 FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
             );
             

@@ -29,7 +29,7 @@ public class ZmqMessenger extends AbstractVerticle
 
     private final Map<String, PendingRequest> pendingRequests = new HashMap<>();
 
-    private static final String REQUEST_ID = "request_id";
+    private static final String REQUEST_ID = "requestId";
 
     private static class PendingRequest
     {
@@ -152,6 +152,7 @@ public class ZmqMessenger extends AbstractVerticle
         var timedOutRequests = pendingRequests.entrySet().stream()
                 .filter(entry -> now - entry.getValue().timestamp >= REQUEST_TIMEOUT_MS)
                 .toList();
+
         timedOutRequests.forEach(entry ->
         {
             logger.warn("Request {} timed out", entry.getKey());

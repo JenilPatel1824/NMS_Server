@@ -29,7 +29,7 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 30000000;
+    private static final long FETCH_DEVICE_INTERVAL = 300_000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -108,11 +108,11 @@ public class PollingEngine extends AbstractVerticle
         {
             if (reply.succeeded() && reply.result().body().getString(Constants.STATUS).equalsIgnoreCase(Constants.SUCCESS))
             {
-                addToBatch(reply.result().body().getJsonObject(Constants.DATA),
-                        device.getLong("job_id"));            }
+                addToBatch(reply.result().body().getJsonObject(Constants.DATA), device.getLong(Constants.DATABASE_JOB_ID));
+            }
             else
             {
-                logger.error("Failed to get SNMP response: {}", reply.cause().getMessage());
+                logger.error("Failed to get SNMP response: ");
             }
         });
     }
@@ -128,7 +128,7 @@ public class PollingEngine extends AbstractVerticle
         var timestamp = istTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         var entry = new JsonObject()
-                .put(Constants.JOB_ID, jobId)
+                .put(Constants.DATABASE_JOB_ID, jobId)
                 .put(Constants.DATA, snmpData)
                 .put(Constants.POLLED_AT, timestamp);
 
@@ -185,7 +185,7 @@ public class PollingEngine extends AbstractVerticle
          {
              queryBuilder.append("($").append(index++).append(", $").append(index++).append(", $").append(index++).append("),");
 
-             params.add(data.getLong(Constants.JOB_ID))
+             params.add(data.getLong(Constants.DATABASE_JOB_ID))
                      .add(data.getJsonObject(Constants.DATA))
                      .add(data.getString(Constants.POLLED_AT));
          }

@@ -124,7 +124,7 @@ class ApiServerTest
     @Test
     void testDiscoveryProfileGet(VertxTestContext testContext)
     {
-        var testProfileId = "200089";
+        var testProfileId = "210129";
 
         webClient.get(8080, "localhost", "/discovery/" + testProfileId)
                 .send(response ->
@@ -143,7 +143,7 @@ class ApiServerTest
     @Test
     void testDiscoveryProfileUpdate(VertxTestContext testContext)
     {
-        var testProfileId = "200089";
+        var testProfileId = "210129";
 
         var updatedRequestBody = new JsonObject()
                 .put("discovery_profile_name", faker.name().firstName())
@@ -164,7 +164,7 @@ class ApiServerTest
     @Test
     void testUpdateProvisionStatus(VertxTestContext testContext)
     {
-        var discoveryId = "200089";
+        var discoveryId = "210129";
 
         webClient.post(8080, "localhost", "/provision/start"  + "/" +discoveryId)
                 .send( response ->
@@ -249,7 +249,7 @@ class ApiServerTest
     @Test
     void testDiscoveryRun(VertxTestContext testContext)
     {
-        var discoveryProfileId = "200089";
+        var discoveryProfileId = "210129";
 
         webClient.post(8080, "localhost", "/discovery/" + discoveryProfileId + "/run")
                 .send(response ->

@@ -113,19 +113,95 @@ public class Service
                 return;
             }
 
-            var request = new JsonObject()
-                    .put(Constants.TABLE_NAME, tableName)
-                    .put(Constants.OPERATION, Constants.UPDATE)
-                    .put(Constants.DATA, requestBody)
-                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
+            if (Constants.DATABASE_TABLE_DISCOVERY_PROFILE.equals(tableName) &&
+                    (requestBody.containsKey(Constants.IP) || requestBody.containsKey(Constants.DATABASE_CREDENTIAL_PROFILE_ID)))
+            {
+                var fetchQuery = "SELECT ip, discovery_profile_name, credential_profile_id, status FROM " + tableName + " WHERE id = $1";
 
-            executeQuery(context, request, 200);
+                vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
+                        new JsonObject()
+                                .put(Constants.QUERY, fetchQuery)
+                                .put(Constants.PARAMS, new JsonArray().add(profileId)),
+                        fetchResult ->
+                        {
+                            if (fetchResult.failed())
+                            {
+                                context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
+
+                                return;
+                            }
+
+                            var existingData = fetchResult.result().body();
+
+                            if (existingData == null || existingData.getJsonArray(Constants.DATA).isEmpty())
+                            {
+                                context.response().setStatusCode(404).end(Constants.MESSAGE_NOT_FOUND);
+
+                                return;
+                            }
+
+                            var existingRecord = existingData.getJsonArray(Constants.DATA).getJsonObject(0);
+
+                            var existingIp = existingRecord.getString(Constants.IP);
+
+                            var existingName = existingRecord.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME);
+
+                            var existingCredentialProfileId = existingRecord.getValue(Constants.DATABASE_CREDENTIAL_PROFILE_ID);
+
+                            var newIp = requestBody.getString(Constants.IP, existingIp);
+
+                            var newName = requestBody.getString(Constants.DATABASE_CREDENTIAL_PROFILE_NAME, existingName);
+
+                            var newCredentialProfileId = requestBody.getValue(Constants.DATABASE_CREDENTIAL_PROFILE_ID, existingCredentialProfileId);
+
+                            if (!existingIp.equals(newIp) || !existingCredentialProfileId.equals(newCredentialProfileId))
+                            {
+                                requestBody.put(Constants.IP, newIp);
+
+                                requestBody.put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, newCredentialProfileId);
+
+                                requestBody.put(Constants.STATUS, false);
+                            }
+
+                            if (!existingName.equals(newName) && requestBody.isEmpty())
+                            {
+                                logger.info("name not matched ");
+                                requestBody.put(Constants.DATABASE_CREDENTIAL_PROFILE_NAME, newName);
+                            }
+
+                            if (requestBody.isEmpty())
+                            {
+                                context.response().setStatusCode(204).end();
+
+                                return;
+                            }
+
+                            var request = new JsonObject()
+                                    .put(Constants.TABLE_NAME, tableName)
+                                    .put(Constants.OPERATION, Constants.UPDATE)
+                                    .put(Constants.DATA, requestBody)
+                                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
+
+                            executeQuery(context, request, 200);
+                        });
+            }
+            else
+            {
+                var request = new JsonObject()
+                        .put(Constants.TABLE_NAME, tableName)
+                        .put(Constants.OPERATION, Constants.UPDATE)
+                        .put(Constants.DATA, requestBody)
+                        .put(Constants.CONDITION, new JsonObject().put(Constants.ID, profileId));
+
+                executeQuery(context, request, 200);
+            }
         }
         catch (NumberFormatException e)
         {
             context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
         }
     }
+
 
     // Fetches all records from the database.
     // @param context The RoutingContext containing the request and response.
@@ -429,8 +505,10 @@ public class Service
     // Updates the provision status for a discovery profile.
     // @param discoveryProfileId The ID of the discovery profile to update.
     // @param context The RoutingContext containing the request and response.
-    public void updateProvisionStatus(String discoveryProfileId, RoutingContext context) {
-        try {
+    public void updateProvisionStatus(String discoveryProfileId, RoutingContext context)
+    {
+        try
+        {
             var profileId = Long.parseLong(discoveryProfileId);
 
             var query = "SELECT dp.status, dp.ip, dp.credential_profile_id " +
@@ -559,7 +637,7 @@ public class Service
                             .add(Constants.DATA)
                             .add(Constants.POLLED_AT))
                     .put(Constants.CONDITION, new JsonObject()
-                            .put(Constants.JOB_ID, jobIdLong));
+                            .put(Constants.DATABASE_JOB_ID, jobIdLong));
 
             var queryResult = QueryBuilder.buildQuery(request);
 
@@ -615,64 +693,80 @@ public class Service
         }
     }
 
-    // Fetches the top 10 devices with the most errors in the last 24 hours.
+    // Fetches the top 10 devices with the most errors in the latest polling.
     // @param context The RoutingContext containing the request and response.
-    public void getInterfacesByError(RoutingContext context)
-    {
-        var query = "WITH error_data AS ( "
-                + "SELECT pj.ip, "
-                + "       interface->>'interface.name' AS interface_name, "
-                + "       SUM( "
-                + "           (interface->>'interface.sent.error.packets')::INT + "
-                + "           (interface->>'interface.received.error.packets')::INT "
-                + "       ) AS total_errors "
-                + "FROM provision_data pd "
-                + "JOIN provisioning_jobs pj ON pd.job_id = pj.id "
-                + "CROSS JOIN jsonb_array_elements(pd.data->'interfaces') AS interface "
-                + "WHERE pd.polled_at >= NOW() - INTERVAL '24 HOURS' "
-                + "GROUP BY pj.ip, interface->>'interface.name' "
-                + ") "
-                + "SELECT ip, "
-                + "       interface_name, "
-                + "       total_errors, "
-                + "       DENSE_RANK() OVER (ORDER BY total_errors DESC) AS rank "
-                + "FROM error_data "
-                + "ORDER BY total_errors DESC "
-                + "LIMIT 10;";
+    public void getInterfacesByError(RoutingContext context) {
+
+        var query = """
+                WITH latest_polling AS (
+                    SELECT
+                        pj.ip,
+                        interface->>'interface.name' AS interface_name,
+                        COALESCE((interface->>'interface.sent.error.packets')::INT, 0) +
+                        COALESCE((interface->>'interface.received.error.packets')::INT, 0) AS total_errors
+                    FROM provisioning_jobs pj
+                    JOIN LATERAL (
+                        SELECT pd.data AS interfaces
+                        FROM provision_data pd
+                        WHERE pd.job_id = pj.id
+                        AND pd.data->'interfaces' IS NOT NULL  -- Ensure 'interfaces' exists
+                        ORDER BY pd.polled_at DESC
+                        LIMIT 1  -- Pick only the latest polling data
+                    ) latest_pd ON true
+                    CROSS JOIN jsonb_array_elements(latest_pd.interfaces->'interfaces') AS interface
+                )
+                SELECT ip, interface_name, total_errors, rank
+                FROM (
+                    SELECT
+                        ip,
+                        interface_name,
+                        total_errors,
+                        DENSE_RANK() OVER (ORDER BY total_errors DESC) AS rank
+                    FROM latest_polling
+                    WHERE total_errors > 0
+                ) ranked
+                WHERE rank <= 10;
+                """;
 
         executeAndRespond(context, query);
-
     }
 
-    // Fetches the top 10 devices with the most speed in last 24 hours
+    // Fetches the top 10 devices with the most speed in latest polling
     // @param context The RoutingContext containing the request and response.
-    public void getInterfacesBySpeed(RoutingContext context)
-    {
+    public void getInterfacesBySpeed(RoutingContext context) {
         var query = """
-                WITH error_data AS ( 
-                    SELECT pj.ip, 
-                           interface->>'interface.name' AS interface_name, 
-                           SUM( 
-                               (interface->>'interface.sent.error.packets')::INT + 
-                               (interface->>'interface.received.error.packets')::INT 
-                           ) AS total_errors 
-                    FROM provision_data pd 
-                    JOIN provisioning_jobs pj ON pd.job_id = pj.id 
-                    CROSS JOIN jsonb_array_elements(pd.data->'interfaces') AS interface 
-                    WHERE pd.polled_at >= NOW() - INTERVAL '24 HOURS' 
-                    GROUP BY pj.ip, interface->>'interface.name' 
-                ) 
-                SELECT ip, 
-                       interface_name, 
-                       total_errors, 
-                       DENSE_RANK() OVER (ORDER BY total_errors DESC) AS rank 
-                FROM error_data 
-                ORDER BY total_errors DESC 
-                LIMIT 10;
+                WITH latest_polling AS (
+                    SELECT
+                        pj.ip,
+                        interface->>'interface.name' AS interface_name,
+                        (interface->>'interface.speed')::BIGINT AS speed
+                    FROM provisioning_jobs pj
+                    JOIN LATERAL (
+                        SELECT pd.data->'interfaces' AS interfaces
+                        FROM provision_data pd
+                        WHERE pd.job_id = pj.id
+                        AND pd.data->'interfaces' IS NOT NULL  -- Ensure 'interfaces' field exists
+                        ORDER BY pd.polled_at DESC
+                        LIMIT 1  -- Pick only the latest polling data
+                    ) latest_pd ON true
+                    CROSS JOIN jsonb_array_elements(latest_pd.interfaces) AS interface
+                    WHERE (interface->>'interface.speed') IS NOT NULL
+                    AND (interface->>'interface.speed') ~ '^[0-9]+$'  -- Ensure speed is a valid number
+                    AND (interface->>'interface.speed')::BIGINT > 0  -- Ignore speed = 0
+                )
+                SELECT ip, interface_name, speed, rank
+                FROM (
+                    SELECT
+                        ip,
+                        interface_name,
+                        speed,
+                        DENSE_RANK() OVER (ORDER BY speed DESC) AS rank
+                    FROM latest_polling
+                ) ranked
+                WHERE rank <= 10;
         """;
 
         executeAndRespond(context, query);
-
     }
 
     // Fetches the top 10 devices with the most reboots in the last 7 days.
@@ -680,40 +774,54 @@ public class Service
     public void getInterfacesByUptime(RoutingContext context)
     {
         var query = """
-    WITH uptime_seconds AS (
-        SELECT 
-            job_id,
-            polled_at,
-            COALESCE(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' days, ', 1)::INT, 0) * 86400 +
-            COALESCE(SPLIT_PART(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' days, ', 2), ' hours, ', 1)::INT, 0) * 3600 +
-            COALESCE(SPLIT_PART(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' hours, ', 2), ' minutes, ', 1)::INT, 0) * 60 +
-            COALESCE(SPLIT_PART(SPLIT_PART(REPLACE(data->>'system.uptime', 'Uptime: ', ''), ' minutes, ', 2), ' seconds', 1)::INT, 0) AS total_seconds
-        FROM provision_data
-        WHERE polled_at >= NOW() - INTERVAL '7 days'
-    ),
-    reboot_detection AS (
-        SELECT 
-            job_id,
-            total_seconds,
-            LAG(total_seconds) OVER (PARTITION BY job_id ORDER BY polled_at) AS prev_total_seconds
-        FROM uptime_seconds
-    ),
-    reboot_counts AS (
-        SELECT 
-            pj.ip AS device_ip,
-            COUNT(*) FILTER (WHERE total_seconds < prev_total_seconds) AS reboot_count
-        FROM reboot_detection rd
-        JOIN provisioning_jobs pj ON rd.job_id = pj.id
-        GROUP BY pj.ip
-    )
-    SELECT 
-        device_ip,
-        reboot_count,
-        DENSE_RANK() OVER (ORDER BY reboot_count DESC) AS rank
-    FROM reboot_counts
-    ORDER BY reboot_count DESC
-    LIMIT 10;
-""";
+                WITH parsed_data AS (
+                    SELECT
+                        pj.ip,
+                        pd.job_id,
+                        pd.polled_at,
+                        (pd.data->>'system.uptime') AS raw_uptime,
+                        (
+                            COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) days'))[1]::INT, 0) * 86400 +
+                            COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) hours'))[1]::INT, 0) * 3600 +
+                            COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) minutes'))[1]::INT, 0) * 60 +
+                            COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) seconds'))[1]::INT, 0)
+                        ) AS uptime_seconds
+                    FROM provision_data pd
+                    JOIN provisioning_jobs pj ON pd.job_id = pj.id
+                    WHERE pd.data ? 'system.uptime'
+                    AND pd.polled_at >= NOW() - INTERVAL '7 days'
+                ),
+                lagged_data AS (
+                    SELECT
+                        ip,
+                        job_id,
+                        polled_at,
+                        uptime_seconds,
+                        LAG(uptime_seconds) OVER (PARTITION BY job_id ORDER BY polled_at) AS prev_uptime
+                    FROM parsed_data
+                ),
+                reboot_counts AS (
+                    SELECT
+                        ip,
+                        job_id,
+                        COUNT(*) AS reboot_count
+                    FROM lagged_data
+                    WHERE uptime_seconds < prev_uptime
+                    GROUP BY ip, job_id
+                )
+                SELECT ip, job_id, reboot_count, reboot_rank
+                FROM (
+                    SELECT
+                        ip,
+                        job_id,
+                        reboot_count,
+                        DENSE_RANK() OVER (ORDER BY reboot_count DESC) AS reboot_rank
+                    FROM reboot_counts
+                ) ranked
+                WHERE reboot_rank <= 10
+                ORDER BY reboot_rank ASC;
+            """;
+
         executeAndRespond(context, query);
     }
 
