@@ -23,13 +23,13 @@ public class PollingEngine extends AbstractVerticle
 
     private static final String ZMQ_REQUEST_ADDRESS = Constants.EVENTBUS_ZMQ_ADDRESS;
 
-    private static final int BATCH_SIZE = 2000;
+    private static final int BATCH_SIZE = 15;
 
     private static final long BATCH_FLUSH_INTERVAL = 20_000;
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 300_000;
+    private static final long FETCH_DEVICE_INTERVAL = 300000000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -38,7 +38,7 @@ public class PollingEngine extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        vertx.setTimer(FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
+        vertx.setPeriodic( FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
 
         vertx.setPeriodic(BATCH_FLUSH_CHECK_INTERVAL, id -> checkBatchTimeFlush());
 

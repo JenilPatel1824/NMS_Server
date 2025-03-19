@@ -1,5 +1,7 @@
 package io.vertx.nms.database;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -10,22 +12,42 @@ import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
 import io.vertx.sqlclient.Tuple;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
 
 public class Database extends AbstractVerticle
 {
+    private static class CacheEntry
+    {
+        final JsonObject response;
+
+        final Set<String> tables;
+
+        CacheEntry(JsonObject response, Set<String> tables)
+        {
+            this.response = response;
+
+            this.tables = tables;
+        }
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(Database.class);
 
     private PgPool pgClient;
 
-    // Initializes the database connection and ensures necessary tables exist.
-    // Sets up an event bus consumer for handling database queries.
+    private Cache<String, CacheEntry> cache;
+
+    private final Map<String, Set<String>> tableToCacheKeys = new HashMap<>();
+
     @Override
     public void start(Promise<Void> startPromise)
     {
@@ -40,6 +62,33 @@ public class Database extends AbstractVerticle
 
         pgClient = PgPool.pool(vertx, connectOptions, poolOptions);
 
+        cache = Caffeine.newBuilder()
+                .maximumSize(30)
+                .expireAfterWrite(30, TimeUnit.MINUTES)
+                .removalListener((key, value, cause) ->
+                {
+                    if (value != null)
+                    {
+                        var entry = (CacheEntry) value;
+
+                        entry.tables.forEach(table ->
+                        {
+                            var keys = tableToCacheKeys.get(table);
+
+                            if (keys != null)
+                            {
+                                keys.remove(key);
+
+                                if (keys.isEmpty())
+                                {
+                                    tableToCacheKeys.remove(table);
+                                }
+                            }
+                        });
+                    }
+                })
+                .build();
+
         init().onComplete(ar ->
         {
             if (ar.succeeded())
@@ -49,7 +98,6 @@ public class Database extends AbstractVerticle
                 logger.info("DatabaseVerticle Eventbus is ready to listen");
 
                 startPromise.complete();
-
             }
             else
             {
@@ -58,7 +106,6 @@ public class Database extends AbstractVerticle
         });
     }
 
-    // Sets up an event bus consumer for handling database queries.
     private void setupEventBusConsumer()
     {
         var eventBus = vertx.eventBus();
@@ -73,16 +120,36 @@ public class Database extends AbstractVerticle
 
             var params = request.getJsonArray(Constants.PARAMS);
 
-            if (request.getJsonArray(Constants.PARAMS) == null)
+            if (params == null)
             {
                 params = new JsonArray();
             }
 
-            boolean isInsertOrUpdate = query.trim().toLowerCase().startsWith(Constants.INSERT) || query.trim().toLowerCase().startsWith(Constants.UPDATE);
+            var isInsertOrUpdate = query.trim().toLowerCase().startsWith(Constants.INSERT) || query.trim().toLowerCase().startsWith(Constants.UPDATE);
+
+            var isSelect = query.toLowerCase().trim().startsWith(Constants.SELECT) || query.toLowerCase().trim().startsWith(Constants.WITH);
+
+            var isMutation = isInsertOrUpdate || query.toLowerCase().trim().startsWith(Constants.DELETE);
 
             if (isInsertOrUpdate && !query.toLowerCase().contains("returning id"))
             {
                 query += " RETURNING id";
+            }
+
+            if (isSelect)
+            {
+                var cacheKey = generateCacheKey(query, params);
+
+                var cachedResponse = cache.getIfPresent(cacheKey);
+
+                if (cachedResponse != null)
+                {
+                    logger.info("Cache hit for query: {}", query);
+
+                    message.reply(cachedResponse.response);
+
+                    return;
+                }
             }
 
             var finalQuery = query;
@@ -93,7 +160,7 @@ public class Database extends AbstractVerticle
             {
                 var paramValue = params.getValue(i);
 
-                if ((query.toLowerCase().contains(Constants.POLLED_AT) && paramValue instanceof String) || (query.toLowerCase().contains("updated_at") && paramValue instanceof String))
+                if (query.toLowerCase().contains(Constants.POLLED_AT) && paramValue instanceof String)
                 {
                     tupleParams.addLocalDateTime(LocalDateTime.parse((String) paramValue, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
                 }
@@ -103,7 +170,9 @@ public class Database extends AbstractVerticle
                 }
             }
 
-            pgClient.preparedQuery(query).execute(tupleParams, ar ->
+            var finalParams = params;
+
+            pgClient.preparedQuery(finalQuery).execute(tupleParams, ar ->
             {
                 if (ar.succeeded())
                 {
@@ -111,7 +180,21 @@ public class Database extends AbstractVerticle
 
                     var response = new JsonObject().put(Constants.STATUS, Constants.SUCCESS);
 
-                    if (finalQuery.trim().toLowerCase().startsWith(Constants.SELECT) || finalQuery.trim().toLowerCase().startsWith(Constants.WITH))
+                    if (isMutation)
+                    {
+                        var affectedTables = parseTablesForMutation(finalQuery);
+
+                        affectedTables.forEach(table ->
+                        {
+                            logger.info("Invalidating cache for table: {}", table);
+
+                            var keys = tableToCacheKeys.getOrDefault(table, Collections.emptySet());
+
+                            new ArrayList<>(keys).forEach(cache::invalidate);
+                        });
+                    }
+
+                    if (isSelect)
                     {
                         var rowJson = new JsonObject();
 
@@ -140,9 +223,23 @@ public class Database extends AbstractVerticle
                             resultData.add(rowJson.copy());
                         });
 
-                        response.put(Constants.DATA, resultData);
-                    }
+                        var cacheKey = generateCacheKey(finalQuery, finalParams);
 
+                        var tables = parseTablesForSelect(finalQuery);
+
+                        var entry = new CacheEntry(response.put(Constants.DATA, resultData), tables);
+
+                        logger.info("Inserting into cache for query: {}", finalQuery);
+
+                        cache.put(cacheKey, entry);
+
+                        tables.forEach(table ->
+                        {
+                            logger.info("Adding cache key for table: {}", table);
+
+                            tableToCacheKeys.computeIfAbsent(table, k -> new HashSet<>()).add(cacheKey);
+                        });
+                    }
                     else if (isInsertOrUpdate)
                     {
                         if (rows.iterator().hasNext())
@@ -158,13 +255,17 @@ public class Database extends AbstractVerticle
                     {
                         response.put(Constants.MESSAGE, Constants.MESSAGE_QUERY_SUCCESSFUL);
                     }
+
                     message.reply(response);
                 }
                 else
                 {
                     logger.error("Database query failed: {}", ar.cause().getMessage());
 
-                    message.fail(1, new JsonObject().put(Constants.STATUS, Constants.FAIL).put(Constants.MESSAGE, ar.cause().getMessage()).encode());
+                    message.fail(1, new JsonObject()
+                            .put(Constants.STATUS, Constants.FAIL)
+                            .put(Constants.MESSAGE, ar.cause().getMessage())
+                            .encode());
                 }
             });
         });
@@ -172,13 +273,12 @@ public class Database extends AbstractVerticle
         logger.info("DatabaseService is listening on eventbus address: database.query.execute");
     }
 
-    // Initializes the database connection and ensures necessary tables exist.
-    private Future<Object> init()
-    {
+    private Future<Object> init() {
+
         var promise = Promise.promise();
 
         var createTablesQuery = """
-    CREATE TABLE IF NOT EXISTS credential_profile (
+            CREATE TABLE IF NOT EXISTS credential_profile (
                 id SERIAL PRIMARY KEY,
                 credential_profile_name TEXT UNIQUE NOT NULL,
                 system_type TEXT NOT NULL,
@@ -198,7 +298,7 @@ public class Database extends AbstractVerticle
             CREATE TABLE IF NOT EXISTS provisioning_jobs (
                 id SERIAL PRIMARY KEY,
                 credential_profile_id INT,
-                ip TEXT NOT NULL UNIQUE ,
+                ip TEXT NOT NULL UNIQUE,
                 FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
             );
             
@@ -208,9 +308,7 @@ public class Database extends AbstractVerticle
                 data JSONB NOT NULL,
                 polled_at TIMESTAMP
             );
-            
-""";
-
+        """;
 
         pgClient.query(createTablesQuery).execute(ar ->
         {
@@ -219,8 +317,8 @@ public class Database extends AbstractVerticle
                 logger.info("Checked and ensured tables exist.");
 
                 promise.complete();
-
-            } else
+            }
+            else
             {
                 logger.error("Failed to create tables: {}", ar.cause().getMessage());
 
@@ -230,5 +328,98 @@ public class Database extends AbstractVerticle
 
         return promise.future();
     }
-}
 
+    private String generateCacheKey(String query, JsonArray params)
+    {
+        var key = query + params.toString();
+
+        return DigestUtils.sha1Hex(key);
+    }
+
+
+    private Set<String> parseTablesForSelect(String query)
+    {
+        var tables = new HashSet<String>();
+
+        var pattern = Pattern.compile("(?:from|join)\\s+([^\\s,)(]+)", Pattern.CASE_INSENSITIVE);
+
+        var matcher = pattern.matcher(query.toLowerCase());
+
+        while (matcher.find())
+        {
+            var table = matcher.group(1).replaceAll("\"", "");
+
+            if (table.contains("."))
+            {
+                table = table.substring(table.lastIndexOf('.') + 1);
+            }
+
+            tables.add(table);
+        }
+        return tables;
+    }
+
+    private Set<String> parseTablesForMutation(String query)
+    {
+        var lowerQuery = query.toLowerCase().trim();
+
+       var tables = new HashSet<String>();
+
+        Matcher matcher;
+
+        if (lowerQuery.startsWith(Constants.INSERT))
+        {
+            var insertPattern = Pattern.compile("insert\\s+into\\s+((\"[^\"]+\"|[^\\s(]+))", Pattern.CASE_INSENSITIVE);
+
+            matcher = insertPattern.matcher(lowerQuery);
+
+            if (matcher.find())
+            {
+                var table = matcher.group(1).replaceAll("\"", "");
+
+                if (table.contains("."))
+                {
+                    table = table.substring(table.lastIndexOf('.') + 1);
+                }
+
+                tables.add(table);
+            }
+        }
+        else if (lowerQuery.startsWith(Constants.UPDATE))
+        {
+            matcher = Pattern.compile("update\\s+((\"[^\"]+\"|[^\\s]+))", Pattern.CASE_INSENSITIVE).matcher(lowerQuery);
+
+            if (matcher.find())
+            {
+                var table = matcher.group(1).replaceAll("\"", "");
+
+                if (table.contains("."))
+                {
+                    table = table.substring(table.lastIndexOf('.') + 1);
+                }
+
+                tables.add(table);
+            }
+        }
+        else if (lowerQuery.startsWith(Constants.DELETE))
+        {
+            matcher = Pattern.compile("delete\\s+from\\s+((\"[^\"]+\"|[^\\s]+))", Pattern.CASE_INSENSITIVE).matcher(lowerQuery);
+
+            if (matcher.find())
+            {
+                var table = matcher.group(1).replaceAll("\"", "");
+
+                if (table.contains("."))
+                {
+                    table = table.substring(table.lastIndexOf('.') + 1);
+                }
+
+                tables.add(table);
+            }
+        }
+
+        logger.debug("Parsed mutation tables for query '{}': {}", query, tables);
+
+        return tables;
+    }
+}
