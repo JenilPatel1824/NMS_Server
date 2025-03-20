@@ -106,6 +106,9 @@ public class Database extends AbstractVerticle
         });
     }
 
+
+    //Sets up an EventBus consumer to handle database queries, execute them using the PostgreSQL client,
+    //cache SELECT queries, and invalidate cache on mutations
     private void setupEventBusConsumer()
     {
         var eventBus = vertx.eventBus();
@@ -273,6 +276,9 @@ public class Database extends AbstractVerticle
         logger.info("DatabaseService is listening on eventbus address: database.query.execute");
     }
 
+
+    // Initializes the database by ensuring required tables exist.
+    // Creates tables if they do not already exist and sets up necessary constraints.
     private Future<Object> init() {
 
         var promise = Promise.promise();
@@ -329,6 +335,10 @@ public class Database extends AbstractVerticle
         return promise.future();
     }
 
+    // Generates a cache key by hashing the query and parameters.
+    // @param query  The SQL query string.
+    // @param params The parameters used in the query as a JsonArray.
+    // @return A SHA-1 hashed string representing the cache key.
     private String generateCacheKey(String query, JsonArray params)
     {
         var key = query + params.toString();
@@ -336,7 +346,9 @@ public class Database extends AbstractVerticle
         return DigestUtils.sha1Hex(key);
     }
 
-
+    // Extracts table names from a SELECT query using regex pattern matching.
+    // @param query The SQL SELECT query string.
+    // @return A set of table names found in the query.
     private Set<String> parseTablesForSelect(String query)
     {
         var tables = new HashSet<String>();
@@ -359,6 +371,9 @@ public class Database extends AbstractVerticle
         return tables;
     }
 
+    // Extracts table names from an INSERT, UPDATE, or DELETE query using regex pattern matching.
+    // @param query The SQL mutation query (INSERT, UPDATE, or DELETE).
+    // @return A set of table names affected by the mutation.
     private Set<String> parseTablesForMutation(String query)
     {
         var lowerQuery = query.toLowerCase().trim();

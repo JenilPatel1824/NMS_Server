@@ -29,7 +29,7 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 300000000;
+    private static final long FETCH_DEVICE_INTERVAL = 300000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -38,7 +38,7 @@ public class PollingEngine extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        vertx.setPeriodic( FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
+        vertx.setPeriodic(3000, FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
 
         vertx.setPeriodic(BATCH_FLUSH_CHECK_INTERVAL, id -> checkBatchTimeFlush());
 

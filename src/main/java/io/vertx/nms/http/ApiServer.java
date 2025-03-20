@@ -2,9 +2,11 @@ package io.vertx.nms.http;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.DecodeException;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.nms.service.Service;
 import io.vertx.nms.util.Constants;
 import org.slf4j.Logger;
@@ -45,6 +47,8 @@ public class ApiServer extends AbstractVerticle
 
     private static final String PROVISION_TOP_UPTIME_URL = "/topRestarts";
 
+    private static final String PROVISION_DEVICES_URL = "/devices";
+
     private static final String CREDENTIAL_PROFILE_ID = "credentialProfileId";
 
     private static final String MESSAGE_REQUIRED_CREDENTIAL_PROFILE_ID = "credential profile id is required.";
@@ -53,6 +57,14 @@ public class ApiServer extends AbstractVerticle
     public void start()
     {
         var mainRouter = Router.router(vertx);
+
+        mainRouter.route().handler(CorsHandler.create("*")
+                .allowedMethod(HttpMethod.GET)
+                .allowedMethod(HttpMethod.POST)
+                .allowedMethod(HttpMethod.PUT)
+                .allowedMethod(HttpMethod.DELETE)
+                .allowedMethod(HttpMethod.OPTIONS)
+                .allowedHeader("*"));
 
         mainRouter.route(HTTP_PATH_CREDENTIAL).subRouter(createCredentialRouter());
 
@@ -361,6 +373,11 @@ public class ApiServer extends AbstractVerticle
         provisionRouter.get(PROVISION_TOP_UPTIME_URL).handler(context->
         {
             service.getInterfacesByUptime(context);
+        });
+
+        provisionRouter.get(PROVISION_DEVICES_URL).handler(context->
+        {
+            service.getDevices(context);
         });
 
         return provisionRouter;

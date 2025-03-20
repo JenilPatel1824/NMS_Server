@@ -587,7 +587,7 @@ public class Service
                                                     {
                                                         if (updateReply.succeeded())
                                                         {
-                                                            context.response().setStatusCode(200).end(PROVISION_UPDATE_SUCCESSFUL + insertedId);
+                                                            context.response().setStatusCode(200).end(new JsonObject().put(Constants.STATUS,Constants.SUCCESS).put(Constants.MESSAGE,PROVISION_UPDATE_SUCCESSFUL).put(Constants.ID,insertedId).encode());
                                                         }
                                                         else
                                                         {
@@ -822,6 +822,16 @@ public class Service
                 WHERE reboot_rank <= 10
                 ORDER BY reboot_rank ASC;
             """;
+
+        executeAndRespond(context, query);
+    }
+
+    // Fetches all devices from provisioning jobs
+    public void getDevices(RoutingContext context)
+    {
+        var query = """ 
+                SELECT * FROM provisioning_jobs;
+                """;
 
         executeAndRespond(context, query);
     }
