@@ -101,6 +101,8 @@ public class Constants
 
     public static final String DATABASE_JOB_ID = "job_id";
 
+    public static final String CLASS = "class";
+
 
     public static final String MESSAGE_EMPTY_REQUEST = "Bad request: Empty message body";
 
