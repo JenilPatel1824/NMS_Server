@@ -1,0 +1,22 @@
+2025-03-21 12:47:47 [io.vertx.nms.database.Database] INFO - Checked and ensured tables exist.
+2025-03-21 12:47:47 [io.vertx.nms.database.Database] INFO - DatabaseService is listening on eventbus address: database.query.execute
+2025-03-21 12:47:47 [io.vertx.nms.database.Database] INFO - DatabaseVerticle Eventbus is ready to listen
+2025-03-21 12:47:50 [io.vertx.nms.database.Database] INFO - Executing query: SELECT p.id AS job_id, p.ip, c.system_type, c.credentials FROM provisioning_jobs p JOIN credential_profile c ON p.credential_profile_id = c.id
+2025-03-21 12:47:50 [io.vertx.nms.database.Database] INFO - Inserting into cache for query: SELECT p.id AS job_id, p.ip, c.system_type, c.credentials FROM provisioning_jobs p JOIN credential_profile c ON p.credential_profile_id = c.id
+2025-03-21 12:47:50 [io.vertx.nms.database.Database] INFO - Adding cache key for table: credential_profile
+2025-03-21 12:47:50 [io.vertx.nms.database.Database] INFO - Adding cache key for table: provisioning_jobs
+2025-03-21 12:47:52 [io.vertx.nms.database.Database] INFO - Executing query: INSERT INTO provision_data (job_id, data, polled_at) VALUES ($1, $2, $3),($4, $5, $6),($7, $8, $9),($10, $11, $12),($13, $14, $15),($16, $17, $18),($19, $20, $21),($22, $23, $24),($25, $26, $27),($28, $29, $30),($31, $32, $33),($34, $35, $36),($37, $38, $39),($40, $41, $42),($43, $44, $45) RETURNING id
+2025-03-21 12:47:52 [io.vertx.nms.database.Database] INFO - Invalidating cache for table: provision_data
+2025-03-21 12:48:17 [io.vertx.nms.database.Database] INFO - Executing query: INSERT INTO provision_data (job_id, data, polled_at) VALUES ($1, $2, $3) RETURNING id
+2025-03-21 12:48:17 [io.vertx.nms.database.Database] INFO - Invalidating cache for table: provision_data
+2025-03-21 12:48:27 [io.vertx.nms.database.Database] INFO - Checked and ensured tables exist.
+2025-03-21 12:48:27 [io.vertx.nms.database.Database] INFO - DatabaseService is listening on eventbus address: database.query.execute
+2025-03-21 12:48:27 [io.vertx.nms.database.Database] INFO - DatabaseVerticle Eventbus is ready to listen
+2025-03-21 12:48:30 [io.vertx.nms.database.Database] INFO - Executing query: SELECT p.id AS job_id, p.ip, c.system_type, c.credentials FROM provisioning_jobs p JOIN credential_profile c ON p.credential_profile_id = c.id
+2025-03-21 12:48:30 [io.vertx.nms.database.Database] INFO - Inserting into cache for query: SELECT p.id AS job_id, p.ip, c.system_type, c.credentials FROM provisioning_jobs p JOIN credential_profile c ON p.credential_profile_id = c.id
+2025-03-21 12:48:30 [io.vertx.nms.database.Database] INFO - Adding cache key for table: credential_profile
+2025-03-21 12:48:30 [io.vertx.nms.database.Database] INFO - Adding cache key for table: provisioning_jobs
+2025-03-21 12:48:33 [io.vertx.nms.database.Database] INFO - Executing query: INSERT INTO provision_data (job_id, data, polled_at) VALUES ($1, $2, $3),($4, $5, $6),($7, $8, $9),($10, $11, $12),($13, $14, $15),($16, $17, $18),($19, $20, $21),($22, $23, $24),($25, $26, $27),($28, $29, $30),($31, $32, $33),($34, $35, $36),($37, $38, $39),($40, $41, $42),($43, $44, $45) RETURNING id
+2025-03-21 12:48:33 [io.vertx.nms.database.Database] INFO - Invalidating cache for table: provision_data
+2025-03-21 12:48:57 [io.vertx.nms.database.Database] INFO - Executing query: INSERT INTO provision_data (job_id, data, polled_at) VALUES ($1, $2, $3) RETURNING id
+2025-03-21 12:48:57 [io.vertx.nms.database.Database] INFO - Invalidating cache for table: provision_data

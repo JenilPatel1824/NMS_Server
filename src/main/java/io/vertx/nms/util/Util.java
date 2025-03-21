@@ -8,6 +8,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -194,5 +198,52 @@ public class Util
 
             return false;
         }
+    }
+
+    public static Map<Integer, String> fpingBatch(List<String> ipAddresses)
+    {
+        var reachableIps = new HashMap<Integer,String>();
+
+        var count = 1;
+
+        try
+        {
+            var tempFile = Files.createTempFile("ips", ".txt");
+
+            Files.write(tempFile, String.join("\n", ipAddresses).getBytes());
+
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                    "fping",
+                    "-a",
+                    "-f", tempFile.toString()
+            );
+
+            var process = processBuilder.start();
+
+            var reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+            String line;
+
+            while ((line = reader.readLine()) != null)
+            {
+                line = line.trim();
+
+                if (!line.isEmpty())
+                {
+                    reachableIps.put(count++, line);
+                }
+            }
+
+            process.waitFor();
+
+            Files.delete(tempFile);
+
+        }
+        catch (Exception e)
+        {
+            logger.error("Error during batch ping operation", e);
+        }
+
+        return reachableIps;
     }
 }

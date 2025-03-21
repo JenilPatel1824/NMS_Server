@@ -101,8 +101,16 @@ public class Constants
 
     public static final String DATABASE_JOB_ID = "job_id";
 
-    public static final String CLASS = "class";
+    public static final String NUMBER = "number";
 
+    public static final String NUMBERS = "numbers";
+
+    public static final String ERROR = "error";
+
+    public static final String DISCOVERED_IPS ="discovered_ips";
+
+
+    public static final String MESSAGE_NO_SNMP_DEVICE_IN_RANGE = "No successful SNMP discoveries in the IP range";
 
     public static final String MESSAGE_EMPTY_REQUEST = "Bad request: Empty message body";
 

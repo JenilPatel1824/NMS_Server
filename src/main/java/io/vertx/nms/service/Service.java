@@ -1,5 +1,8 @@
 package io.vertx.nms.service;
 
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -9,6 +12,16 @@ import io.vertx.nms.database.QueryBuilder;
 import io.vertx.nms.util.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Service
 {
@@ -160,7 +173,7 @@ public class Service
 
                                 requestBody.put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, newCredentialProfileId);
 
-                                requestBody.put(Constants.STATUS, false);
+                                requestBody.put(Constants.STATUS, null);
                             }
 
                             if (!existingName.equals(newName) && requestBody.isEmpty())
@@ -354,20 +367,15 @@ public class Service
         {
             var profileId = Long.parseLong(discoveryProfileId);
 
-            var queryForDiscovery = "SELECT dp.id, dp.ip, dp.discovery_profile_name, cp.id as credential_profile_id, cp.system_type, cp.credentials " +
-                    "FROM discovery_profiles dp " +
-                    "JOIN credential_profile cp ON dp.credential_profile_id = cp.id " +
-                    "WHERE dp.id = $1";
+            var queryForDiscovery = "SELECT dt.id, dt.ip, dt.discovery_profile_name, cp.id as credential_profile_id, cp.system_type, cp.credentials " +
+                    "FROM discovery_profiles dt " +
+                    "JOIN credential_profile cp ON dt.credential_profile_id = cp.id " +
+                    "WHERE dt.id = $1";
 
-            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
-                    new JsonObject()
-                            .put(Constants.QUERY, queryForDiscovery)
-                            .put(Constants.PARAMS, new JsonArray().add(profileId)),
-                    fetchResult ->
+            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, queryForDiscovery).put(Constants.PARAMS, new JsonArray().add(profileId)), fetchResult ->
                     {
                         if (fetchResult.failed())
                         {
-
                             logger.error("Failed to fetch discovery for profile id: {}", discoveryProfileId);
 
                             context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
@@ -381,7 +389,6 @@ public class Service
 
                         if (dataArray == null || dataArray.isEmpty())
                         {
-
                             logger.error("No discovery data found or credential profile deleted for profile id: {}", discoveryProfileId);
 
                             context.response().setStatusCode(404).end(DISCOVERY_NOT_FOUND);
@@ -395,7 +402,6 @@ public class Service
 
                         if (targetIp == null || targetIp.isEmpty())
                         {
-
                             context.response().setStatusCode(400).end(IP_NOT_FOUND);
 
                             return;
@@ -403,95 +409,16 @@ public class Service
 
                         logger.info("Found IP for request: {}", targetIp);
 
-                        vertx.executeBlocking(promise ->
+                        if (targetIp.contains("/"))
                         {
-                            var isReachable = Util.ping(targetIp);
-
-                            promise.complete(isReachable);
-                        }, res ->
+                            processCidrRangeDiscovery(targetIp, discovery, profileId, context);
+                        }
+                        else
                         {
-                            if (res.succeeded() && (Boolean) res.result())
-                            {
-                                var deviceType = discovery.getString(Constants.SYSTEM_TYPE);
-
-                                if (!deviceType.equalsIgnoreCase(Constants.SNMP))
-                                {
-                                    context.response().setStatusCode(400).end(INVALID_DEVICE_TYPE);
-
-                                    return;
-                                }
-
-                                var credentials = discovery.getJsonObject(Constants.CREDENTIALS);
-
-                                if (credentials == null)
-                                {
-                                    context.response().setStatusCode(500).end(INVALID_CREDENTIAL_FORMAT);
-
-                                    return;
-                                }
-
-                                var zmqRequest = new JsonObject()
-                                        .put(Constants.IP, targetIp)
-                                        .put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
-                                        .put(Constants.VERSION, credentials.getString(Constants.VERSION))
-                                        .put(Constants.PLUGIN_TYPE, deviceType)
-                                        .put(Constants.REQUEST_TYPE, Constants.DISCOVERY);
-
-                                vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_ZMQ_ADDRESS, zmqRequest, zmqResult ->
-                                {
-                                    if (zmqResult.failed())
-                                    {
-                                        logger.info(Constants.MESSAGE_ZMQ_NO_RESPONSE);
-
-                                        context.response().setStatusCode(504).end(Constants.MESSAGE_ZMQ_NO_RESPONSE);
-
-                                        return;
-                                    }
-
-                                    var zmqResponseJson = zmqResult.result().body();
-
-                                    logger.info("ZMQ Response: {}", zmqResponseJson);
-
-                                    var isSuccess = Constants.SUCCESS.equalsIgnoreCase(zmqResponseJson.getString(Constants.STATUS));
-
-                                    if (!isSuccess)
-                                    {
-                                        context.response().setStatusCode(500).end(DISCOVERY_FAIL + targetIp);
-
-                                        return;
-                                    }
-
-                                    var updateStatusQuery = "UPDATE discovery_profiles " +
-                                            "SET status = true " +
-                                            "WHERE id = $2";
-
-                                    vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
-                                            new JsonObject()
-                                                    .put(Constants.QUERY, updateStatusQuery)
-                                                    .put(Constants.PARAMS, new JsonArray().add(targetIp).add(profileId)),
-                                            updateResult ->
-                                            {
-                                                if (updateResult.succeeded())
-                                                {
-                                                    context.response().setStatusCode(200).end(DISCOVERY_SUCCESSFUL);
-                                                }
-                                                else
-                                                {
-                                                    logger.error("Failed to update discovery status {}", discoveryProfileId);
-
-                                                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
-                                                }
-                                            });
-                                });
-                            }
-                            else
-                            {
-                                logger.error("Ping failed for IP: {}", targetIp);
-
-                                context.response().setStatusCode(400).end(PING_FAIL);
-                            }
-                        });
+                            processSingleIpDiscovery(targetIp, discovery, profileId, context);
+                        }
                     });
+
         }
         catch (NumberFormatException e)
         {
@@ -500,6 +427,293 @@ public class Service
 
             context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
         }
+    }
+
+    private void processCidrRangeDiscovery(String cidrRange, JsonObject discovery, Long profileId, RoutingContext context) {
+        try
+        {
+            var parts = cidrRange.split("/");
+
+            var networkAddress = parts[0];
+
+            var prefixLength = Integer.parseInt(parts[1]);
+
+            if (prefixLength < 0 || prefixLength > 32)
+            {
+                context.response().setStatusCode(400).end("Invalid CIDR range format");
+
+                return;
+            }
+
+            if (prefixLength == 24)
+            {
+                var baseIp = networkAddress.substring(0, networkAddress.lastIndexOf(".") + 1);
+
+                var allIps = new ArrayList<String>();
+
+                for (int i = 1; i <= 255; i++)
+                {
+                    allIps.add(baseIp + i);
+                }
+
+                logger.info("Starting discovery for IP range: {} with {} IPs", cidrRange, allIps.size());
+
+                vertx.executeBlocking(promise ->
+                {
+                    var reachableIps = Util.fpingBatch(allIps);
+
+                    promise.complete(reachableIps);
+
+                }, pingResult ->
+                {
+                    if (pingResult.succeeded())
+                    {
+                        var reachableIps = (Map<Integer, String>) pingResult.result();
+
+                        if (reachableIps.isEmpty()) 
+                        {
+                            logger.error("No reachable IPs found in range: {}", cidrRange);
+
+                            context.response().setStatusCode(400).end("No reachable IPs found in the specified range");
+
+                            return;
+                        }
+
+                        logger.info("Found {} reachable IPs in range {}", reachableIps.size(), cidrRange);
+
+                        var deviceType = discovery.getString(Constants.SYSTEM_TYPE);
+
+                        if (!deviceType.equalsIgnoreCase(Constants.SNMP))
+                        {
+                            context.response().setStatusCode(400).end(INVALID_DEVICE_TYPE);
+
+                            return;
+                        }
+
+                        var credentials = discovery.getJsonObject(Constants.CREDENTIALS);
+
+                        if (credentials == null)
+                        {
+                            context.response().setStatusCode(500).end(INVALID_CREDENTIAL_FORMAT);
+
+                            return;
+                        }
+
+                        runBatchSnmpDiscovery(reachableIps, credentials, deviceType, profileId, context);
+
+                    }
+                    else
+                    {
+                        logger.error("Error during batch ping for range: {}", cidrRange);
+
+                        context.response().setStatusCode(500).end("Error during IP range discovery");
+                    }
+                });
+
+            }
+            else
+            {
+                context.response().setStatusCode(400).end("Only /24 CIDR ranges are supported");
+            }
+        }
+        catch (Exception e)
+        {
+            logger.error("Error processing CIDR range: {}", cidrRange, e);
+
+            context.response().setStatusCode(500).end("Error processing IP range");
+        }
+    }
+
+    private void runBatchSnmpDiscovery(Map<Integer, String> reachableIps, JsonObject credentials, String deviceType, Long profileId, RoutingContext context) {
+        var discoveryFutures = new ArrayList<Future>();
+
+        var futureToIpNumberMap = new HashMap<>();
+
+        var futureIndex = 0;
+
+        for (Map.Entry<Integer, String> entry : reachableIps.entrySet()) {
+            var number = entry.getKey();
+
+            var ip = entry.getValue();
+
+            var zmqRequest = new JsonObject()
+                    .put(Constants.IP, ip)
+                    .put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
+                    .put(Constants.VERSION, credentials.getString(Constants.VERSION))
+                    .put(Constants.PLUGIN_TYPE, deviceType)
+                    .put(Constants.REQUEST_TYPE, Constants.DISCOVERY);
+
+            var promise = Promise.<JsonObject>promise();
+
+            var future = promise.future().map(result ->
+            {
+                return result.put("ip", ip).put("number", number);
+            });
+
+            discoveryFutures.add(future);
+
+            futureToIpNumberMap.put(futureIndex++, number);
+
+            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_ZMQ_ADDRESS, zmqRequest, ar ->
+            {
+                if (ar.succeeded()) {
+                    promise.complete(ar.result().body());
+                } else {
+                    promise.complete(new JsonObject().put(Constants.STATUS, Constants.FAIL));
+                }
+            });
+        }
+
+        var successfulIps = new HashMap<Integer, String>();
+
+        for (int i = 0; i < discoveryFutures.size(); i++) {
+            Future<JsonObject> future = discoveryFutures.get(i);
+
+            if (future.succeeded()) {
+                var result = future.result();
+
+                var isSuccess = Constants.SUCCESS.equalsIgnoreCase(result.getString(Constants.STATUS));
+
+                if (isSuccess) {
+                    var number = result.getInteger(Constants.NUMBER);
+
+                    var ip = result.getString(Constants.IP);
+
+                    successfulIps.put(number, ip);
+
+                    logger.info("Successfully discovered device at IP: {}", ip);
+                }
+            }
+        }
+
+        if (successfulIps.isEmpty()) {
+            logger.warn("No successful SNMP discoveries in the IP range");
+
+            context.response().setStatusCode(400).end(Constants.MESSAGE_NO_SNMP_DEVICE_IN_RANGE);
+
+            return;
+        }
+
+        var statusJson = new JsonObject();
+
+        for (Map.Entry<Integer, String> entry : successfulIps.entrySet()) {
+            statusJson.put(entry.getKey().toString(), entry.getValue());
+        }
+
+        var updateStatusQuery = "UPDATE discovery_profiles " +
+                "SET status = $1::jsonb " +
+                "WHERE id = $2";
+
+        vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, updateStatusQuery).put(Constants.PARAMS, new JsonArray().add(statusJson).add(profileId)),
+                updateResult ->
+                {
+                    if (updateResult.succeeded()) {
+                        context.response()
+                                .setStatusCode(200)
+                                .end(new JsonObject().put(Constants.MESSAGE, Constants.SUCCESS).put(Constants.DISCOVERED_IPS, statusJson).encode());
+                    }
+                    else
+                    {
+                        logger.error("Failed to update discovery status {}", profileId);
+
+                        context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
+                    }
+                });
+    }
+
+    private void processSingleIpDiscovery(String targetIp, JsonObject discovery, Long profileId, RoutingContext context)
+    {
+        vertx.executeBlocking(promise ->
+        {
+            var isReachable = Util.ping(targetIp);
+
+            promise.complete(isReachable);
+        }, res ->
+        {
+            if (res.succeeded() && (Boolean) res.result())
+            {
+                var deviceType = discovery.getString(Constants.SYSTEM_TYPE);
+
+                if (!deviceType.equalsIgnoreCase(Constants.SNMP))
+                {
+                    context.response().setStatusCode(400).end(INVALID_DEVICE_TYPE);
+
+                    return;
+                }
+
+                var credentials = discovery.getJsonObject(Constants.CREDENTIALS);
+
+                if (credentials == null)
+                {
+                    context.response().setStatusCode(500).end(INVALID_CREDENTIAL_FORMAT);
+
+                    return;
+                }
+
+                var zmqRequest = new JsonObject()
+                        .put(Constants.IP, targetIp)
+                        .put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
+                        .put(Constants.VERSION, credentials.getString(Constants.VERSION))
+                        .put(Constants.PLUGIN_TYPE, deviceType)
+                        .put(Constants.REQUEST_TYPE, Constants.DISCOVERY);
+
+                vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_ZMQ_ADDRESS, zmqRequest, zmqResult ->
+                {
+                    if (zmqResult.failed())
+                    {
+                        logger.info(Constants.MESSAGE_ZMQ_NO_RESPONSE);
+
+                        context.response().setStatusCode(504).end(Constants.MESSAGE_ZMQ_NO_RESPONSE);
+
+                        return;
+                    }
+
+                    var zmqResponseJson = zmqResult.result().body();
+
+                    logger.info("ZMQ Response: {}", zmqResponseJson);
+
+                    var isSuccess = Constants.SUCCESS.equalsIgnoreCase(zmqResponseJson.getString(Constants.STATUS));
+
+                    if (!isSuccess)
+                    {
+                        context.response().setStatusCode(500).end(DISCOVERY_FAIL + targetIp);
+
+                        return;
+                    }
+
+                    var statusJson = new JsonObject().put("1", targetIp);
+
+                    var updateStatusQuery = "UPDATE discovery_profile " +
+                            "SET status = $1::jsonb " +
+                            "WHERE id = $2";
+
+                    vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
+                            new JsonObject().put(Constants.QUERY, updateStatusQuery).put(Constants.PARAMS, new JsonArray().add(statusJson.encode()).add(profileId)), updateResult ->
+                            {
+                                if (updateResult.succeeded())
+                                {
+                                    context.response().setStatusCode(200)
+                                            .end(new JsonObject()
+                                                    .put(Constants.MESSAGE, DISCOVERY_SUCCESSFUL)
+                                                    .put(Constants.DISCOVERED_IPS, statusJson)
+                                                    .encode());
+                                }
+                                else
+                                {
+                                    logger.error("Failed to update discovery status {}", profileId);
+
+                                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
+                                }
+                            });
+                });
+            }
+            else
+            {
+                logger.error("Ping failed for IP: {}", targetIp);
+
+                context.response().setStatusCode(400).end(PING_FAIL);
+            }
+        });
     }
 
     // Updates the provision status for a discovery profile.
@@ -511,13 +725,24 @@ public class Service
         {
             var profileId = Long.parseLong(discoveryProfileId);
 
-            var query = "SELECT dp.status, dp.ip, dp.credential_profile_id " +
-                    "FROM discovery_profiles dp " +
-                    "WHERE dp.id = " + profileId;
+            var requestBody = context.getBodyAsJson();
 
-            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
-                    new JsonObject().put(Constants.QUERY, query),
-                    checkReply ->
+            var numbersArray = requestBody.getJsonArray(Constants.NUMBERS);
+
+            if (numbersArray == null || numbersArray.isEmpty())
+            {
+                context.response().setStatusCode(400).end("Numbers array is required");
+
+                return;
+            }
+
+            var successResults = new JsonArray();
+
+            var failedResults = new JsonArray();
+
+            var query = "SELECT id, status FROM discovery_profiles WHERE id = " + profileId;
+
+            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, query), checkReply ->
                     {
                         if (checkReply.succeeded())
                         {
@@ -532,84 +757,20 @@ public class Service
 
                             var data = result.getJsonArray(Constants.DATA).getJsonObject(0);
 
-                            var status = data.getBoolean(Constants.STATUS);
+                            var statusJson = data.getJsonObject(Constants.STATUS);
 
-                            var ip = data.getString(Constants.IP);
-
-                            var credentialProfileId = data.getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID);
-
-                            if (status == null || !status)
+                            if (statusJson == null)
                             {
-                                context.response().setStatusCode(400).end(Constants.MESSAGE_IP_NOT_DISCOVERED);
+                                context.response().setStatusCode(400).end("Status information not available");
 
                                 return;
                             }
 
-                            if (credentialProfileId == null)
-                            {
-                                context.response().setStatusCode(400).end(Constants.MESSAGE_NULL_CREDENTIAL_ID);
-
-                                return;
-                            }
-
-                            var insertRequest = new JsonObject()
-                                    .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS)
-                                    .put(Constants.OPERATION, Constants.INSERT)
-                                    .put(Constants.DATA, new JsonObject()
-                                            .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, credentialProfileId)
-                                            .put(Constants.IP, ip));
-
-                            var queryResult = QueryBuilder.buildQuery(insertRequest);
-
-                            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
-                                    new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()),
-                                    insertReply ->
-                                    {
-                                        if (insertReply.succeeded())
-                                        {
-
-                                            var insertResult = insertReply.result().body();
-
-                                            var insertedId = insertResult.getLong(Constants.ID);
-
-                                            if (insertedId == null)
-                                            {
-
-                                                context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
-
-                                                return;
-                                            }
-                                            var updateQuery = "UPDATE credential_profile SET in_use_by = in_use_by + 1 WHERE id = " + credentialProfileId;
-
-                                            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
-                                                    new JsonObject().put(Constants.QUERY, updateQuery),
-                                                    updateReply ->
-                                                    {
-                                                        if (updateReply.succeeded())
-                                                        {
-                                                            context.response().setStatusCode(200).end(new JsonObject().put(Constants.STATUS,Constants.SUCCESS).put(Constants.MESSAGE,PROVISION_UPDATE_SUCCESSFUL).put(Constants.ID,insertedId).encode());
-                                                        }
-                                                        else
-                                                        {
-                                                            logger.error("Failed to update in_use_by: {}", updateReply.cause().getMessage());
-
-                                                            context.response().setStatusCode(500).end("Provisioning successful, but failed to update credential profile.");
-                                                        }
-                                                    });
-
-                                        }
-                                        else
-                                        {
-                                            logger.error("Provisioning insert failed: {}", insertReply.cause().getMessage());
-
-                                            context.response().setStatusCode(400).end(Constants.MESSAGE_POLLING_STARTED);
-                                        }
-                                    });
-
+                            processNumbers(profileId, numbersArray, statusJson, successResults, failedResults, context);
                         }
                         else
                         {
-                            logger.error("Failed to fetch discovery profile: {}", checkReply.cause().getMessage());
+                            logger.error("Failed to fetch discovery test: {}", checkReply.cause().getMessage());
 
                             context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
                         }
@@ -619,6 +780,204 @@ public class Service
         {
             context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
         }
+    }
+
+    private void processNumbers(Long profileId, JsonArray numbersArray, JsonObject statusJson, JsonArray successResults, JsonArray failedResults, RoutingContext context) {
+
+        var pendingOperations = new AtomicInteger(numbersArray.size());
+
+        for (int i = 0; i < numbersArray.size(); i++)
+        {
+            var number = String.valueOf(numbersArray.getValue(i));
+
+            if (!statusJson.containsKey(number))
+            {
+                var errorResult = new JsonObject()
+                        .put(Constants.NUMBER, number)
+                        .put(Constants.ERROR, "Number not found");
+                failedResults.add(errorResult);
+
+                if (pendingOperations.decrementAndGet() == 0)
+                {
+                    sendFinalResponse(successResults, failedResults, context);
+                }
+
+                continue;
+            }
+
+            var ip = statusJson.getString(number);
+
+            if (ip == null || ip.isEmpty())
+            {
+                JsonObject errorResult = new JsonObject().put(Constants.NUMBER, number).put(Constants.ERROR, "Invalid IP address");
+
+                failedResults.add(errorResult);
+
+                if (pendingOperations.decrementAndGet() == 0)
+                {
+                    sendFinalResponse(successResults, failedResults, context);
+                }
+
+                continue;
+            }
+
+            var credentialQuery = "SELECT credential_profile_id FROM discovery_profiles WHERE id = " + profileId;
+
+            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, credentialQuery),
+                    credReply ->
+                    {
+                        if (credReply.succeeded())
+                        {
+                            var credResult = credReply.result().body();
+
+                            if (credResult == null || credResult.getJsonArray(Constants.DATA).isEmpty())
+                            {
+                                JsonObject errorResult = new JsonObject()
+                                        .put(Constants.NUMBER, number)
+                                        .put(Constants.ERROR, "Credential profile not found");
+
+                                failedResults.add(errorResult);
+
+                                if (pendingOperations.decrementAndGet() == 0)
+                                {
+                                    sendFinalResponse(successResults, failedResults, context);
+                                }
+
+                                return;
+                            }
+
+                            var credData = credResult.getJsonArray(Constants.DATA).getJsonObject(0);
+
+                            var credentialProfileId = credData.getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID);
+
+                            if (credentialProfileId == null)
+                            {
+                                var errorResult = new JsonObject().put(Constants.NUMBER, number).put(Constants.ERROR, Constants.MESSAGE_NULL_CREDENTIAL_ID);
+
+                                failedResults.add(errorResult);
+
+                                if (pendingOperations.decrementAndGet() == 0)
+                                {
+                                    sendFinalResponse(successResults, failedResults, context);
+                                }
+
+                                return;
+                            }
+
+                            startProvisioning( number, ip, credentialProfileId, successResults, failedResults, pendingOperations, context);
+                        }
+                        else
+                        {
+                            var errorResult = new JsonObject().put(Constants.NUMBER, number).put(Constants.ERROR, "Failed to fetch credential profile");
+
+                            failedResults.add(errorResult);
+
+                            if (pendingOperations.decrementAndGet() == 0)
+                            {
+                                sendFinalResponse(successResults, failedResults, context);
+                            }
+                        }
+                    });
+        }
+    }
+
+    private void startProvisioning( String number, String ip, Long credentialProfileId, JsonArray successResults, JsonArray failedResults, AtomicInteger pendingOperations, RoutingContext context)
+    {
+
+        var insertRequest = new JsonObject()
+                .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS)
+                .put(Constants.OPERATION, Constants.INSERT)
+                .put(Constants.DATA, new JsonObject()
+                        .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, credentialProfileId)
+                        .put(Constants.IP, ip));
+
+        var queryResult = QueryBuilder.buildQuery(insertRequest);
+
+        vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS,
+                new JsonObject().put(Constants.QUERY, queryResult.getQuery()).put(Constants.PARAMS, queryResult.getParams()),
+                insertReply ->
+                {
+                    if (insertReply.succeeded())
+                    {
+                        var insertResult = insertReply.result().body();
+
+                        var insertedId = insertResult.getLong(Constants.ID);
+
+                        if (insertedId == null)
+                        {
+                            var errorResult = new JsonObject().put(Constants.NUMBER, number).put(Constants.ERROR, "Failed to insert provisioning job");
+
+                            failedResults.add(errorResult);
+
+                            if (pendingOperations.decrementAndGet() == 0)
+                            {
+                                sendFinalResponse(successResults, failedResults, context);
+                            }
+
+                            return;
+                        }
+
+                        var updateQuery = "UPDATE credential_profile SET in_use_by = in_use_by + 1 WHERE id = " + credentialProfileId;
+
+                        vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, updateQuery),
+                                updateReply ->
+                                {
+                                    if (updateReply.succeeded())
+                                    {
+                                        var successResult = new JsonObject()
+                                                .put(Constants.NUMBER, number)
+                                                .put(Constants.ID, insertedId)
+                                                .put(Constants.STATUS, Constants.SUCCESS);
+
+                                        successResults.add(successResult);
+
+                                    }
+                                    else
+                                    {
+                                        logger.error("Failed to update in_use_by for number {}: {}", number, updateReply.cause().getMessage());
+
+                                        var successResult = new JsonObject()
+                                                .put(Constants.NUMBER, number)
+                                                .put(Constants.ID, insertedId)
+                                                .put(Constants.STATUS, Constants.SUCCESS)
+                                                .put("warning", "Provisioning successful, but failed to update credential profile usage count");
+                                        successResults.add(successResult);
+                                    }
+
+                                    if (pendingOperations.decrementAndGet() == 0)
+                                    {
+                                        sendFinalResponse(successResults, failedResults, context);
+                                    }
+                                });
+                    }
+                    else
+                    {
+                        logger.error("Provisioning insert failed for number {}: {}", number, insertReply.cause().getMessage());
+
+                        var errorResult = new JsonObject()
+                                .put(Constants.NUMBER, number)
+                                .put(Constants.ERROR, "Failed to insert provisioning job");
+
+                        failedResults.add(errorResult);
+
+                        if (pendingOperations.decrementAndGet() == 0)
+                        {
+                            sendFinalResponse(successResults, failedResults, context);
+                        }
+                    }
+                });
+    }
+
+    private void sendFinalResponse(JsonArray successResults, JsonArray failedResults, RoutingContext context) {
+        JsonObject response = new JsonObject()
+                .put(Constants.STATUS, successResults.isEmpty() ? Constants.ERROR : Constants.SUCCESS)
+                .put("total", successResults.size() + failedResults.size())
+                .put(Constants.SUCCESS, successResults.size())
+                .put(Constants.FAIL, failedResults.size())
+                .put("successfulNumbers", successResults)
+                .put("failedNumbers", failedResults);
+
+        context.response().setStatusCode(200).end(response.encode());
     }
 
     // Fetches provision data for a given job ID.

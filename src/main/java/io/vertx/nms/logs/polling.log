@@ -1,0 +1,14 @@
+2025-03-21 12:47:50 [io.vertx.nms.engine.PollingEngine] INFO - Device Fetch Successful
+2025-03-21 12:47:52 [io.vertx.nms.engine.PollingEngine] INFO - flushing batch 15
+2025-03-21 12:47:52 [io.vertx.nms.engine.PollingEngine] INFO - Storing 15 SNMP records in batch...
+2025-03-21 12:47:52 [io.vertx.nms.engine.PollingEngine] INFO - Batch SNMP data stored successfully.
+2025-03-21 12:48:17 [io.vertx.nms.engine.PollingEngine] INFO - flushing batch 1
+2025-03-21 12:48:17 [io.vertx.nms.engine.PollingEngine] INFO - Storing 1 SNMP records in batch...
+2025-03-21 12:48:17 [io.vertx.nms.engine.PollingEngine] INFO - Batch SNMP data stored successfully.
+2025-03-21 12:48:30 [io.vertx.nms.engine.PollingEngine] INFO - Device Fetch Successful
+2025-03-21 12:48:33 [io.vertx.nms.engine.PollingEngine] INFO - flushing batch 15
+2025-03-21 12:48:33 [io.vertx.nms.engine.PollingEngine] INFO - Storing 15 SNMP records in batch...
+2025-03-21 12:48:33 [io.vertx.nms.engine.PollingEngine] INFO - Batch SNMP data stored successfully.
+2025-03-21 12:48:57 [io.vertx.nms.engine.PollingEngine] INFO - flushing batch 1
+2025-03-21 12:48:57 [io.vertx.nms.engine.PollingEngine] INFO - Storing 1 SNMP records in batch...
+2025-03-21 12:48:57 [io.vertx.nms.engine.PollingEngine] INFO - Batch SNMP data stored successfully.
