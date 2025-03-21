@@ -875,51 +875,51 @@ public class Service
 
             vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, fetchQuery), fetchReply ->
             {
-                        if (fetchReply.succeeded())
+                if (fetchReply.succeeded())
+                {
+                    var result = fetchReply.result().body();
+
+                    if (result == null || result.getJsonArray(Constants.DATA).isEmpty())
+                    {
+                        context.response().setStatusCode(404).end(Constants.MESSAGE_JOB_NOT_FOUND);
+
+                        return;
+                    }
+
+                    var credentialProfileId = result.getJsonArray(Constants.DATA).getJsonObject(0).getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID);
+
+                    var deleteRequest = new JsonObject()
+                            .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS)
+                            .put(Constants.OPERATION, Constants.DELETE)
+                            .put(Constants.CONDITION, new JsonObject().put(Constants.ID, parsedId));
+
+                    var deleteQuery = QueryBuilder.buildQuery(deleteRequest);
+
+                    vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, deleteQuery.getQuery()).put(Constants.PARAMS, deleteQuery.getParams()), deleteReply ->
+                    {
+                        if (deleteReply.succeeded())
                         {
-                            var result = fetchReply.result().body();
-
-                            if (result == null || result.getJsonArray(Constants.DATA).isEmpty())
+                            if (credentialProfileId != null)
                             {
-                                context.response().setStatusCode(404).end(Constants.MESSAGE_JOB_NOT_FOUND);
+                                var updateQuery = "UPDATE credential_profile SET in_use_by = in_use_by - 1 WHERE id = " + credentialProfileId;
 
-                                return;
+                                vertx.eventBus().send(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, updateQuery));
                             }
 
-                            var credentialProfileId = result.getJsonArray(Constants.DATA).getJsonObject(0).getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID);
+                            context.response().setStatusCode(204).end();
 
-                            var deleteRequest = new JsonObject()
-                                    .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS)
-                                    .put(Constants.OPERATION, Constants.DELETE)
-                                    .put(Constants.CONDITION, new JsonObject().put(Constants.ID, parsedId));
-
-                            var deleteQuery = QueryBuilder.buildQuery(deleteRequest);
-
-                            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, deleteQuery.getQuery()).put(Constants.PARAMS, deleteQuery.getParams()), deleteReply ->
-                            {
-                                        if (deleteReply.succeeded())
-                                        {
-                                            if (credentialProfileId != null)
-                                            {
-                                                var updateQuery = "UPDATE credential_profile SET in_use_by = in_use_by - 1 WHERE id = " + credentialProfileId;
-
-                                                vertx.eventBus().send(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, updateQuery));
-                                            }
-
-                                            context.response().setStatusCode(204).end();
-
-                                        }
-                                        else
-                                        {
-                                            context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
-                                        }
-                                    });
                         }
                         else
                         {
                             context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
                         }
                     });
+                }
+                else
+                {
+                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
+                }
+            });
         }
         catch (NumberFormatException e)
         {

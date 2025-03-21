@@ -115,10 +115,10 @@ public class QueryBuilder
         return new QueryResult(query.toString(), new JsonArray(parameters));
     }
 
-// Appends a WHERE clause to the SQL query if conditions exist.
-// @param query StringBuilder containing the query being built.
-// @param condition JSON object with column-value pairs for filtering.
-// @param parameters List to store query parameters for prepared statements.
+    // Appends a WHERE clause to the SQL query if conditions exist.
+    // @param query StringBuilder containing the query being built.
+    // @param condition JSON object with column-value pairs for filtering.
+    // @param parameters List to store query parameters for prepared statements.
     private static void appendCondition(StringBuilder query, JsonObject condition, List<Object> parameters, AtomicInteger paramIndex)
     {
         if (!condition.isEmpty())

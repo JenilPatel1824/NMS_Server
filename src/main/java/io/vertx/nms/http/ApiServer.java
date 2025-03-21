@@ -119,7 +119,7 @@ public class ApiServer extends AbstractVerticle
         {
             var credentialProfileId = context.pathParam(CREDENTIAL_PROFILE_ID);
 
-            logger.info("CredentialHandler Get/:{}", credentialProfileId);
+            logger.info(Thread.currentThread().getName()+"CredentialHandler Get/:{}", credentialProfileId);
 
             if (credentialProfileId == null || credentialProfileId.isEmpty())
             {

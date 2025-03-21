@@ -1,6 +1,7 @@
 package io.vertx.nms;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.nms.database.Database;
 import io.vertx.nms.engine.PollingEngine;
@@ -127,7 +128,7 @@ public class Main extends AbstractVerticle
 
         var vertx = Vertx.vertx();
 
-        vertx.deployVerticle(new ApiServer(vertx))
+        vertx.deployVerticle(new ApiServer(vertx),new DeploymentOptions())
                 .compose(apiRes ->
                 {
                     logger.info("HTTP server verticle deployed");
