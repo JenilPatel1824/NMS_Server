@@ -127,10 +127,11 @@ public class Util
     // @param ip is ip for validation
     private static boolean isValidIpv4(String ip)
     {
-        var ipv4Regex = "^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$";
+        var ipv4CidrRegex = "^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)(/(3[0-2]|[12]?[0-9]))?$";
 
-        return Pattern.compile(ipv4Regex).matcher(ip).matches();
+        return Pattern.compile(ipv4CidrRegex).matcher(ip).matches();
     }
+
 
     // Returns the table name based on the request path.
     // @param context The routing context containing the request details.

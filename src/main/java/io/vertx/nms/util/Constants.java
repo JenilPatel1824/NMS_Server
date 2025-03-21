@@ -17,7 +17,7 @@ public class Constants
     public static final String ZMQ_ADDRESS = "tcp://localhost:5555";
 
 
-    public static final String DATABASE_TABLE_DISCOVERY_PROFILE = "discovery_profiles";
+    public static final String DATABASE_TABLE_DISCOVERY_PROFILE = "discovery_test";
 
     public static final String DATABASE_TABLE_CREDENTIAL_PROFILE = "credential_profile";
 
@@ -151,4 +151,5 @@ public class Constants
 
     public static final String DATABASE_IN_USE_BY = "in_use_by";
 
+    public static final String MESSAGE_NO_REACHABLE_DEVICE_IN_RANGE = "no rechable device in range" ;
 }

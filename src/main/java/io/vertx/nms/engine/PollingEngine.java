@@ -38,7 +38,7 @@ public class PollingEngine extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        vertx.setPeriodic( FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
+        vertx.setPeriodic(3000, FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
 
         vertx.setPeriodic(BATCH_FLUSH_CHECK_INTERVAL, id -> checkBatchTimeFlush());
 
