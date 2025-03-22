@@ -15,7 +15,7 @@ public class Constants
     public static final String DB_PASSWORD = "admin";
 
     public static final String ZMQ_ADDRESS = "tcp://localhost:5555";
-
+    
 
     public static final String DATABASE_TABLE_DISCOVERY_PROFILE = "discovery_profiles";
 

@@ -167,45 +167,45 @@ public class PollingEngine extends AbstractVerticle
         storeSnmpDataBatch(batchCopy);
     }
 
-     // Stores SNMP data in batch.
-     // @param snmpDataList List of JSON objects containing SNMP data to be stored.
-     private void storeSnmpDataBatch(List<JsonObject> snmpDataList)
-     {
-         if (snmpDataList.isEmpty()) return;
+    // Stores SNMP data in batch.
+    // @param snmpDataList List of JSON objects containing SNMP data to be stored.
+    private void storeSnmpDataBatch(List<JsonObject> snmpDataList)
+    {
+        if (snmpDataList.isEmpty()) return;
 
-         logger.info("Storing {} SNMP records in batch...", snmpDataList.size());
+        logger.info("Storing {} SNMP records in batch...", snmpDataList.size());
 
-         var queryBuilder = new StringBuilder("INSERT INTO provision_data (job_id, data, polled_at) VALUES ");
+        var queryBuilder = new StringBuilder("INSERT INTO provision_data (job_id, data, polled_at) VALUES ");
 
-         var params = new JsonArray();
+        var params = new JsonArray();
 
-         var index = 1;
+        var index = 1;
 
-         for (var data : snmpDataList)
-         {
-             queryBuilder.append("($").append(index++).append(", $").append(index++).append(", $").append(index++).append("),");
+        for (var data : snmpDataList)
+        {
+            queryBuilder.append("($").append(index++).append(", $").append(index++).append(", $").append(index++).append("),");
 
-             params.add(data.getLong(Constants.DATABASE_JOB_ID))
-                     .add(data.getJsonObject(Constants.DATA))
-                     .add(data.getString(Constants.POLLED_AT));
-         }
+            params.add(data.getLong(Constants.DATABASE_JOB_ID))
+                    .add(data.getJsonObject(Constants.DATA))
+                    .add(data.getString(Constants.POLLED_AT));
+        }
 
-         queryBuilder.setLength(queryBuilder.length() - 1);
+        queryBuilder.setLength(queryBuilder.length() - 1);
 
-         queryBuilder.append(" RETURNING id");
+        queryBuilder.append(" RETURNING id");
 
-         var queryRequest = new JsonObject().put(Constants.QUERY, queryBuilder.toString()).put(Constants.PARAMS, params);
+        var queryRequest = new JsonObject().put(Constants.QUERY, queryBuilder.toString()).put(Constants.PARAMS, params);
 
-         vertx.eventBus().<JsonObject>request(DB_QUERY_ADDRESS, queryRequest, reply ->
-         {
-             if (reply.succeeded())
-             {
-                 logger.info("Batch SNMP data stored successfully.");
-             }
-             else
-             {
-                 logger.error("Failed to store SNMP data batch: {}", reply.cause().getMessage());
-             }
-         });
-     }
+        vertx.eventBus().<JsonObject>request(DB_QUERY_ADDRESS, queryRequest, reply ->
+        {
+            if (reply.succeeded())
+            {
+                logger.info("Batch SNMP data stored successfully.");
+            }
+            else
+            {
+                logger.error("Failed to store SNMP data batch: {}", reply.cause().getMessage());
+            }
+        });
+    }
 }

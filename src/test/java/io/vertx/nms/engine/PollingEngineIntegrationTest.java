@@ -24,13 +24,13 @@ public class PollingEngineIntegrationTest
 
     private static final Logger logger = LoggerFactory.getLogger(PollingEngineIntegrationTest.class);
 
-
     @BeforeEach
     void deployVerticles(Vertx vertx, VertxTestContext testContext)
     {
         vertx.deployVerticle(new PollingEngine()).onComplete(testContext.succeedingThenComplete());
     }
 
+    //Tests Polling flow with mock database
     @Test
     void testFullPollingFlow(Vertx vertx, VertxTestContext testContext)
     {
