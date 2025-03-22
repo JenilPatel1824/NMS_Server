@@ -751,7 +751,7 @@ public class Service
 
                     var statusJson = new JsonObject().put("1", targetIp);
 
-                    var updateStatusQuery = "UPDATE discovery_profile " +
+                    var updateStatusQuery = "UPDATE discovery_test " +
                             "SET status = $1::jsonb " +
                             "WHERE id = $2";
 
