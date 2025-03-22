@@ -1,2 +1,2 @@
-io/vertx/nms/service/ParallelProvision.class
-ApiServerTest.class
+io/vertx/nms/engine/PollingEngineIntegrationTest.class
+io/vertx/nms/http/ApiServerTest.class

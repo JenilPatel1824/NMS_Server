@@ -1,4 +1,4 @@
-package io.vertx.nms.http;
+package io.vertx.nms;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;
@@ -11,6 +11,8 @@ import io.vertx.nms.service.Service;
 import io.vertx.nms.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Set;
 
 public class ApiServer extends AbstractVerticle
 {
@@ -58,13 +60,7 @@ public class ApiServer extends AbstractVerticle
     {
         var mainRouter = Router.router(vertx);
 
-        mainRouter.route().handler(CorsHandler.create("*")
-                .allowedMethod(HttpMethod.GET)
-                .allowedMethod(HttpMethod.POST)
-                .allowedMethod(HttpMethod.PUT)
-                .allowedMethod(HttpMethod.DELETE)
-                .allowedMethod(HttpMethod.OPTIONS)
-                .allowedHeader("*"));
+        mainRouter.route().handler(CorsHandler.create().addOrigin("*").allowedMethods(Set.of(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.OPTIONS)).allowedHeaders(Set.of("*")));
 
         mainRouter.route(HTTP_PATH_CREDENTIAL).subRouter(createCredentialRouter());
 
@@ -119,7 +115,7 @@ public class ApiServer extends AbstractVerticle
         {
             var credentialProfileId = context.pathParam(CREDENTIAL_PROFILE_ID);
 
-            logger.info(Thread.currentThread().getName()+"CredentialHandler Get/:{}", credentialProfileId);
+            logger.info("CredentialHandler Get/:{}", credentialProfileId);
 
             if (credentialProfileId == null || credentialProfileId.isEmpty())
             {
@@ -317,7 +313,7 @@ public class ApiServer extends AbstractVerticle
         {
             var discoveryProfileId = context.pathParam(Constants.DISCOVERY_PROFILE_ID);
 
-            logger.info("ProvisionHandler PUT /:discoveryProfileId/:status {}", discoveryProfileId);
+            logger.info("ProvisionHandler PUT provision start/ {}", discoveryProfileId);
 
             if (discoveryProfileId == null || discoveryProfileId.isEmpty())
             {
@@ -360,25 +356,14 @@ public class ApiServer extends AbstractVerticle
 
             service.deleteProvisioningJob(discoveryProfileId, context);
         });
-        provisionRouter.get(PROVISION_TOP_ERROR_URL).handler(context->
-        {
-            service.getInterfacesByError(context);
-        });
 
-        provisionRouter.get(PROVISION_TOP_SPEED_URL).handler(context->
-        {
-            service.getInterfacesBySpeed(context);
-        });
+        provisionRouter.get(PROVISION_TOP_ERROR_URL).handler(service::getInterfacesByError);
 
-        provisionRouter.get(PROVISION_TOP_UPTIME_URL).handler(context->
-        {
-            service.getInterfacesByUptime(context);
-        });
+        provisionRouter.get(PROVISION_TOP_SPEED_URL).handler(service::getInterfacesBySpeed);
 
-        provisionRouter.get(PROVISION_DEVICES_URL).handler(context->
-        {
-            service.getDevices(context);
-        });
+        provisionRouter.get(PROVISION_TOP_UPTIME_URL).handler(service::getInterfacesByUptime);
+
+        provisionRouter.get(PROVISION_DEVICES_URL).handler(service::getDevices);
 
         return provisionRouter;
 

@@ -2,7 +2,6 @@ package io.vertx.nms.util;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.nms.service.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,16 +80,14 @@ public class Util
 
                 if (Constants.SNMP.equalsIgnoreCase(systemType))
                 {
-                    if (!credentialJson.containsKey(Constants.COMMUNITY) || credentialJson.getValue(Constants.COMMUNITY) == null ||
-                            (credentialJson.getValue(Constants.COMMUNITY) instanceof String && ((String) credentialJson.getValue(Constants.COMMUNITY)).trim().isEmpty()))
+                    if (!credentialJson.containsKey(Constants.COMMUNITY) || credentialJson.getValue(Constants.COMMUNITY) == null || (credentialJson.getValue(Constants.COMMUNITY) instanceof String && ((String) credentialJson.getValue(Constants.COMMUNITY)).trim().isEmpty()))
                     {
                         context.response().setStatusCode(400).end("Field 'credential.community' cannot be null or empty for system_type 'snmp'");
 
                         return false;
                     }
 
-                    if (!credentialJson.containsKey(Constants.VERSION) || credentialJson.getValue(Constants.VERSION) == null ||
-                            (credentialJson.getValue(Constants.VERSION) instanceof String && ((String) credentialJson.getValue(Constants.VERSION)).trim().isEmpty()))
+                    if (!credentialJson.containsKey(Constants.VERSION) || credentialJson.getValue(Constants.VERSION) == null || (credentialJson.getValue(Constants.VERSION) instanceof String && ((String) credentialJson.getValue(Constants.VERSION)).trim().isEmpty()))
                     {
                         context.response().setStatusCode(400).end("Field 'credential.version' cannot be null or empty for system_type 'snmp'");
 
@@ -102,14 +99,17 @@ public class Util
                     if (credentialJson.isEmpty())
                     {
                         context.response().setStatusCode(400).end("Field 'credential' cannot be empty");
+
                         return false;
                     }
                     for (var key : credentialJson.fieldNames())
                     {
                         var innerValue = credentialJson.getValue(key);
+
                         if (innerValue == null || (innerValue instanceof String && ((String) innerValue).trim().isEmpty()))
                         {
                             context.response().setStatusCode(400).end("Field 'credential." + key + "' cannot be null or empty");
+
                             return false;
                         }
                     }
@@ -132,7 +132,7 @@ public class Util
     // @param context The routing context containing the request details.
     public static String getTableNameFromContext(RoutingContext context)
     {
-        String path = context.request().path();
+        var path = context.request().path();
 
         if (path.startsWith("/credential")) return Constants.DATABASE_TABLE_CREDENTIAL_PROFILE;
 

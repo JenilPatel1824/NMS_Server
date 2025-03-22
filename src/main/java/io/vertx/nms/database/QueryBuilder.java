@@ -11,33 +11,11 @@ import java.util.stream.Collectors;
 
 public class QueryBuilder
 {
-    public static class QueryResult
-    {
-        private final String query;
+    public record QueryResult(String query, JsonArray params) { }
 
-        private final JsonArray params;
-
-        public QueryResult(String query, JsonArray params)
-        {
-            this.query = query;
-
-            this.params = params;
-        }
-
-        public String getQuery()
-        {
-            return query;
-        }
-
-        public JsonArray getParams()
-        {
-            return params;
-        }
-    }
-
-// Builds an SQL query string and parameters based on the requested operation.
-// @param request JSON object containing operation type, table name, columns, data, and conditions.
-// @return QueryResult containing the constructed query string and parameters.
+    // Builds an SQL query string and parameters based on the requested operation.
+    // @param request JSON object containing operation type, table name, columns, data, and conditions.
+    // @return QueryResult containing the constructed query string and parameters.
     public static QueryResult buildQuery(JsonObject request)
     {
         var operation = request.getString(Constants.OPERATION).toLowerCase();
@@ -60,9 +38,7 @@ public class QueryBuilder
         {
             case Constants.SELECT:
 
-                query.append("SELECT ")
-                        .append(columns.isEmpty() ? Constants.DATABASE_ALL_COLUMN : String.join(", ", columns.getList()))
-                        .append(" FROM ").append(tableName);
+                query.append("SELECT ").append(columns.isEmpty() ? Constants.DATABASE_ALL_COLUMN : String.join(", ", columns.getList())).append(" FROM ").append(tableName);
 
                 appendCondition(query, condition, parameters, paramIndex);
 
@@ -72,13 +48,9 @@ public class QueryBuilder
 
                 var keys = new ArrayList<>(data.fieldNames());
 
-                var placeholders = keys.stream()
-                        .map(k -> "$" + paramIndex.getAndIncrement())
-                        .collect(Collectors.joining(", "));
+                var placeholders = keys.stream().map(k -> "$" + paramIndex.getAndIncrement()).collect(Collectors.joining(", "));
 
-                query.append("INSERT INTO ").append(tableName)
-                        .append(" (").append(String.join(", ", keys)).append(") ")
-                        .append("VALUES (").append(placeholders).append(")");
+                query.append("INSERT INTO ").append(tableName).append(" (").append(String.join(", ", keys)).append(") ").append("VALUES (").append(placeholders).append(")");
 
                 keys.forEach(k -> parameters.add(data.getValue(k)));
 

@@ -1,3 +1,2 @@
-/home/jenil/Documents/NMS_Server/src/test/java/ApiServerTest.java
-/home/jenil/Documents/NMS_Server/src/test/java/io/vertx/nms/service/DiscoveryRunner.java
-/home/jenil/Documents/NMS_Server/src/test/java/io/vertx/nms/service/ParallelProvision.java
+/home/jenil/Documents/NMS_Server/src/test/java/io/vertx/nms/engine/PollingEngineIntegrationTest.java
+/home/jenil/Documents/NMS_Server/src/test/java/io/vertx/nms/http/ApiServerTest.java

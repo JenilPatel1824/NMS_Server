@@ -23,13 +23,15 @@ public class ZmqMessenger extends AbstractVerticle
 
     private static final int RESPONSE_CHECK_INTERVAL_MS = 500;
 
-    private static final long REQUEST_TIMEOUT_MS = 265000;
+    private static final long REQUEST_TIMEOUT_MS = 258000;
 
-    private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 2000;
+    private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 20000;
 
     private final Map<String, PendingRequest> pendingRequests = new HashMap<>();
 
     private static final String REQUEST_ID = "requestId";
+
+    private static final String REQUEST_TIMED_OUT ="Request timed out";
 
     private static class PendingRequest
     {
@@ -157,7 +159,7 @@ public class ZmqMessenger extends AbstractVerticle
         {
             logger.warn("Request {} timed out", entry.getKey());
 
-            entry.getValue().message.fail(408, "Request timed out");
+            entry.getValue().message.fail(408, REQUEST_TIMED_OUT);
 
             pendingRequests.remove(entry.getKey());
         });

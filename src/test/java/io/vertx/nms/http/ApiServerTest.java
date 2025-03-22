@@ -1,10 +1,14 @@
+package io.vertx.nms.http;
+
 import com.github.javafaker.Faker;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.junit5.VertxExtension;
-import io.vertx.nms.Main;
+import io.vertx.nms.ApiServer;
+import io.vertx.nms.database.Database;
+import io.vertx.nms.messaging.ZmqMessenger;
 import io.vertx.nms.util.Constants;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,7 +32,11 @@ class ApiServerTest
 
         webClient = WebClient.create(vertx);
 
-        vertx.deployVerticle(new Main(), testContext.succeeding(id -> testContext.completeNow()));
+        vertx.deployVerticle(new ApiServer(vertx))
+                .compose(id -> vertx.deployVerticle(new Database()))
+                .compose(id -> vertx.deployVerticle(new ZmqMessenger()))
+                .onSuccess(id -> testContext.completeNow())
+                .onFailure(testContext::failNow);
     }
 
     @AfterAll
@@ -161,11 +169,26 @@ class ApiServerTest
                 });
     }
 
+    //Test case for running a discovery
+    @Test
+    void testDiscoveryRun(VertxTestContext testContext)
+    {
+        var discoveryProfileId = "210210";
+
+        webClient.post(8080, "localhost", "/discovery/" + discoveryProfileId + "/run")
+                .send(response ->
+                {
+                    assertEquals(200, response.result().statusCode(), "Expected status code 200");
+
+                    testContext.completeNow();
+                });
+    }
+
     //Test case for updating provision status
     @Test
     void testUpdateProvisionStatus(VertxTestContext testContext)
     {
-        var discoveryId = "210129";
+        var discoveryId = "210128";
 
         webClient.post(8080, "localhost", "/provision/start"  + "/" +discoveryId)
                 .send( response ->
@@ -180,7 +203,7 @@ class ApiServerTest
     @Test
     void testGetProvisionData(VertxTestContext testContext)
     {
-        var jobId = "10147";
+        var jobId = "10152";
 
         webClient.get(8080, "localhost", "/provision/data/" + jobId)
                 .send(response ->
@@ -241,21 +264,6 @@ class ApiServerTest
                     var responseBody = response.result().bodyAsJsonObject();
 
                     assertNotNull(responseBody, "Response body should not be null");
-
-                    testContext.completeNow();
-                });
-    }
-
-    //Test case for running a discovery
-    @Test
-    void testDiscoveryRun(VertxTestContext testContext)
-    {
-        var discoveryProfileId = "210147";
-
-        webClient.post(8080, "localhost", "/discovery/" + discoveryProfileId + "/run")
-                .send(response ->
-                {
-                    assertEquals(200, response.result().statusCode(), "Expected status code 200");
 
                     testContext.completeNow();
                 });

@@ -29,7 +29,7 @@ public class PollingEngine extends AbstractVerticle
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
-    private static final long FETCH_DEVICE_INTERVAL = 3000000;
+    private static final long FETCH_DEVICE_INTERVAL = 300_000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -38,7 +38,7 @@ public class PollingEngine extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        vertx.setPeriodic( FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
+        vertx.setPeriodic(3000, FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
 
         vertx.setPeriodic(BATCH_FLUSH_CHECK_INTERVAL, id -> checkBatchTimeFlush());
 
@@ -62,7 +62,7 @@ public class PollingEngine extends AbstractVerticle
 
         var queryResult = QueryBuilder.buildQuery(request);
 
-        vertx.eventBus().<JsonObject>request(DB_QUERY_ADDRESS, new JsonObject().put(Constants.QUERY,queryResult.getQuery()).put(Constants.PARAMS,queryResult.getParams()), reply ->
+        vertx.eventBus().<JsonObject>request(DB_QUERY_ADDRESS, new JsonObject().put(Constants.QUERY,queryResult.query()).put(Constants.PARAMS,queryResult.params()), reply ->
         {
             if (reply.succeeded())
             {
@@ -104,7 +104,7 @@ public class PollingEngine extends AbstractVerticle
                 .put(Constants.REQUEST_TYPE, Constants.POLLING)
                 .put(Constants.PLUGIN_TYPE, device.getString(Constants.SYSTEM_TYPE));
 
-        vertx.<JsonObject>eventBus().<JsonObject>request(ZMQ_REQUEST_ADDRESS, request,new DeliveryOptions().setSendTimeout(270000),reply ->
+        vertx.<JsonObject>eventBus().<JsonObject>request(ZMQ_REQUEST_ADDRESS, request,new DeliveryOptions().setSendTimeout(280000),reply ->
         {
             if (reply.succeeded() && reply.result().body().getString(Constants.STATUS).equalsIgnoreCase(Constants.SUCCESS))
             {
@@ -167,8 +167,8 @@ public class PollingEngine extends AbstractVerticle
         storeSnmpDataBatch(batchCopy);
     }
 
-    // Stores SNMP data in batch.
-    // @param snmpDataList List of JSON objects containing SNMP data to be stored.
+     // Stores SNMP data in batch.
+     // @param snmpDataList List of JSON objects containing SNMP data to be stored.
      private void storeSnmpDataBatch(List<JsonObject> snmpDataList)
      {
          if (snmpDataList.isEmpty()) return;
@@ -194,9 +194,7 @@ public class PollingEngine extends AbstractVerticle
 
          queryBuilder.append(" RETURNING id");
 
-         var queryRequest = new JsonObject()
-                 .put(Constants.QUERY, queryBuilder.toString())
-                 .put(Constants.PARAMS, params);
+         var queryRequest = new JsonObject().put(Constants.QUERY, queryBuilder.toString()).put(Constants.PARAMS, params);
 
          vertx.eventBus().<JsonObject>request(DB_QUERY_ADDRESS, queryRequest, reply ->
          {
