@@ -3,7 +3,8 @@ package io.vertx.nms;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.nms.database.Database;
-import io.vertx.nms.engine.PollingEngine;
+import io.vertx.nms.polling.PollingProcessor;
+import io.vertx.nms.polling.PollingScheduler;
 import io.vertx.nms.http.ApiServer;
 import io.vertx.nms.messaging.ZmqMessenger;
 import io.vertx.nms.util.Constants;
@@ -57,28 +58,35 @@ public class Main
 
         var vertx = Vertx.vertx();
 
-        vertx.deployVerticle(new ApiServer(vertx),new DeploymentOptions())
+        vertx.deployVerticle(new ApiServer())
                 .compose(apiRes ->
                 {
                     logger.info("HTTP server verticle deployed");
 
-                    return vertx.deployVerticle(new Database());
+                    return vertx.deployVerticle(Database.class.getName());
                 })
                 .compose(dbRes ->
                 {
                     logger.info("Database verticle deployed");
 
-                    return vertx.deployVerticle(new ZmqMessenger());
+                    return vertx.deployVerticle(ZmqMessenger.class.getName());
                 })
                 .compose(zmqRes ->
                 {
                     logger.info("ZMQ Messenger verticle deployed");
 
-                    return vertx.deployVerticle(new PollingEngine());
+                    return vertx.deployVerticle(PollingProcessor.class.getName(),new DeploymentOptions().setInstances(1));
                 })
-                .onSuccess(pollingRes ->
+                .compose(pollingRes ->
                 {
                     logger.info("Polling engine verticle deployed");
+
+                    return vertx.deployVerticle(PollingScheduler.class.getName());
+
+                })
+                .onSuccess(schedulerRes ->
+                {
+                    logger.info("Scheduler verticle deployed");
 
                     logger.info("All verticles deployed successfully.");
                 })

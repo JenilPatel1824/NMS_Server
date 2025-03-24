@@ -1,2 +1,2 @@
-io/vertx/nms/engine/PollingEngineIntegrationTest.class
+io/vertx/nms/polling/PollingIntegrationTest.class
 io/vertx/nms/http/ApiServerTest.class

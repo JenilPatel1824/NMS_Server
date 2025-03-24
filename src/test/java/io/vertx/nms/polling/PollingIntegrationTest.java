@@ -1,4 +1,4 @@
-package io.vertx.nms.engine;
+package io.vertx.nms.polling;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
@@ -18,16 +18,19 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith(VertxExtension.class)
-public class PollingEngineIntegrationTest
+public class PollingIntegrationTest
 {
     private static final int BATCH_SIZE = 15;
 
-    private static final Logger logger = LoggerFactory.getLogger(PollingEngineIntegrationTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(PollingIntegrationTest.class);
 
     @BeforeEach
     void deployVerticles(Vertx vertx, VertxTestContext testContext)
     {
-        vertx.deployVerticle(new PollingEngine()).onComplete(testContext.succeedingThenComplete());
+        vertx.deployVerticle(new PollingScheduler())
+                .compose(id -> vertx.deployVerticle(new PollingProcessor()))
+                .compose(zmqId -> vertx.deployVerticle( new ZmqMessenger()))
+                .onComplete(testContext.succeedingThenComplete());
     }
 
     //Tests Polling flow with mock database
@@ -73,27 +76,11 @@ public class PollingEngineIntegrationTest
             }
         });
 
-        vertx.deployVerticle(new PollingEngine())
-                .compose(id -> vertx.deployVerticle(new ZmqMessenger()))
-                .onComplete(deployResult ->
-                {
-                    if (deployResult.succeeded())
-                    {
-                        logger.info("Verticles deployed successfully");
-                    }
-                    else
-                    {
-                        logger.error("Failed to deploy verticles", deployResult.cause());
-
-                        testContext.failNow(deployResult.cause());
-                    }
-                });
-
-        vertx.setTimer(15000, timerId ->
+        vertx.setTimer(25000, timerId ->
         {
             if (!testContext.completed())
             {
-                logger.error("Test didn't complete within 10 seconds");
+                logger.error("Test didn't complete within 25 seconds");
 
                 testContext.failNow(new TimeoutException("Test didn't complete within 10 seconds"));
             }

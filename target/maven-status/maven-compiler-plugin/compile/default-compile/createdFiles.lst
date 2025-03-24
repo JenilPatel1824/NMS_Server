@@ -1,1 +1,3 @@
+io/vertx/nms/polling/PollingProcessor.class
+io/vertx/nms/polling/PollingScheduler.class
 io/vertx/nms/http/ApiServer.class

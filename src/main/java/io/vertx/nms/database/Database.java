@@ -85,7 +85,7 @@ public class Database extends AbstractVerticle
             {
                 setupEventBusConsumer();
 
-                logger.info("DatabaseVerticle Eventbus is ready to listen");
+                logger.info(" DatabaseVerticle Eventbus is ready to listen");
 
                 startPromise.complete();
             }
@@ -180,8 +180,6 @@ public class Database extends AbstractVerticle
 
                         affectedTables.forEach(table ->
                         {
-                            logger.info("Invalidating cache for table: {}", table);
-
                             var keys = tableToCacheKeys.getOrDefault(table, Collections.emptySet());
 
                             new ArrayList<>(keys).forEach(cache::invalidate);
@@ -233,8 +231,6 @@ public class Database extends AbstractVerticle
 
                             tables.forEach(table ->
                             {
-                                logger.info("Adding cache key for table: {}", table);
-
                                 tableToCacheKeys.computeIfAbsent(table, k -> new HashSet<>()).add(cacheKey);
                             });
                         }
@@ -274,8 +270,6 @@ public class Database extends AbstractVerticle
                 }
             });
         });
-
-        logger.info("DatabaseService is listening on eventbus address: database.query.execute");
     }
 
     // Initializes the database by ensuring required tables exist.
@@ -449,8 +443,6 @@ public class Database extends AbstractVerticle
                 tables.add(table);
             }
         }
-
-        logger.debug("Parsed mutation tables for query '{}': {}", query, tables);
 
         return tables;
     }

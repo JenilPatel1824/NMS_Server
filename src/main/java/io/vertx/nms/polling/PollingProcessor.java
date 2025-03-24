@@ -1,11 +1,10 @@
-package io.vertx.nms.engine;
+package io.vertx.nms.polling;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.nms.util.Constants;
-import io.vertx.nms.database.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,21 +14,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PollingEngine extends AbstractVerticle
+public class PollingProcessor extends AbstractVerticle
 {
-    private static final Logger logger = LoggerFactory.getLogger(PollingEngine.class);
+    private static final Logger logger = LoggerFactory.getLogger(PollingProcessor.class);
 
     private static final String DB_QUERY_ADDRESS = Constants.EVENTBUS_DATABASE_ADDRESS;
 
     private static final String ZMQ_REQUEST_ADDRESS = Constants.EVENTBUS_ZMQ_ADDRESS;
 
-    private static final int BATCH_SIZE = 15;
+    private static final int BATCH_SIZE = 100;
 
-    private static final long BATCH_FLUSH_INTERVAL = 20_000;
+    private static final long BATCH_FLUSH_INTERVAL = 10_000;
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
-
-    private static final long FETCH_DEVICE_INTERVAL = 300_000;
 
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
@@ -38,43 +35,18 @@ public class PollingEngine extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        vertx.setPeriodic( FETCH_DEVICE_INTERVAL, id -> fetchProvisionedDevices());
+        vertx.eventBus().<JsonArray>consumer(Constants.EVENTBUS_POLLING_BATCH_ADDRESS, msg ->
+        {
+            logger.info("received ");
+
+            processDevices(new JsonObject().put(Constants.DATA, msg.body()));
+        });
 
         vertx.setPeriodic(BATCH_FLUSH_CHECK_INTERVAL, id -> checkBatchTimeFlush());
 
+        logger.info("Polling Worker started");
+
         startPromise.complete();
-    }
-
-    // Fetches provision jobs from the database and send them for process.
-    // Constructs a query to retrieve relevant device details and sends it via the event bus.
-    // On success, processes the retrieved device data; on failure, logs an error.
-    private void fetchProvisionedDevices()
-    {
-        var request = new JsonObject()
-                .put(Constants.OPERATION, Constants.SELECT)
-                .put(Constants.TABLE_NAME, "provisioning_jobs p " +
-                        "JOIN credential_profile c ON p.credential_profile_id = c.id")
-                .put(Constants.COLUMNS, new JsonArray()
-                        .add("p.id AS job_id")
-                        .add("p.ip")
-                        .add("c.system_type")
-                        .add("c.credentials"));
-
-        var queryResult = QueryBuilder.buildQuery(request);
-
-        vertx.eventBus().<JsonObject>request(DB_QUERY_ADDRESS, new JsonObject().put(Constants.QUERY,queryResult.query()).put(Constants.PARAMS,queryResult.params()), reply ->
-        {
-            if (reply.succeeded())
-            {
-                logger.info("Device Fetch Successful");
-
-                processDevices(reply.result().body());
-            }
-            else
-            {
-                logger.error("Failed to fetch provisioned devices: {}", reply.cause().getMessage());
-            }
-        });
     }
 
     // Processes the fetched provisioned devices.
@@ -83,8 +55,6 @@ public class PollingEngine extends AbstractVerticle
     // @param body The response object received from the database query, expected to be a JsonObject containing a Constants.DATA array.
     private void processDevices(JsonObject body)
     {
-        if (!body.containsKey(Constants.DATA)) return;
-
         body.getJsonArray(Constants.DATA).forEach(entry ->
         {
             sendZmqRequest((JsonObject) entry);

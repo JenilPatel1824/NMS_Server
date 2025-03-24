@@ -18,12 +18,7 @@ public class ApiServer extends AbstractVerticle
 {
     private static final Logger logger = LoggerFactory.getLogger(ApiServer.class);
 
-    private final Service service;
-
-    public ApiServer(Vertx vertx)
-    {
-        this.service=new Service(vertx);
-    }
+    private Service service;
 
     private static final String HTTP_PATH_CREDENTIAL = "/credential/*";
 
@@ -58,6 +53,8 @@ public class ApiServer extends AbstractVerticle
     @Override
     public void start()
     {
+        this.service = new Service(vertx);
+
         var mainRouter = Router.router(vertx);
 
         mainRouter.route().handler(CorsHandler.create().addOrigin("*").allowedMethods(Set.of(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.OPTIONS)).allowedHeaders(Set.of("*")));

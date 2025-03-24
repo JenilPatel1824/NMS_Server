@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="io.vertx.nms.polling.PollingEngineIntegrationTest" time="15.256" tests="1" errors="1" skipped="0" failures="0">
+  <properties>
+    <property name="java.specification.version" value="17"/>
+    <property name="sun.jnu.encoding" value="UTF-8"/>
+    <property name="java.class.path" value="/home/jenil/Documents/NMS_Server/target/test-classes:/home/jenil/Documents/NMS_Server/target/classes:/home/jenil/.m2/repository/io/vertx/vertx-core/4.5.8/vertx-core-4.5.8.jar:/home/jenil/.m2/repository/io/netty/netty-common/4.1.110.Final/netty-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-buffer/4.1.110.Final/netty-buffer-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport/4.1.110.Final/netty-transport-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler/4.1.110.Final/netty-handler-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec/4.1.110.Final/netty-codec-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler-proxy/4.1.110.Final/netty-handler-proxy-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-socks/4.1.110.Final/netty-codec-socks-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http/4.1.110.Final/netty-codec-http-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http2/4.1.110.Final/netty-codec-http2-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver/4.1.110.Final/netty-resolver-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver-dns/4.1.110.Final/netty-resolver-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-dns/4.1.110.Final/netty-codec-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.16.1/jackson-core-2.16.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-web/4.5.8/vertx-web-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-common/4.5.8/vertx-web-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-auth-common/4.5.8/vertx-auth-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-bridge-common/4.5.8/vertx-bridge-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-junit5/4.5.1/vertx-junit5-4.5.1.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.8.2/junit-jupiter-params-5.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-client/4.5.1/vertx-web-client-4.5.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-uri-template/4.5.8/vertx-uri-template-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-pg-client/4.5.8/vertx-pg-client-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-sql-client/4.5.8/vertx-sql-client-4.5.8.jar:/home/jenil/.m2/repository/org/zeromq/jeromq/0.5.2/jeromq-0.5.2.jar:/home/jenil/.m2/repository/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.16.1/jackson-annotations-2.16.1.jar:/home/jenil/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.8.2/junit-jupiter-api-5.8.2.jar:/home/jenil/.m2/repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-commons/1.8.2/junit-platform-commons-1.8.2.jar:/home/jenil/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.8.2/junit-jupiter-engine-5.8.2.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-engine/1.8.2/junit-platform-engine-1.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-unit/4.4.4/vertx-unit-4.4.4.jar:/home/jenil/.m2/repository/com/github/javafaker/javafaker/1.0.2/javafaker-1.0.2.jar:/home/jenil/.m2/repository/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar:/home/jenil/.m2/repository/org/yaml/snakeyaml/1.23/snakeyaml-1.23-android.jar:/home/jenil/.m2/repository/com/github/mifmif/generex/1.0.2/generex-1.0.2.jar:/home/jenil/.m2/repository/dk/brics/automaton/automaton/1.11-8/automaton-1.11-8.jar:/home/jenil/.m2/repository/com/github/ben-manes/caffeine/caffeine/3.1.8/caffeine-3.1.8.jar:/home/jenil/.m2/repository/org/checkerframework/checker-qual/3.37.0/checker-qual-3.37.0.jar:/home/jenil/.m2/repository/com/google/errorprone/error_prone_annotations/2.21.1/error_prone_annotations-2.21.1.jar:/home/jenil/.m2/repository/commons-codec/commons-codec/1.16.0/commons-codec-1.16.0.jar:"/>
+    <property name="java.vm.vendor" value="Ubuntu"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.vendor.url" value="https://ubuntu.com/"/>
+    <property name="user.timezone" value="Asia/Kolkata"/>
+    <property name="os.name" value="Linux"/>
+    <property name="java.vm.specification.version" value="17"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="user.country" value="IN"/>
+    <property name="sun.boot.library.path" value="/usr/lib/jvm/java-17-openjdk-amd64/lib"/>
+    <property name="sun.java.command" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250324151306199_3.jar /home/jenil/Documents/NMS_Server/target/surefire 2025-03-24T15-13-06_105-jvmRun1 surefire-20250324151306199_1tmp surefire_0-20250324151306199_2tmp"/>
+    <property name="jdk.debug" value="release"/>
+    <property name="surefire.test.class.path" value="/home/jenil/Documents/NMS_Server/target/test-classes:/home/jenil/Documents/NMS_Server/target/classes:/home/jenil/.m2/repository/io/vertx/vertx-core/4.5.8/vertx-core-4.5.8.jar:/home/jenil/.m2/repository/io/netty/netty-common/4.1.110.Final/netty-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-buffer/4.1.110.Final/netty-buffer-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport/4.1.110.Final/netty-transport-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler/4.1.110.Final/netty-handler-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec/4.1.110.Final/netty-codec-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler-proxy/4.1.110.Final/netty-handler-proxy-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-socks/4.1.110.Final/netty-codec-socks-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http/4.1.110.Final/netty-codec-http-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http2/4.1.110.Final/netty-codec-http2-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver/4.1.110.Final/netty-resolver-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver-dns/4.1.110.Final/netty-resolver-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-dns/4.1.110.Final/netty-codec-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.16.1/jackson-core-2.16.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-web/4.5.8/vertx-web-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-common/4.5.8/vertx-web-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-auth-common/4.5.8/vertx-auth-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-bridge-common/4.5.8/vertx-bridge-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-junit5/4.5.1/vertx-junit5-4.5.1.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.8.2/junit-jupiter-params-5.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-client/4.5.1/vertx-web-client-4.5.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-uri-template/4.5.8/vertx-uri-template-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-pg-client/4.5.8/vertx-pg-client-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-sql-client/4.5.8/vertx-sql-client-4.5.8.jar:/home/jenil/.m2/repository/org/zeromq/jeromq/0.5.2/jeromq-0.5.2.jar:/home/jenil/.m2/repository/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.16.1/jackson-annotations-2.16.1.jar:/home/jenil/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.8.2/junit-jupiter-api-5.8.2.jar:/home/jenil/.m2/repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-commons/1.8.2/junit-platform-commons-1.8.2.jar:/home/jenil/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.8.2/junit-jupiter-engine-5.8.2.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-engine/1.8.2/junit-platform-engine-1.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-unit/4.4.4/vertx-unit-4.4.4.jar:/home/jenil/.m2/repository/com/github/javafaker/javafaker/1.0.2/javafaker-1.0.2.jar:/home/jenil/.m2/repository/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar:/home/jenil/.m2/repository/org/yaml/snakeyaml/1.23/snakeyaml-1.23-android.jar:/home/jenil/.m2/repository/com/github/mifmif/generex/1.0.2/generex-1.0.2.jar:/home/jenil/.m2/repository/dk/brics/automaton/automaton/1.11-8/automaton-1.11-8.jar:/home/jenil/.m2/repository/com/github/ben-manes/caffeine/caffeine/3.1.8/caffeine-3.1.8.jar:/home/jenil/.m2/repository/org/checkerframework/checker-qual/3.37.0/checker-qual-3.37.0.jar:/home/jenil/.m2/repository/com/google/errorprone/error_prone_annotations/2.21.1/error_prone_annotations-2.21.1.jar:/home/jenil/.m2/repository/commons-codec/commons-codec/1.16.0/commons-codec-1.16.0.jar:"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="user.home" value="/home/jenil"/>
+    <property name="user.language" value="en"/>
+    <property name="java.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.version.date" value="2025-01-21"/>
+    <property name="java.home" value="/usr/lib/jvm/java-17-openjdk-amd64"/>
+    <property name="file.separator" value="/"/>
+    <property name="basedir" value="/home/jenil/Documents/NMS_Server"/>
+    <property name="java.vm.compressedOopsMode" value="Zero based"/>
+    <property name="line.separator" value="&#10;"/>
+    <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="surefire.real.class.path" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250324151306199_3.jar"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="java.runtime.version" value="17.0.14+7-Ubuntu-120.04"/>
+    <property name="user.name" value="jenil"/>
+    <property name="path.separator" value=":"/>
+    <property name="os.version" value="5.15.0-131-generic"/>
+    <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
+    <property name="file.encoding" value="UTF-8"/>
+    <property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/>
+    <property name="localRepository" value="/home/jenil/.m2/repository"/>
+    <property name="java.vendor.url.bug" value="https://bugs.launchpad.net/ubuntu/+source/openjdk-17"/>
+    <property name="java.io.tmpdir" value="/tmp"/>
+    <property name="java.version" value="17.0.14"/>
+    <property name="user.dir" value="/home/jenil/Documents/NMS_Server"/>
+    <property name="os.arch" value="amd64"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="native.encoding" value="UTF-8"/>
+    <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib/x86_64-linux-gnu/jni:/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/usr/lib/jni:/lib:/usr/lib"/>
+    <property name="java.vm.info" value="mixed mode, sharing"/>
+    <property name="java.vendor" value="Ubuntu"/>
+    <property name="java.vm.version" value="17.0.14+7-Ubuntu-120.04"/>
+    <property name="java.specification.maintenance.version" value="1"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="java.class.version" value="61.0"/>
+  </properties>
+  <testcase name="testFullPollingFlow(Vertx, VertxTestContext)" classname="io.vertx.nms.polling.PollingEngineIntegrationTest" time="15.24">
+    <error message="Test didn&apos;t complete within 10 seconds" type="java.util.concurrent.TimeoutException"><![CDATA[java.util.concurrent.TimeoutException: Test didn't complete within 10 seconds
+	at io.vertx.nms.polling.PollingEngineIntegrationTest.lambda$testFullPollingFlow$3(PollingEngineIntegrationTest.java:98)
+	at io.vertx.core.impl.VertxImpl$InternalTimerHandler.handle(VertxImpl.java:1056)
+	at io.vertx.core.impl.VertxImpl$InternalTimerHandler.handle(VertxImpl.java:1027)
+	at io.vertx.core.impl.ContextImpl.emit(ContextImpl.java:328)
+	at io.vertx.core.impl.ContextImpl.emit(ContextImpl.java:321)
+	at io.vertx.core.impl.ContextInternal.emit(ContextInternal.java:209)
+	at io.vertx.core.impl.VertxImpl$InternalTimerHandler.run(VertxImpl.java:1045)
+	at io.netty.util.concurrent.PromiseTask.runTask(PromiseTask.java:98)
+	at io.netty.util.concurrent.ScheduledFutureTask.run(ScheduledFutureTask.java:153)
+	at io.netty.util.concurrent.AbstractEventExecutor.runTask(AbstractEventExecutor.java:173)
+	at io.netty.util.concurrent.AbstractEventExecutor.safeExecute(AbstractEventExecutor.java:166)
+	at io.netty.util.concurrent.SingleThreadEventExecutor.runAllTasks(SingleThreadEventExecutor.java:469)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:569)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+]]></error>
+    <system-out><![CDATA[2025-03-24 15:13:07 [vert.x-eventloop-thread-0] INFO  i.vertx.nms.polling.PollingProcessor - Polling Worker started
+2025-03-24 15:13:07 [main] INFO  i.v.n.p.PollingEngineIntegrationTest - Starting testFullPollingFlow
+2025-03-24 15:13:07 [vert.x-eventloop-thread-2] INFO  i.vertx.nms.polling.PollingProcessor - Polling Worker started
+2025-03-24 15:13:07 [vert.x-eventloop-thread-3] DEBUG io.vertx.nms.messaging.ZmqMessenger -  zmq message verticle 
+2025-03-24 15:13:07 [vert.x-eventloop-thread-1] INFO  i.v.n.p.PollingEngineIntegrationTest - Verticles deployed successfully
+2025-03-24 15:13:22 [vert.x-eventloop-thread-1] ERROR i.v.n.p.PollingEngineIntegrationTest - Test didn't complete within 10 seconds
+]]></system-out>
+  </testcase>
+</testsuite>

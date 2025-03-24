@@ -31,7 +31,7 @@ class ApiServerTest
 
         webClient = WebClient.create(vertx);
 
-        vertx.deployVerticle(new ApiServer(vertx))
+        vertx.deployVerticle(new ApiServer())
                 .compose(id -> vertx.deployVerticle(new Database()))
                 .compose(id -> vertx.deployVerticle(new ZmqMessenger()))
                 .onSuccess(id -> testContext.completeNow())

@@ -15,7 +15,7 @@ public class Constants
     public static final String DB_PASSWORD = "admin";
 
     public static final String ZMQ_ADDRESS = "tcp://localhost:5555";
-    
+
 
     public static final String DATABASE_TABLE_DISCOVERY_PROFILE = "discovery_profiles";
 
@@ -39,6 +39,9 @@ public class Constants
     public static final String EVENTBUS_DATABASE_ADDRESS = "database.query.execute";
 
     public static final String EVENTBUS_ZMQ_ADDRESS = "zmq.send";
+
+    public static final String EVENTBUS_POLLING_BATCH_ADDRESS = "polling.batch.process";
+
 
 
     public static final String CONDITION = "condition";
