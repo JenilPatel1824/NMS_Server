@@ -53,7 +53,7 @@ public class Database extends AbstractVerticle
         pgClient = PgPool.pool(vertx, connectOptions, poolOptions);
 
         cache = Caffeine.newBuilder()
-                .maximumSize(30)
+                .maximumSize(20)
                 .expireAfterWrite(30, TimeUnit.MINUTES)
                 .removalListener((key, value, cause) ->
                 {

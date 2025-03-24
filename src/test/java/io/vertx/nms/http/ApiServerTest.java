@@ -6,7 +6,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.junit5.VertxExtension;
-import io.vertx.nms.ApiServer;
 import io.vertx.nms.database.Database;
 import io.vertx.nms.messaging.ZmqMessenger;
 import io.vertx.nms.util.Constants;

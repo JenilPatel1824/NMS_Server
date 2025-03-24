@@ -448,7 +448,7 @@ public class Service
 
                             if (!isSuccess)
                             {
-                                context.response().setStatusCode(500).end(DISCOVERY_FAIL + targetIp);
+                                context.response().setStatusCode(400).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,DISCOVERY_FAIL + targetIp).encode());
 
                                 return;
                             }
@@ -576,7 +576,7 @@ public class Service
                                 {
                                     logger.error("Failed to update in_use_by: {}", updateReply.cause().getMessage());
 
-                                    context.response().setStatusCode(500).end("Provisioning successful, but failed to update credential profile.");
+                                    context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
                                 }
                             });
 

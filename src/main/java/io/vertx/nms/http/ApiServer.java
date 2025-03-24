@@ -1,4 +1,4 @@
-package io.vertx.nms;
+package io.vertx.nms.http;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Vertx;

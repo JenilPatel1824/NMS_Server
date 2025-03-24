@@ -4,6 +4,7 @@ import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.nms.database.Database;
 import io.vertx.nms.engine.PollingEngine;
+import io.vertx.nms.http.ApiServer;
 import io.vertx.nms.messaging.ZmqMessenger;
 import io.vertx.nms.util.Constants;
 import org.slf4j.Logger;
