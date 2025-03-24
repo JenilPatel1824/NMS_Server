@@ -22,7 +22,7 @@ public class PollingScheduler extends AbstractVerticle
     {
         logger.info("Scheduler started");
 
-        vertx.setPeriodic(3000, SCHEDULER_INTERVAL, id ->
+        vertx.setPeriodic( SCHEDULER_INTERVAL, id ->
         {
             fetchAllBatches();
 

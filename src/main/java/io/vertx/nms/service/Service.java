@@ -758,53 +758,75 @@ public class Service
     public void getInterfacesByUptime(RoutingContext context)
     {
         var query = """
-                WITH parsed_data AS (
-                    SELECT
-                        pj.ip,
-                        pd.job_id,
-                        pd.polled_at,
-                        (pd.data->>'system.uptime') AS raw_uptime,
-                        (
-                            COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) days'))[1]::INT, 0) * 86400 +
-                            COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) hours'))[1]::INT, 0) * 3600 +
-                            COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) minutes'))[1]::INT, 0) * 60 +
-                            COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) seconds'))[1]::INT, 0)
-                        ) AS uptime_seconds
-                    FROM provision_data pd
-                    JOIN provisioning_jobs pj ON pd.job_id = pj.id
-                    WHERE pd.data ? 'system.uptime'
-                    AND pd.polled_at >= NOW() - INTERVAL '7 days'
-                ),
-                lagged_data AS (
-                    SELECT
-                        ip,
-                        job_id,
-                        polled_at,
-                        uptime_seconds,
-                        LAG(uptime_seconds) OVER (PARTITION BY job_id ORDER BY polled_at) AS prev_uptime
-                    FROM parsed_data
-                ),
-                reboot_counts AS (
-                    SELECT
-                        ip,
-                        job_id,
-                        COUNT(*) AS reboot_count
-                    FROM lagged_data
-                    WHERE uptime_seconds < prev_uptime
-                    GROUP BY ip, job_id
-                )
-                SELECT ip, job_id, reboot_count, reboot_rank
-                FROM (
-                    SELECT
-                        ip,
-                        job_id,
-                        reboot_count,
-                        DENSE_RANK() OVER (ORDER BY reboot_count DESC) AS reboot_rank
-                    FROM reboot_counts
-                ) ranked
-                WHERE reboot_rank <= 10
-                ORDER BY reboot_rank ASC;
-            """;
+            WITH parsed_data AS (
+                SELECT
+                    pj.ip,
+                    pd.job_id,
+                    pd.polled_at,
+                    pd.data->>'system.uptime' AS raw_uptime,
+                    REGEXP_REPLACE(pd.data->>'system.uptime', 'Uptime: ', '') AS clean_uptime,
+                    (
+                        COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) days'))[1]::INT, 0) * 86400 +
+                        COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) hours'))[1]::INT, 0) * 3600 +
+                        COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) minutes'))[1]::INT, 0) * 60 +
+                        COALESCE((regexp_match(pd.data->>'system.uptime', '(\\d+) seconds'))[1]::INT, 0)
+                    ) AS uptime_seconds
+                FROM provision_data pd
+                JOIN provisioning_jobs pj ON pd.job_id = pj.id
+                WHERE pd.data ? 'system.uptime'
+                AND pd.polled_at >= NOW() - INTERVAL '7 days'
+            ),
+            sequential_polls AS (
+                SELECT
+                    current.ip,
+                    current.job_id,
+                    current.polled_at,
+                    current.raw_uptime,
+                    current.uptime_seconds,
+                    prev.polled_at AS prev_polled_at,
+                    prev.raw_uptime AS prev_raw_uptime,
+                    prev.uptime_seconds AS prev_uptime_seconds
+                FROM parsed_data current
+                JOIN LATERAL (
+                    SELECT p.polled_at, p.raw_uptime, p.uptime_seconds
+                    FROM parsed_data p
+                    WHERE p.job_id = current.job_id
+                    AND p.polled_at < current.polled_at
+                    ORDER BY p.polled_at DESC
+                    LIMIT 1
+                ) prev ON true
+            ),
+            reboot_events AS (
+                SELECT
+                    ip,
+                    job_id,
+                    polled_at,
+                    raw_uptime,
+                    uptime_seconds,
+                    prev_polled_at,
+                    prev_raw_uptime,
+                    prev_uptime_seconds
+                FROM sequential_polls
+                WHERE uptime_seconds < prev_uptime_seconds
+            ),
+            reboot_counts AS (
+                SELECT
+                    ip,
+                    job_id,
+                    COUNT(*) AS reboot_count
+                FROM reboot_events
+                GROUP BY ip, job_id
+                HAVING COUNT(*) > 0
+            )
+            SELECT 
+                ip, 
+                job_id, 
+                reboot_count, 
+                DENSE_RANK() OVER (ORDER BY reboot_count DESC) AS reboot_rank
+            FROM reboot_counts
+            ORDER BY reboot_rank ASC, ip
+            LIMIT 10;
+        """;
 
         executeAndRespond(context, query);
     }
