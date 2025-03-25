@@ -22,7 +22,7 @@ public class PollingScheduler extends AbstractVerticle
     {
         logger.info("Scheduler started");
 
-        vertx.setPeriodic( SCHEDULER_INTERVAL, id ->
+        vertx.setPeriodic( 2000, SCHEDULER_INTERVAL, id ->
         {
             fetchAllBatches();
 
@@ -44,6 +44,7 @@ public class PollingScheduler extends AbstractVerticle
     {
         var query = "SELECT p.id AS job_id, p.ip, c.system_type, c.credentials " +
                 "FROM provisioning_jobs p JOIN credential_profile c ON p.credential_profile_id = c.id " +
+                "where p.deleted = FALSE "+
                 "ORDER BY p.id LIMIT $1 OFFSET $2";
 
         var params = new JsonArray().add(FETCH_BATCH_SIZE).add(currentOffset);

@@ -36,6 +36,16 @@ public class Service
 
     private static final String DATA_NOT_FOUND = "No data found for ProfileId: ";
 
+    private static final String DUPLICATE_ERROR = "Duplicate entry: Profile already exists.";
+
+    private static final String FOREIGN_KEY_ERROR = "No credential profile found ";
+
+    private static final String DUPLICATE_ERROR_CODE = "23505";
+
+    private static final String FOREIGN_KEY_ERROR_CODE = "23503";
+
+    private static final String MESSAGE_CREDENTIAL_UPDATE_FAILED = "Failed to update credential Profile Usage count";
+
     public Service(Vertx vertx)
     {
         this.vertx = vertx;
@@ -334,9 +344,36 @@ public class Service
             }
             else
             {
-                logger.error("Database operation failed: {}", reply.cause().getMessage());
+                var errorMessage = reply.cause().getMessage();
 
-                context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR + reply.cause().getMessage());
+                if (errorMessage.contains(DUPLICATE_ERROR_CODE))
+                {
+                    logger.warn("Duplicate key error: {}", errorMessage);
+
+                    context.response().setStatusCode(400).end(new JsonObject()
+                                    .put(Constants.STATUS, Constants.FAIL)
+                                    .put(Constants.MESSAGE, DUPLICATE_ERROR)
+                                    .encode());
+                }
+                else if (errorMessage.contains(FOREIGN_KEY_ERROR_CODE))
+                {
+                    logger.warn("Foreign key error: {}", errorMessage);
+
+                    context.response().setStatusCode(400).end(new JsonObject()
+                            .put(Constants.STATUS, Constants.FAIL)
+                            .put(Constants.MESSAGE, FOREIGN_KEY_ERROR)
+                            .encode());
+                }
+                else
+                {
+                    logger.error("Database operation failed: {}", errorMessage);
+
+                    context.response().setStatusCode(500).end(new JsonObject()
+                                    .put(Constants.STATUS, Constants.FAIL)
+                                    .put(Constants.MESSAGE, Constants.MESSAGE_INTERNAL_SERVER_ERROR)
+                                    .encode()
+                    );
+                }
             }
         });
     }
@@ -551,7 +588,6 @@ public class Service
                     {
                         if (insertReply.succeeded())
                         {
-
                             var insertResult = insertReply.result().body();
 
                             var insertedId = insertResult.getLong(Constants.ID);
@@ -579,13 +615,102 @@ public class Service
                                     context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
                                 }
                             });
-
                         }
                         else
                         {
-                            logger.error("Provisioning insert failed: {}", insertReply.cause().getMessage());
+                            var errorMessage = insertReply.cause().getMessage();
 
-                            context.response().setStatusCode(400).end(Constants.MESSAGE_POLLING_STARTED);
+                            if (errorMessage.contains(DUPLICATE_ERROR_CODE))
+                            {
+                                var selectQueryRequest = new JsonObject().put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS).put(Constants.OPERATION, Constants.SELECT).put(Constants.COLUMNS,new JsonArray().add(Constants.ID).add(Constants.DELETED)).put(Constants.CONDITION,new JsonObject().put(Constants.IP,ip));
+
+                                var queryBuilder= QueryBuilder.buildQuery(selectQueryRequest);
+
+                                var selectQuery = new JsonObject().put(Constants.QUERY,queryBuilder.query()).put(Constants.PARAMS,queryBuilder.params());
+
+                                vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, selectQuery, selectReply ->
+                                {
+                                    if (selectReply.succeeded())
+                                    {
+                                        var selectResult = selectReply.result().body();
+
+                                        if (selectResult.getJsonArray(Constants.DATA).isEmpty())
+                                        {
+                                            context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
+
+                                            return;
+                                        }
+
+                                        var existingRecord = selectResult.getJsonArray(Constants.DATA).getJsonObject(0);
+
+                                        var isDeleted = existingRecord.getBoolean(Constants.DELETED);
+
+                                        int existingId = existingRecord.getInteger(Constants.ID);
+
+                                        if (isDeleted)
+                                        {
+                                            var updateStatusQueryRequest = new JsonObject().put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS).put(Constants.OPERATION,Constants.UPDATE).put(Constants.DATA,new JsonObject().put(Constants.DELETED,false)).put(Constants.CONDITION,new JsonObject().put(Constants.ID,existingId));
+
+                                            var updateStatusQueryBuilder = QueryBuilder.buildQuery(updateStatusQueryRequest);
+
+                                            var updateStatusQuery = new JsonObject().put(Constants.QUERY,updateStatusQueryBuilder.query()).put(Constants.PARAMS,updateStatusQueryBuilder.params());
+
+                                            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, updateStatusQuery, updateStatusReply ->
+                                            {
+                                                var updateQuery = "UPDATE credential_profile SET in_use_by = in_use_by + 1 WHERE id = " + credentialProfileId;
+
+                                                vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, updateQuery), updateReply ->
+                                                {
+                                                    if (updateReply.succeeded())
+                                                    {
+                                                        if (updateStatusReply.succeeded())
+                                                        {
+                                                            context.response()
+                                                                    .setStatusCode(200)
+                                                                    .end(new JsonObject()
+                                                                            .put(Constants.STATUS, Constants.SUCCESS)
+                                                                            .put(Constants.MESSAGE, PROVISION_UPDATE_SUCCESSFUL)
+                                                                            .put(Constants.ID, existingId)
+                                                                            .encode());
+                                                        }
+                                                        else
+                                                        {
+                                                            logger.error("Failed to update deleted flag: {}", updateStatusReply.cause().getMessage());
+
+                                                            context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
+
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        context.response().setStatusCode(500).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,MESSAGE_CREDENTIAL_UPDATE_FAILED).encode());
+
+                                                        logger.error("Failed to update in_use_by: {}", updateReply.cause().getMessage());
+                                                    }
+                                                });
+
+
+                                            });
+                                        }
+                                        else
+                                        {
+                                            context.response().setStatusCode(400).end(Constants.MESSAGE_POLLING_STARTED);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        logger.error("Failed to fetch existing record: {}", selectReply.cause().getMessage());
+
+                                        context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
+                                    }
+                                });
+                            }
+                            else
+                            {
+                                logger.error("Provisioning insert failed: {}", errorMessage);
+
+                                context.response().setStatusCode(400).end(Constants.MESSAGE_POLLING_STARTED);
+                            }
                         }
                     });
 
@@ -877,7 +1002,7 @@ public class Service
         {
             var parsedId = Long.parseLong(jobId);
 
-            var fetchQueryRequest = (new JsonObject().put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS).put(Constants.OPERATION, Constants.SELECT).put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_CREDENTIAL_PROFILE_ID)).put(Constants.CONDITION,new JsonObject().put(Constants.ID, parsedId)));
+            var fetchQueryRequest = (new JsonObject().put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS).put(Constants.OPERATION, Constants.SELECT).put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_CREDENTIAL_PROFILE_ID).add(Constants.DELETED)).put(Constants.CONDITION,new JsonObject().put(Constants.ID, parsedId)));
 
             var queryResult = QueryBuilder.buildQuery(fetchQueryRequest);
 
@@ -896,12 +1021,13 @@ public class Service
 
                     var credentialProfileId = result.getJsonArray(Constants.DATA).getJsonObject(0).getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID);
 
-                    var deleteRequest = new JsonObject()
+                    var updateRequest = new JsonObject()
                             .put(Constants.TABLE_NAME, Constants.DATABASE_TABLE_PROVISIONING_JOBS)
-                            .put(Constants.OPERATION, Constants.DELETE)
+                            .put(Constants.OPERATION, Constants.UPDATE)
+                            .put(Constants.DATA, new JsonObject().put(Constants.DELETED, true))
                             .put(Constants.CONDITION, new JsonObject().put(Constants.ID, parsedId));
 
-                    var deleteQuery = QueryBuilder.buildQuery(deleteRequest);
+                    var deleteQuery = QueryBuilder.buildQuery(updateRequest);
 
                     vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, deleteQuery.query()).put(Constants.PARAMS, deleteQuery.params()), deleteReply ->
                     {

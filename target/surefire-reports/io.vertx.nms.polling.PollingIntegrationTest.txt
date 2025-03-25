@@ -1,4 +1,24 @@
 -------------------------------------------------------------------------------
 Test set: io.vertx.nms.polling.PollingIntegrationTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 10.24 s -- in io.vertx.nms.polling.PollingIntegrationTest
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 25.30 s <<< FAILURE! -- in io.vertx.nms.polling.PollingIntegrationTest
+io.vertx.nms.polling.PollingIntegrationTest.testFullPollingFlow(Vertx, VertxTestContext) -- Time elapsed: 25.28 s <<< ERROR!
+java.util.concurrent.TimeoutException: Test didn't complete within 10 seconds
+	at io.vertx.nms.polling.PollingIntegrationTest.lambda$testFullPollingFlow$3(PollingIntegrationTest.java:85)
+	at io.vertx.core.impl.VertxImpl$InternalTimerHandler.handle(VertxImpl.java:1056)
+	at io.vertx.core.impl.VertxImpl$InternalTimerHandler.handle(VertxImpl.java:1027)
+	at io.vertx.core.impl.ContextImpl.emit(ContextImpl.java:328)
+	at io.vertx.core.impl.ContextImpl.emit(ContextImpl.java:321)
+	at io.vertx.core.impl.ContextInternal.emit(ContextInternal.java:209)
+	at io.vertx.core.impl.VertxImpl$InternalTimerHandler.run(VertxImpl.java:1045)
+	at io.netty.util.concurrent.PromiseTask.runTask(PromiseTask.java:98)
+	at io.netty.util.concurrent.ScheduledFutureTask.run(ScheduledFutureTask.java:153)
+	at io.netty.util.concurrent.AbstractEventExecutor.runTask(AbstractEventExecutor.java:173)
+	at io.netty.util.concurrent.AbstractEventExecutor.safeExecute(AbstractEventExecutor.java:166)
+	at io.netty.util.concurrent.SingleThreadEventExecutor.runAllTasks(SingleThreadEventExecutor.java:469)
+	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:569)
+	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994)
+	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+

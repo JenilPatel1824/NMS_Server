@@ -76,11 +76,11 @@ public class PollingIntegrationTest
             }
         });
 
-        vertx.setTimer(25000, timerId ->
+        vertx.setTimer(15000, timerId ->
         {
             if (!testContext.completed())
             {
-                logger.error("Test didn't complete within 25 seconds");
+                logger.error("Test didn't complete within 15 seconds");
 
                 testContext.failNow(new TimeoutException("Test didn't complete within 10 seconds"));
             }

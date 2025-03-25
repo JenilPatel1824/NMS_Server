@@ -46,6 +46,8 @@ public class Constants
 
     public static final String CONDITION = "condition";
 
+    public static final String DELETED = "deleted";
+
     public static final String WITH = "with";
 
     public static final String DATA = "data";

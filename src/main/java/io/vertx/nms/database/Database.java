@@ -274,7 +274,8 @@ public class Database extends AbstractVerticle
 
     // Initializes the database by ensuring required tables exist.
     // Creates tables if they do not already exist and sets up necessary constraints.
-    private Future<Object> init() {
+    private Future<Object> init()
+    {
 
         var promise = Promise.promise();
 
@@ -300,6 +301,7 @@ public class Database extends AbstractVerticle
                 id SERIAL PRIMARY KEY,
                 credential_profile_id INT,
                 ip TEXT NOT NULL UNIQUE,
+                deleted BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
             );
 
