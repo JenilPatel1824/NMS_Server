@@ -8,11 +8,8 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.nms.util.Constants;
 import io.vertx.nms.database.QueryBuilder;
 import io.vertx.nms.util.Util;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
 
 public class Service
 {
@@ -134,7 +131,7 @@ public class Service
                 {
                     if (fetchResult.failed())
                     {
-                        context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
+                        context.response().setStatusCode(503).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
 
                         return;
                     }
@@ -143,7 +140,7 @@ public class Service
 
                     if (existingData == null || existingData.getJsonArray(Constants.DATA).isEmpty())
                     {
-                        context.response().setStatusCode(404).end(Constants.MESSAGE_NOT_FOUND);
+                        context.response().setStatusCode(404).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,Constants.MESSAGE_NOT_FOUND).encode());
 
                         return;
                     }
@@ -228,16 +225,10 @@ public class Service
             return;
         }
 
-        try
-        {
-            var request = new JsonObject().put(Constants.TABLE_NAME, tableName).put(Constants.OPERATION, Constants.SELECT).put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
+        var request = new JsonObject().put(Constants.TABLE_NAME, tableName).put(Constants.OPERATION, Constants.SELECT).put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
-            executeQuery(context, request, 200);
-        }
-        catch (Exception e)
-        {
-            context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
-        }
+        executeQuery(context, request, 200);
+
     }
 
     // Deletes a record from the database.
@@ -440,7 +431,6 @@ public class Service
 
                 if (targetIp == null || targetIp.isEmpty())
                 {
-
                     context.response().setStatusCode(400).end(IP_NOT_FOUND);
 
                     return;
@@ -581,7 +571,7 @@ public class Service
 
                     if (result == null || result.getJsonArray(Constants.DATA).isEmpty())
                     {
-                        context.response().setStatusCode(404).end(Constants.MESSAGE_NOT_FOUND);
+                        context.response().setStatusCode(404).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,Constants.MESSAGE_NOT_FOUND).encode());
 
                         return;
                     }
@@ -995,11 +985,9 @@ public class Service
     // Fetches all devices from provisioning jobs
     public void getDevices(RoutingContext context)
     {
-        var queryRequest = new JsonObject().put(Constants.TABLE_NAME,Constants.DATABASE_TABLE_PROVISIONING_JOBS).put(Constants.OPERATION,Constants.SELECT).put(Constants.COLUMNS,new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
+        var queryRequest = new JsonObject().put(Constants.TABLE_NAME,Constants.DATABASE_TABLE_PROVISIONING_JOBS).put(Constants.OPERATION,Constants.SELECT).put(Constants.COLUMNS,new JsonArray().add(Constants.ID).add(Constants.DATABASE_CREDENTIAL_PROFILE_ID).add(Constants.IP).add(Constants.PORT)).put(Constants.CONDITION,new JsonObject().put(Constants.DELETED,false));
 
-        var queryResult = QueryBuilder.buildQuery(queryRequest);
-
-        executeAndRespond(context, queryResult.query());
+        executeQuery(context, queryRequest,200);
     }
 
     // Executes a query and responds with the result.
@@ -1050,7 +1038,7 @@ public class Service
 
                     if (result == null || result.getJsonArray(Constants.DATA).isEmpty())
                     {
-                        context.response().setStatusCode(404).end(Constants.MESSAGE_JOB_NOT_FOUND);
+                        context.response().setStatusCode(404).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,Constants.MESSAGE_JOB_NOT_FOUND).encode());
 
                         return;
                     }
@@ -1094,7 +1082,7 @@ public class Service
 
         catch (NumberFormatException e)
         {
-            context.response().setStatusCode(400).end(Constants.MESSAGE_INVALID_PROFILE_ID);
+            context.response().setStatusCode(400).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,Constants.MESSAGE_INVALID_PROFILE_ID).encode());
         }
 
         catch (Exception e)
