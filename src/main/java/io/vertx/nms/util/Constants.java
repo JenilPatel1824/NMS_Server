@@ -123,7 +123,7 @@ public class Constants
 
     public static final String MESSAGE_INTERNAL_SERVER_ERROR = "Internal Server Error.";
 
-    public static final String MESSAGE_QUERY_SUCCESSFUL = "Query executed successfully";
+    public static final String MESSAGE_OPERATION_SUCCESSFUL = "Operation successful";
 
     public static final String MESSAGE_ZMQ_NO_RESPONSE = "No response from ZMQ server";
 

@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
-//port,
+
 public class Main
 {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
@@ -59,42 +59,42 @@ public class Main
         var vertx = Vertx.vertx();
 
         vertx.deployVerticle(new ApiServer())
-                .compose(apiRes ->
-                {
-                    logger.info("HTTP server verticle deployed");
+            .compose(apiRes ->
+            {
+                logger.info("HTTP server verticle deployed");
 
-                    return vertx.deployVerticle(Database.class.getName());
-                })
-                .compose(dbRes ->
-                {
-                    logger.info("Database verticle deployed");
+                return vertx.deployVerticle(Database.class.getName());
+            })
+            .compose(dbRes ->
+            {
+                logger.info("Database verticle deployed");
 
-                    return vertx.deployVerticle(ZmqMessenger.class.getName());
-                })
-                .compose(zmqRes ->
-                {
-                    logger.info("ZMQ Messenger verticle deployed");
+                return vertx.deployVerticle(ZmqMessenger.class.getName());
+            })
+            .compose(zmqRes ->
+            {
+                logger.info("ZMQ Messenger verticle deployed");
 
-                    return vertx.deployVerticle(PollingProcessor.class.getName(),new DeploymentOptions().setInstances(1));
-                })
-                .compose(pollingRes ->
-                {
-                    logger.info("Polling engine verticle deployed");
+                return vertx.deployVerticle(PollingProcessor.class.getName(),new DeploymentOptions().setInstances(1));
+            })
+            .compose(pollingRes ->
+            {
+                logger.info("Polling engine verticle deployed");
 
-                    return vertx.deployVerticle(PollingScheduler.class.getName());
+                return vertx.deployVerticle(PollingScheduler.class.getName());
 
-                })
-                .onSuccess(schedulerRes ->
-                {
-                    logger.info("Scheduler verticle deployed");
+            })
+            .onSuccess(schedulerRes ->
+            {
+                logger.info("Scheduler verticle deployed");
 
-                    logger.info("All verticles deployed successfully.");
-                })
-                .onFailure(err ->
-                {
-                    logger.error("Failed to deploy verticles: {}", err.getMessage());
+                logger.info("All verticles deployed successfully.");
+            })
+            .onFailure(err ->
+            {
+                logger.error("Failed to deploy verticles: {}", err.getMessage());
 
-                    vertx.close();
-                });
+                vertx.close();
+            });
     }
 }

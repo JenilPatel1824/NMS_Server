@@ -32,7 +32,7 @@ public class ApiServer extends AbstractVerticle
 
     private static final String DISCOVERY_RUN_URL = "/:discoveryProfileId/run";
 
-    private static final String PROVISION_START_URL = "/start/:discoveryProfileId";
+    private static final String PROVISION_START_URL = "/:discoveryProfileId";
 
     private static final String PROVISION_DATA_URL = "/data/:job_id";
 

@@ -112,7 +112,8 @@ class ApiServerTest
         var requestBody = new JsonObject()
                 .put("discovery_profile_name", faker.name().firstName())
                 .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, 67)
-                .put("ip", faker.internet().ipV4Address());
+                .put("ip", faker.internet().ipV4Address())
+                .put(Constants.PORT,161);
 
         webClient.post(8080, "localhost", "/discovery/")
                 .sendJsonObject(requestBody, response ->
@@ -155,6 +156,7 @@ class ApiServerTest
         var updatedRequestBody = new JsonObject()
                 .put("discovery_profile_name", faker.name().firstName())
                 .put("ip","172.16.12.211")
+                .put(Constants.PORT,161)
                 .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID,67);
 
         webClient.put(8080, "localhost", "/discovery/" + testProfileId)

@@ -250,11 +250,11 @@ public class Database extends AbstractVerticle
                             response.put(Constants.ID, id);
                         }
 
-                        response.put(Constants.MESSAGE, Constants.MESSAGE_QUERY_SUCCESSFUL);
+                        response.put(Constants.MESSAGE, Constants.MESSAGE_OPERATION_SUCCESSFUL);
                     }
                     else
                     {
-                        response.put(Constants.MESSAGE, Constants.MESSAGE_QUERY_SUCCESSFUL);
+                        response.put(Constants.MESSAGE, Constants.MESSAGE_OPERATION_SUCCESSFUL);
                     }
 
                     message.reply(response);
@@ -321,6 +321,7 @@ public class Database extends AbstractVerticle
             CREATE INDEX IF NOT EXISTS idx_provision_data_interface_errors ON provision_data ((COALESCE(((data -> 'interfaces'::text) ->> 'interface.sent.error.packets'::text)::integer, 0) + COALESCE(((data -> 'interfaces'::text) ->> 'interface.received.error.packets'::text)::integer, 0)));
             CREATE INDEX IF NOT EXISTS idx_provision_data_interface_speed ON provision_data (COALESCE((NULLIF(((data -> 'interfaces'::text) ->> 'interface.speed'::text), ''::text))::bigint, 0)) WHERE COALESCE((NULLIF(((data -> 'interfaces'::text) ->> 'interface.speed'::text), ''::text))::bigint, 0) > 0;
             CREATE INDEX IF NOT EXISTS idx_provision_data_system_uptime ON provision_data ((data->>'system.uptime'));
+            CREATE INDEX IF NOT EXISTS idx_provisioning_jobs_deleted ON provisioning_jobs(deleted);
         """;
 
         pgClient.query(createTablesAndIndexesQuery).execute(ar ->

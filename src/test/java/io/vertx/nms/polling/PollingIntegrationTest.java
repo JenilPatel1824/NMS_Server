@@ -56,6 +56,7 @@ public class PollingIntegrationTest
                                 .put("job_id", i + 1)
                                 .put("ip", "192.168.1." + (i + 1))
                                 .put("system_type", "snmp")
+                                .put("port",161)
                                 .put("credentials", new JsonObject()
                                         .put("community", "public")
                                         .put("version", "2c")

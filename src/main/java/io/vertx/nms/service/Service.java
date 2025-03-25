@@ -50,6 +50,8 @@ public class Service
 
     private static final String MESSAGE_CREDENTIAL_UPDATE_FAILED = "Failed to update credential Profile Usage count";
 
+    private static final String CLASS_CAST_ERROR = "can not be coerced to the expected class";
+
     public Service(Vertx vertx)
     {
         this.vertx = vertx;
@@ -228,10 +230,7 @@ public class Service
 
         try
         {
-            var request = new JsonObject()
-                    .put(Constants.TABLE_NAME, tableName)
-                    .put(Constants.OPERATION, Constants.SELECT)
-                    .put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
+            var request = new JsonObject().put(Constants.TABLE_NAME, tableName).put(Constants.OPERATION, Constants.SELECT).put(Constants.COLUMNS, new JsonArray().add(Constants.DATABASE_ALL_COLUMN));
 
             executeQuery(context, request, 200);
         }
@@ -374,7 +373,7 @@ public class Service
                             .put(Constants.MESSAGE, FOREIGN_KEY_ERROR)
                             .encode());
                 }
-                else if (reply.cause().getMessage().contains("can not be coerced to the expected class"))
+                else if (reply.cause().getMessage().contains(CLASS_CAST_ERROR))
                 {
                     context.response().setStatusCode(400).end(new JsonObject()
                             .put(Constants.STATUS, Constants.FAIL)
@@ -520,7 +519,7 @@ public class Service
                                         context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
                                     }
                                 });
-                                
+
                                 return;
                             }
 
@@ -731,7 +730,7 @@ public class Service
                                         }
                                         else
                                         {
-                                            context.response().setStatusCode(400).end(Constants.MESSAGE_POLLING_STARTED);
+                                            context.response().setStatusCode(400).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,Constants.MESSAGE_POLLING_STARTED).encode());
                                         }
                                     }
                                     else
