@@ -35,13 +35,14 @@ public class Constants
 
     public static final String DATABASE_IN_USE_BY = "in_use_by";
 
+    public static final String DATABASE_JOB_ID = "job_id";
+
 
     public static final String EVENTBUS_DATABASE_ADDRESS = "database.query.execute";
 
     public static final String EVENTBUS_ZMQ_ADDRESS = "zmq.send";
 
     public static final String EVENTBUS_POLLING_BATCH_ADDRESS = "polling.batch.process";
-
 
 
     public static final String CONDITION = "condition";
@@ -104,8 +105,9 @@ public class Constants
 
     public static final String FAIL = "fail";
 
-    public static final String DATABASE_JOB_ID = "job_id";
+    public static final String PORT = "port";
 
+    public static final String ERROR = "error";
 
     public static final String MESSAGE_EMPTY_REQUEST = "Bad request: Empty message body";
 
@@ -142,6 +144,6 @@ public class Constants
 
     public static final Set<String> REQUIRED_FIELDS_CREDENTIAL = Set.of(DATABASE_CREDENTIAL_PROFILE_NAME, SYSTEM_TYPE, CREDENTIALS);
 
-    public static final Set<String> REQUIRED_FIELDS_DISCOVERY = Set.of(DATABASE_DISCOVERY_PROFILE_NAME, IP, DATABASE_CREDENTIAL_PROFILE_ID);
+    public static final Set<String> REQUIRED_FIELDS_DISCOVERY = Set.of(DATABASE_DISCOVERY_PROFILE_NAME, IP, DATABASE_CREDENTIAL_PROFILE_ID,PORT);
 
 }

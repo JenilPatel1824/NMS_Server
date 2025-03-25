@@ -72,6 +72,7 @@ public class PollingProcessor extends AbstractVerticle
         var request = new JsonObject().put(Constants.IP, device.getString(Constants.IP)).put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
                 .put(Constants.VERSION, credentials.getString(Constants.VERSION))
                 .put(Constants.REQUEST_TYPE, Constants.POLLING)
+                .put(Constants.PORT,device.getLong(Constants.PORT))
                 .put(Constants.PLUGIN_TYPE, device.getString(Constants.SYSTEM_TYPE));
 
         vertx.<JsonObject>eventBus().<JsonObject>request(ZMQ_REQUEST_ADDRESS, request,new DeliveryOptions().setSendTimeout(280000),reply ->

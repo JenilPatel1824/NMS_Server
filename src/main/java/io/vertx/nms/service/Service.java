@@ -12,6 +12,8 @@ import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 public class Service
 {
     private static final Logger logger = LoggerFactory.getLogger(Service.class);
@@ -39,6 +41,8 @@ public class Service
     private static final String DUPLICATE_ERROR = "Duplicate entry: Profile already exists.";
 
     private static final String FOREIGN_KEY_ERROR = "No credential profile found ";
+
+    private static final String INVALID_VALUE_ERROR = "Some key contains invalid values in request";
 
     private static final String DUPLICATE_ERROR_CODE = "23505";
 
@@ -146,6 +150,8 @@ public class Service
 
                     var existingIp = existingRecord.getString(Constants.IP);
 
+                    var existingPort = existingRecord.getLong(Constants.PORT);
+
                     var existingName = existingRecord.getString(Constants.DATABASE_DISCOVERY_PROFILE_NAME);
 
                     var existingCredentialProfileId = existingRecord.getValue(Constants.DATABASE_CREDENTIAL_PROFILE_ID);
@@ -154,11 +160,15 @@ public class Service
 
                     var newName = requestBody.getString(Constants.DATABASE_CREDENTIAL_PROFILE_NAME, existingName);
 
+                    var newPort = requestBody.getLong(Constants.PORT,existingPort);
+
                     var newCredentialProfileId = requestBody.getValue(Constants.DATABASE_CREDENTIAL_PROFILE_ID, existingCredentialProfileId);
 
-                    if (!existingIp.equals(newIp) || !existingCredentialProfileId.equals(newCredentialProfileId))
+                    if (!existingIp.equals(newIp) || !existingCredentialProfileId.equals(newCredentialProfileId) || !existingPort.equals( newPort))
                     {
                         requestBody.put(Constants.IP, newIp);
+
+                        requestBody.put(Constants.PORT, newPort);
 
                         requestBody.put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, newCredentialProfileId);
 
@@ -364,6 +374,13 @@ public class Service
                             .put(Constants.MESSAGE, FOREIGN_KEY_ERROR)
                             .encode());
                 }
+                else if (reply.cause().getMessage().contains("can not be coerced to the expected class"))
+                {
+                    context.response().setStatusCode(400).end(new JsonObject()
+                            .put(Constants.STATUS, Constants.FAIL)
+                            .put(Constants.MESSAGE, INVALID_VALUE_ERROR)
+                            .encode());
+                }
                 else
                 {
                     logger.error("Database operation failed: {}", errorMessage);
@@ -387,7 +404,7 @@ public class Service
         {
             var profileId = Long.parseLong(discoveryProfileId);
 
-            var queryForDiscovery = "SELECT dp.id, dp.ip, dp.discovery_profile_name, cp.id as credential_profile_id, cp.system_type, cp.credentials " +
+            var queryForDiscovery = "SELECT dp.id, dp.ip, dp.port, cp.id as credential_profile_id, cp.system_type, cp.credentials " +
                     "FROM discovery_profiles dp " +
                     "JOIN credential_profile cp ON dp.credential_profile_id = cp.id " +
                     "WHERE dp.id = $1";
@@ -464,6 +481,7 @@ public class Service
                                 .put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
                                 .put(Constants.VERSION, credentials.getString(Constants.VERSION))
                                 .put(Constants.PLUGIN_TYPE, deviceType)
+                                .put(Constants.PORT, discovery.getLong(Constants.PORT))
                                 .put(Constants.REQUEST_TYPE, Constants.DISCOVERY);
 
                         vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_ZMQ_ADDRESS, zmqRequest,new DeliveryOptions().setSendTimeout(280_000), zmqResult ->
@@ -485,16 +503,32 @@ public class Service
 
                             if (!isSuccess)
                             {
-                                context.response().setStatusCode(400).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,DISCOVERY_FAIL + targetIp).encode());
+                                var updateStatusRequestQuery = new JsonObject().put(Constants.TABLE_NAME,Constants.DATABASE_TABLE_DISCOVERY_PROFILE).put(Constants.OPERATION,Constants.UPDATE).put(Constants.DATA,new JsonObject().put(Constants.STATUS,false)).put(Constants.CONDITION, new JsonObject().put(Constants.ID,profileId));
 
+                                var updateStatusQuery = QueryBuilder.buildQuery(updateStatusRequestQuery);
+
+                                vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, updateStatusQuery.query()).put(Constants.PARAMS, updateStatusQuery.params()), updateResult ->
+                                {
+                                    if (updateResult.succeeded())
+                                    {
+                                        context.response().setStatusCode(400).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,DISCOVERY_FAIL + targetIp).put(Constants.ERROR,zmqResponseJson.getString(Constants.ERROR)).encode());
+                                    }
+                                    else
+                                    {
+                                        logger.error("Failed to update discovery status {}", discoveryProfileId);
+
+                                        context.response().setStatusCode(500).end(Constants.MESSAGE_INTERNAL_SERVER_ERROR);
+                                    }
+                                });
+                                
                                 return;
                             }
 
-                            var updateStatusQuery = "UPDATE discovery_profiles " +
-                                    "SET status = true " +
-                                    "WHERE id = $2";
+                            var updateStatusRequestQuery = new JsonObject().put(Constants.TABLE_NAME,Constants.DATABASE_TABLE_DISCOVERY_PROFILE).put(Constants.OPERATION,Constants.UPDATE).put(Constants.DATA,new JsonObject().put(Constants.STATUS,true)).put(Constants.CONDITION, new JsonObject().put(Constants.ID,profileId));
 
-                            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, updateStatusQuery).put(Constants.PARAMS, new JsonArray().add(targetIp).add(profileId)), updateResult ->
+                            var updateStatusQuery = QueryBuilder.buildQuery(updateStatusRequestQuery);
+
+                            vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, updateStatusQuery.query()).put(Constants.PARAMS, updateStatusQuery.params()), updateResult ->
                             {
                                 if (updateResult.succeeded())
                                 {
@@ -559,6 +593,8 @@ public class Service
 
                     var ip = data.getString(Constants.IP);
 
+                    var port = data.getLong(Constants.PORT);
+
                     var credentialProfileId = data.getLong(Constants.DATABASE_CREDENTIAL_PROFILE_ID);
 
                     if (status == null || !status)
@@ -580,7 +616,8 @@ public class Service
                             .put(Constants.OPERATION, Constants.INSERT)
                             .put(Constants.DATA, new JsonObject()
                                     .put(Constants.DATABASE_CREDENTIAL_PROFILE_ID, credentialProfileId)
-                                    .put(Constants.IP, ip));
+                                    .put(Constants.IP, ip)
+                                    .put(Constants.PORT, port));
 
                     var insertQueryResult = QueryBuilder.buildQuery(insertRequest);
 

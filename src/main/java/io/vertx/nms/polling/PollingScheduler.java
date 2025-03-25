@@ -22,7 +22,7 @@ public class PollingScheduler extends AbstractVerticle
     {
         logger.info("Scheduler started");
 
-        vertx.setPeriodic( 2000, SCHEDULER_INTERVAL, id ->
+        vertx.setPeriodic(  SCHEDULER_INTERVAL, id ->
         {
             fetchAllBatches();
 
@@ -42,7 +42,7 @@ public class PollingScheduler extends AbstractVerticle
     // Sends the fetched batch to the polling event bus and continues fetching until all data is processed.
     private void fetchBatch()
     {
-        var query = "SELECT p.id AS job_id, p.ip, c.system_type, c.credentials " +
+        var query = "SELECT p.id AS job_id, p.ip, p.port, c.system_type, c.credentials " +
                 "FROM provisioning_jobs p JOIN credential_profile c ON p.credential_profile_id = c.id " +
                 "where p.deleted = FALSE "+
                 "ORDER BY p.id LIMIT $1 OFFSET $2";

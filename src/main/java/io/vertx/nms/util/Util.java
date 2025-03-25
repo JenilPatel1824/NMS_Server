@@ -39,7 +39,7 @@ public class Util
         {
             if (!requestBody.containsKey(field) || requestBody.getValue(field) == null)
             {
-                context.response().setStatusCode(400).end(MISSING_REQUIRED_FIELD + field);
+                context.response().setStatusCode(400).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,MISSING_REQUIRED_FIELD + field).encode());
 
                 return false;
             }

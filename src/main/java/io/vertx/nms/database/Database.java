@@ -293,6 +293,7 @@ public class Database extends AbstractVerticle
                 discovery_profile_name TEXT UNIQUE NOT NULL,
                 credential_profile_id INT,
                 ip TEXT NOT NULL,
+                port INT NOT NULL,
                 status BOOLEAN,
                 FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
             );
@@ -301,6 +302,7 @@ public class Database extends AbstractVerticle
                 id SERIAL PRIMARY KEY,
                 credential_profile_id INT,
                 ip TEXT NOT NULL UNIQUE,
+                port INT NOT NULL,
                 deleted BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (credential_profile_id) REFERENCES credential_profile(id) ON DELETE SET NULL
             );
