@@ -350,7 +350,7 @@ public class Service
                 {
                     logger.warn("Duplicate key error: {}", errorMessage);
 
-                    context.response().setStatusCode(400).end(new JsonObject()
+                    context.response().setStatusCode(409).end(new JsonObject()
                                     .put(Constants.STATUS, Constants.FAIL)
                                     .put(Constants.MESSAGE, DUPLICATE_ERROR)
                                     .encode());
@@ -720,7 +720,7 @@ public class Service
                                         }
                                         else
                                         {
-                                            context.response().setStatusCode(400).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,Constants.MESSAGE_POLLING_STARTED).encode());
+                                            context.response().setStatusCode(409).end(new JsonObject().put(Constants.STATUS,Constants.FAIL).put(Constants.MESSAGE,Constants.MESSAGE_POLLING_STARTED).encode());
                                         }
                                     }
                                     else

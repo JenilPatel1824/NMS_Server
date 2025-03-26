@@ -23,6 +23,7 @@ public class Main
 
     public static void main(String[] args)
     {
+        logger.error("starttttttt");
         try (var context = ZMQ.context(1);
              var socket = context.socket(SocketType.REQ))
         {
