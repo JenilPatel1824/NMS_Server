@@ -868,7 +868,6 @@ public class Service
     // @param context The RoutingContext containing the request and response.
     public void getInterfacesBySpeed(RoutingContext context)
     {
-
         var query = """
                 WITH latest_polling AS (
                     SELECT
@@ -906,7 +905,7 @@ public class Service
 
     // Fetches the top 10 devices with the most reboots in the last 7 days.
     // @param context The RoutingContext containing the request and response.
-    public void getInterfacesByUptime(RoutingContext context)
+    public void getDevicesByRestart(RoutingContext context)
     {
         var query = """
             WITH parsed_data AS (
@@ -978,6 +977,102 @@ public class Service
             ORDER BY reboot_rank ASC, ip
             LIMIT 10;
         """;
+
+        executeAndRespond(context, query);
+    }
+
+    // Fetches top 10 devices based on uptime
+    // @param context The RoutingContext containing the request and response.
+    public void getDevicesByUptime(RoutingContext context)
+    {
+        var query = """
+                WITH parsed_data AS (
+                     SELECT
+                         pj.ip,
+                         pd.job_id,
+                         pd.polled_at,
+                         pd.data->>'system.uptime' AS uptime
+                     FROM provision_data pd
+                     JOIN provisioning_jobs pj ON pd.job_id = pj.id
+                     WHERE pd.data ? 'system.uptime'
+                     AND pd.polled_at >= NOW() - INTERVAL '7 days'
+                 ),
+                 latest_uptime AS (
+                     SELECT DISTINCT ON (ip) ip, job_id, uptime
+                     FROM parsed_data
+                     WHERE uptime IS NOT NULL AND uptime <> ''  -- Ensure valid values
+                     ORDER BY ip, polled_at DESC
+                 )
+                 SELECT
+                     ip,
+                     job_id,
+                     uptime,
+                     DENSE_RANK() OVER (ORDER BY uptime DESC) AS rank
+                 FROM latest_uptime
+                 ORDER BY rank ASC
+                 LIMIT 10;
+            """;
+
+        executeAndRespond(context, query);
+    }
+
+    // Fetches top 10 interfaces based on downtime
+    // @param context The RoutingContext containing the request and response.
+    public void getInterfacesByDowntime(RoutingContext context)
+    {
+        var query = """
+                WITH interface_status AS (
+                      SELECT
+                          pj.ip,
+                          interface->>'interface.name' AS interface_name,
+                          pd.polled_at,
+                          interface->>'interface.operational.status' AS status
+                      FROM provisioning_jobs pj
+                      JOIN provision_data pd ON pd.job_id = pj.id
+                      CROSS JOIN jsonb_array_elements(pd.data->'interfaces') AS interface
+                      WHERE pd.data->'interfaces' IS NOT NULL
+                      AND pd.polled_at >= NOW() - INTERVAL '7 days'
+                  ),
+                  down_events AS (
+                      SELECT
+                          ip,
+                          interface_name,
+                          polled_at,
+                          status,
+                          LAG(polled_at) OVER (PARTITION BY ip, interface_name ORDER BY polled_at) AS prev_polled_at
+                      FROM interface_status
+                      WHERE status = '2'  -- Ensure this matches your "down" status
+                  ),
+                  downtime_durations AS (
+                      SELECT
+                          ip,
+                          interface_name,
+                          SUM(EXTRACT(EPOCH FROM (polled_at - prev_polled_at)))::BIGINT AS total_downtime_seconds  -- Cast to BIGINT
+                      FROM down_events
+                      WHERE prev_polled_at IS NOT NULL
+                      GROUP BY ip, interface_name
+                  ),
+                  ranked_downtime AS (
+                      SELECT
+                          ip,
+                          interface_name,
+                          total_downtime_seconds,
+                          -- Convert seconds into days, hours, minutes, and seconds format
+                          CONCAT(
+                              total_downtime_seconds / 86400, ' days ',
+                              (total_downtime_seconds % 86400) / 3600, ' hrs ',
+                              (total_downtime_seconds % 3600) / 60, ' mins ',
+                              total_downtime_seconds % 60, ' secs'
+                          ) AS human_readable_downtime,
+                          DENSE_RANK() OVER (ORDER BY total_downtime_seconds DESC) AS rank
+                      FROM downtime_durations
+                      WHERE total_downtime_seconds > 0  -- Exclude zero downtime
+                  )
+                  SELECT ip, interface_name, human_readable_downtime, rank
+                  FROM ranked_downtime
+                  WHERE rank <= 10
+                  ORDER BY rank;
+            """;
 
         executeAndRespond(context, query);
     }

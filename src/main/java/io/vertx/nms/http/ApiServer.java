@@ -38,11 +38,15 @@ public class ApiServer extends AbstractVerticle
 
     private static final String PROVISION_DELETE_URL = "/:discoveryProfileId";
 
-    private static final String PROVISION_TOP_ERROR_URL = "/topError";
+    private static final String PROVISION_TOP_ERROR_INTERFACES_URL = "/topError";
 
-    private static final String PROVISION_TOP_SPEED_URL = "/topSpeed";
+    private static final String PROVISION_TOP_SPEED_INTERFACES_URL = "/topSpeed";
 
-    private static final String PROVISION_TOP_UPTIME_URL = "/topRestarts";
+    private static final String PROVISION_TOP_RESTARTED_DEVICES_URL = "/topRestarts";
+
+    private static final String PROVISION_TOP_UPTIME_DEVICES_URL = "/topUpTimeDevices";
+
+    private static final String PROVISION_TOP_DOWN_INTERFACES_URL = "/topDownTimeInterfaces";
 
     private static final String PROVISION_DEVICES_URL = "/devices";
 
@@ -354,11 +358,15 @@ public class ApiServer extends AbstractVerticle
             service.deleteProvisioningJob(discoveryProfileId, context);
         });
 
-        provisionRouter.get(PROVISION_TOP_ERROR_URL).handler(service::getInterfacesByError);
+        provisionRouter.get(PROVISION_TOP_ERROR_INTERFACES_URL).handler(service::getInterfacesByError);
 
-        provisionRouter.get(PROVISION_TOP_SPEED_URL).handler(service::getInterfacesBySpeed);
+        provisionRouter.get(PROVISION_TOP_SPEED_INTERFACES_URL).handler(service::getInterfacesBySpeed);
 
-        provisionRouter.get(PROVISION_TOP_UPTIME_URL).handler(service::getInterfacesByUptime);
+        provisionRouter.get(PROVISION_TOP_RESTARTED_DEVICES_URL).handler(service::getDevicesByRestart);
+
+        provisionRouter.get(PROVISION_TOP_UPTIME_DEVICES_URL).handler(service::getDevicesByUptime);
+
+        provisionRouter.get(PROVISION_TOP_DOWN_INTERFACES_URL).handler(service::getInterfacesByDowntime);
 
         provisionRouter.get(PROVISION_DEVICES_URL).handler(service::getDevices);
 

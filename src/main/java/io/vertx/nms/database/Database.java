@@ -322,6 +322,8 @@ public class Database extends AbstractVerticle
             CREATE INDEX IF NOT EXISTS idx_provision_data_interface_speed ON provision_data (COALESCE((NULLIF(((data -> 'interfaces'::text) ->> 'interface.speed'::text), ''::text))::bigint, 0)) WHERE COALESCE((NULLIF(((data -> 'interfaces'::text) ->> 'interface.speed'::text), ''::text))::bigint, 0) > 0;
             CREATE INDEX IF NOT EXISTS idx_provision_data_system_uptime ON provision_data ((data->>'system.uptime'));
             CREATE INDEX IF NOT EXISTS idx_provisioning_jobs_deleted ON provisioning_jobs(deleted);
+            CREATE INDEX IF NOT EXISTS idx_provision_data_polled_at ON provision_data(polled_at);
+            CREATE INDEX IF NOT EXISTS idx_provision_data_jsonb ON provision_data USING GIN (data);
         """;
 
         pgClient.query(createTablesAndIndexesQuery).execute(ar ->
