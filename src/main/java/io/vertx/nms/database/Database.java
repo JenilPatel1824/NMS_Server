@@ -16,7 +16,10 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.SQLException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +29,7 @@ import java.util.stream.IntStream;
 
 public class Database extends AbstractVerticle
 {
-    private static final int MAX_CACHEABLE_ROWS = 10_000;
+    private static final int MAX_CACHEABLE_ROWS = 1000;
 
     private record CacheEntry(JsonObject response, Set<String> tables) {}
 
@@ -37,6 +40,18 @@ public class Database extends AbstractVerticle
     private Cache<String, CacheEntry> cache;
 
     private final Map<String, Set<String>> tableToCacheKeys = new HashMap<>();
+
+    private static final String INSERT_TABLE_NAME_REGEX = "insert\\s+into\\s+((\"[^\"]+\"|[^\\s(]+))";
+
+    private static final String UPDATE_TABLE_NAME_REGEX = "update\\s+((\"[^\"]+\"|[^\\s]+))";
+
+    private static final String DELETE_TABLE_NAME_REGEX = "delete\\s+from\\s+((\"[^\"]+\"|[^\\s]+))";
+
+    private static final String PARSE_TABLE_REGX = "(?:from|join)\\s+([^\\s,)(]+)";
+
+    private static final String INSERT_INTO_PROVISION_DATA = "insert into provision_data";
+
+    private static final String RETURNING_ID = "returning id";
 
     @Override
     public void start(Promise<Void> startPromise)
@@ -100,175 +115,178 @@ public class Database extends AbstractVerticle
     //cache SELECT queries, and invalidate cache on mutations
     private void setupEventBusConsumer()
     {
-        var eventBus = vertx.eventBus();
-
-        eventBus.<JsonObject>localConsumer(Constants.EVENTBUS_DATABASE_ADDRESS, message ->
+        vertx.eventBus().<JsonObject>localConsumer(Constants.EVENTBUS_DATABASE_ADDRESS, message ->
         {
-            var request = message.body();
+            var query = message.body().getString(Constants.QUERY).toLowerCase().trim();
 
-            var query = request.getString(Constants.QUERY);
+            var isInsertPollingData = query.startsWith(INSERT_INTO_PROVISION_DATA);
 
             logger.info("Executing query: {}", query);
 
-            var params = request.getJsonArray(Constants.PARAMS);
+            var params = message.body().getJsonArray(Constants.PARAMS);
 
             if (params == null)
             {
                 params = new JsonArray();
             }
 
-            var isInsertOrUpdate = query.trim().toLowerCase().startsWith(Constants.INSERT) || query.trim().toLowerCase().startsWith(Constants.UPDATE);
+            var isInsertOrUpdate = query.startsWith(Constants.INSERT) || query.startsWith(Constants.UPDATE);
 
-            var isSelect = query.toLowerCase().trim().startsWith(Constants.SELECT) || query.toLowerCase().trim().startsWith(Constants.WITH);
-
-            var isMutation = isInsertOrUpdate || query.toLowerCase().trim().startsWith(Constants.DELETE);
-
-            if (isInsertOrUpdate && !query.toLowerCase().contains("returning id"))
+            if(!isInsertPollingData)
             {
-                query += " RETURNING id";
+                if (isInsertOrUpdate && !query.contains(RETURNING_ID))
+                {
+                    query += " returning id";
+                }
             }
 
-            boolean shouldCheckCache = isSelect && !queryInvolvesProvisionData(query);
+            var cacheHit = false;
 
-            if (shouldCheckCache)
+            if ((query.startsWith(Constants.SELECT) || query.startsWith(Constants.WITH)) && !queryInvolvesProvisionData(query))
             {
-                var cacheKey = generateCacheKey(query, params);
-
-                var cachedResponse = cache.getIfPresent(cacheKey);
-
-                if (cachedResponse != null)
+                if (cache.getIfPresent(generateCacheKey(query, params)) != null)
                 {
                     logger.info("Cache hit for query: {}", query);
 
-                    message.reply(cachedResponse.response);
+                    message.reply(cache.getIfPresent(generateCacheKey(query, params)).response);
 
-                    return;
+                    cacheHit=true;
                 }
             }
 
-            var finalQuery = query;
-
-            var tupleParams = Tuple.tuple();
-
-            for (int i = 0; i < params.size(); i++)
+            if(!cacheHit)
             {
-                var paramValue = params.getValue(i);
+                var finalQuery = query;
 
-                if (query.toLowerCase().contains(Constants.POLLED_AT) && paramValue instanceof String)
+                var tupleParams = Tuple.tuple();
+
+                for (int i = 0; i < params.size(); i++)
                 {
-                    tupleParams.addLocalDateTime(LocalDateTime.parse((String) paramValue, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                }
-                else
-                {
+                    var paramValue = params.getValue(i);
+
                     tupleParams.addValue(paramValue);
+
                 }
-            }
 
-            var finalParams = params;
+                var finalParams = params;
 
-            pgClient.preparedQuery(finalQuery).execute(tupleParams, ar ->
-            {
-                if (ar.succeeded())
+                vertx.executeBlocking(promise ->
                 {
-                    var rows = ar.result();
-
-                    var response = new JsonObject().put(Constants.STATUS, Constants.SUCCESS);
-
-                    if (isMutation)
+                    pgClient.preparedQuery(finalQuery).execute(tupleParams, ar ->
                     {
-                        var affectedTables = parseTablesForMutation(finalQuery);
-
-                        affectedTables.forEach(table ->
+                        if (ar.succeeded())
                         {
-                            var keys = tableToCacheKeys.getOrDefault(table, Collections.emptySet());
+                            var rows = ar.result();
 
-                            new ArrayList<>(keys).forEach(cache::invalidate);
-                        });
-                    }
+                            var response = new JsonObject().put(Constants.STATUS, Constants.SUCCESS);
 
-                    if (isSelect)
-                    {
-                        var rowJson = new JsonObject();
-
-                        var resultData = new JsonArray();
-
-                        rows.forEach(row ->
-                        {
-                            rowJson.clear();
-
-                            IntStream.range(0, row.size()).forEach(i ->
+                            if (isInsertOrUpdate || finalQuery.startsWith(Constants.DELETE))
                             {
-                                var columnName = row.getColumnName(i);
-
-                                var value = row.getValue(i);
-
-                                if (Constants.POLLED_AT.equalsIgnoreCase(columnName) && value instanceof LocalDateTime)
+                                parseTablesForMutation(finalQuery).forEach(table ->
                                 {
-                                    rowJson.put(columnName, ((LocalDateTime) value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                                    new ArrayList<>(tableToCacheKeys.getOrDefault(table, Collections.emptySet())).forEach(cache::invalidate);
+                                });
+                            }
+
+                            if (finalQuery.startsWith(Constants.SELECT) || finalQuery.startsWith(Constants.WITH))
+                            {
+                                var rowJson = new JsonObject();
+
+                                var resultData = new JsonArray();
+
+                                rows.forEach(row ->
+                                {
+                                    rowJson.clear();
+
+                                    IntStream.range(0, row.size()).forEach(i ->
+                                    {
+                                        var columnName = row.getColumnName(i);
+
+                                        var value = row.getValue(i);
+
+                                        rowJson.put(columnName, value);
+                                    });
+
+                                    resultData.add(rowJson.copy());
+                                });
+
+                                if (resultData.size() <= MAX_CACHEABLE_ROWS && !queryInvolvesProvisionData(finalQuery))
+                                {
+                                    logger.info("Inserting into cache for query: {} with {} rows", finalQuery, resultData.size());
+
+                                    cache.put(generateCacheKey(finalQuery, finalParams),
+                                            new CacheEntry(response.put(Constants.DATA, resultData),
+                                                    parseTablesForSelect(finalQuery)));
+
+                                    parseTablesForSelect(finalQuery).forEach(table ->
+                                    {
+                                        tableToCacheKeys.computeIfAbsent(table, k -> new HashSet<>()).add(generateCacheKey(finalQuery, finalParams));
+                                    });
+
                                 }
                                 else
                                 {
-                                    rowJson.put(columnName, value);
+                                    logger.info("Skipping cache for query: {} - either result too large ({} rows) or involves provision_data", finalQuery, resultData.size());
+
+                                    response.put(Constants.DATA, resultData);
                                 }
-                            });
 
-                            resultData.add(rowJson.copy());
-                        });
-
-                        boolean shouldCache = resultData.size() <= MAX_CACHEABLE_ROWS && !queryInvolvesProvisionData(finalQuery);
-
-                        if (shouldCache)
-                        {
-                            var cacheKey = generateCacheKey(finalQuery, finalParams);
-
-                            var tables = parseTablesForSelect(finalQuery);
-
-                            var entry = new CacheEntry(response.put(Constants.DATA, resultData), tables);
-
-                            logger.info("Inserting into cache for query: {} with {} rows", finalQuery, resultData.size());
-
-                            cache.put(cacheKey, entry);
-
-                            tables.forEach(table ->
+                            }
+                            else if (isInsertOrUpdate && !isInsertPollingData)
                             {
-                                tableToCacheKeys.computeIfAbsent(table, k -> new HashSet<>()).add(cacheKey);
-                            });
+                                if (rows.iterator().hasNext())
+                                {
+                                    response.put(Constants.ID, rows.iterator().next().getInteger(Constants.ID));
+                                }
+
+                                response.put(Constants.MESSAGE, Constants.MESSAGE_OPERATION_SUCCESSFUL);
+
+                            }
+                            else
+                            {
+                                response.put(Constants.MESSAGE, Constants.MESSAGE_OPERATION_SUCCESSFUL);
+                            }
+
+                            promise.complete(response);
+
                         }
                         else
                         {
-                            logger.info("Skipping cache for query: {} - either result too large ({} rows) or involves provision_data", finalQuery, resultData.size());
+                            logger.error("Database query failed: {}", ar.cause().getMessage());
 
-                            response.put(Constants.DATA, resultData);
+                            promise.fail(ar.cause());
                         }
-                    }
-                    else if (isInsertOrUpdate)
+                    });
+
+                },  res -> {
+
+                    if (res.succeeded())
                     {
-                        if (rows.iterator().hasNext())
+                        if (!isInsertPollingData)
                         {
-                            var id = rows.iterator().next().getInteger(Constants.ID);
-
-                            response.put(Constants.ID, id);
+                            message.reply( res.result());
                         }
-
-                        response.put(Constants.MESSAGE, Constants.MESSAGE_OPERATION_SUCCESSFUL);
+                        else
+                        {
+                            logger.info("Polling stored Successful");
+                        }
                     }
                     else
                     {
-                        response.put(Constants.MESSAGE, Constants.MESSAGE_OPERATION_SUCCESSFUL);
+                        if (!isInsertPollingData)
+                        {
+                            message.fail(1, new JsonObject()
+                                    .put(Constants.STATUS, Constants.FAIL)
+                                    .put(Constants.MESSAGE, res.cause().getMessage())
+                                    .encode());
+                        }
+                        else
+                        {
+                            logger.error("Database query failed: {}", res.cause().getMessage());
+                        }
                     }
-
-                    message.reply(response);
-                }
-                else
-                {
-                    logger.error("Database query failed: {}", ar.cause().getMessage());
-
-                    message.fail(1, new JsonObject()
-                            .put(Constants.STATUS, Constants.FAIL)
-                            .put(Constants.MESSAGE, ar.cause().getMessage())
-                            .encode());
-                }
-            });
+                });
+            }
         });
     }
 
@@ -281,7 +299,7 @@ public class Database extends AbstractVerticle
 
         var createTablesAndIndexesQuery = """
             CREATE TABLE IF NOT EXISTS credential_profile (
-                id SERIAL PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
                 credential_profile_name TEXT UNIQUE NOT NULL,
                 system_type TEXT NOT NULL,
                 credentials JSONB NOT NULL,
@@ -311,7 +329,7 @@ public class Database extends AbstractVerticle
                 id SERIAL PRIMARY KEY,
                 job_id INT NOT NULL REFERENCES provisioning_jobs(id) ON DELETE CASCADE,
                 data JSONB NOT NULL,
-                polled_at TIMESTAMP
+                polled_at BIGINT
             );
 
             CREATE INDEX IF NOT EXISTS idx_credential_profile_in_use_by ON credential_profile (in_use_by);
@@ -351,9 +369,7 @@ public class Database extends AbstractVerticle
     // @return A SHA-1 hashed string representing the cache key.
     private String generateCacheKey(String query, JsonArray params)
     {
-        var key = query + params.toString();
-
-        return DigestUtils.sha1Hex(key);
+        return DigestUtils.sha1Hex(query + params.toString());
     }
 
     // Checks if a query involves the provision_data table
@@ -361,7 +377,7 @@ public class Database extends AbstractVerticle
     // @return True if the query involves the provision_data table, false otherwise.
     private boolean queryInvolvesProvisionData(String query)
     {
-        return query.toLowerCase().contains(Constants.DATABASE_TABLE_PROVISION_DATA);
+        return query.contains(Constants.DATABASE_TABLE_PROVISION_DATA);
     }
 
     // Extracts table names from a SELECT query using regex pattern matching.
@@ -371,9 +387,7 @@ public class Database extends AbstractVerticle
     {
         var tables = new HashSet<String>();
 
-        var pattern = Pattern.compile("(?:from|join)\\s+([^\\s,)(]+)", Pattern.CASE_INSENSITIVE);
-
-        var matcher = pattern.matcher(query.toLowerCase());
+        var matcher = Pattern.compile(PARSE_TABLE_REGX, Pattern.CASE_INSENSITIVE).matcher(query.toLowerCase());
 
         while (matcher.find())
         {
@@ -394,17 +408,15 @@ public class Database extends AbstractVerticle
     // @return A set of table names affected by the mutation.
     private Set<String> parseTablesForMutation(String query)
     {
-        var lowerQuery = query.toLowerCase().trim();
-
         var tables = new HashSet<String>();
 
         Matcher matcher;
 
-        if (lowerQuery.startsWith(Constants.INSERT))
+        if (query.startsWith(Constants.INSERT))
         {
-            var insertPattern = Pattern.compile("insert\\s+into\\s+((\"[^\"]+\"|[^\\s(]+))", Pattern.CASE_INSENSITIVE);
+            var insertPattern = Pattern.compile(INSERT_TABLE_NAME_REGEX, Pattern.CASE_INSENSITIVE);
 
-            matcher = insertPattern.matcher(lowerQuery);
+            matcher = insertPattern.matcher(query);
 
             if (matcher.find())
             {
@@ -418,9 +430,9 @@ public class Database extends AbstractVerticle
                 tables.add(table);
             }
         }
-        else if (lowerQuery.startsWith(Constants.UPDATE))
+        else if (query.startsWith(Constants.UPDATE))
         {
-            matcher = Pattern.compile("update\\s+((\"[^\"]+\"|[^\\s]+))", Pattern.CASE_INSENSITIVE).matcher(lowerQuery);
+            matcher = Pattern.compile(UPDATE_TABLE_NAME_REGEX, Pattern.CASE_INSENSITIVE).matcher(query);
 
             if (matcher.find())
             {
@@ -434,9 +446,9 @@ public class Database extends AbstractVerticle
                 tables.add(table);
             }
         }
-        else if (lowerQuery.startsWith(Constants.DELETE))
+        else if (query.startsWith(Constants.DELETE))
         {
-            matcher = Pattern.compile("delete\\s+from\\s+((\"[^\"]+\"|[^\\s]+))", Pattern.CASE_INSENSITIVE).matcher(lowerQuery);
+            matcher = Pattern.compile(DELETE_TABLE_NAME_REGEX, Pattern.CASE_INSENSITIVE).matcher(query);
 
             if (matcher.find())
             {
@@ -461,17 +473,17 @@ public class Database extends AbstractVerticle
         {
             pgClient.close().onComplete(ar ->
             {
-                        if (ar.succeeded())
-                        {
-                            cache.invalidateAll();
+                if (ar.succeeded())
+                {
+                    cache.invalidateAll();
 
-                            stopPromise.complete();
-                        }
-                        else
-                        {
-                            stopPromise.fail(ar.cause());
-                        }
-                    });
+                    stopPromise.complete();
+                }
+                else
+                {
+                    stopPromise.fail(ar.cause());
+                }
+            });
         }
         else
         {

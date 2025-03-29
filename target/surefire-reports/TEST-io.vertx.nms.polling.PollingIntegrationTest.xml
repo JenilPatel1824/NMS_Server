@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="io.vertx.nms.polling.PollingIntegrationTest" time="10.25" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="io.vertx.nms.polling.PollingIntegrationTest" time="20.406" tests="1" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="17"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="IN"/>
     <property name="sun.boot.library.path" value="/usr/lib/jvm/java-17-openjdk-amd64/lib"/>
-    <property name="sun.java.command" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250325131158186_3.jar /home/jenil/Documents/NMS_Server/target/surefire 2025-03-25T13-11-58_120-jvmRun1 surefire-20250325131158186_1tmp surefire_0-20250325131158186_2tmp"/>
+    <property name="sun.java.command" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250329152700728_3.jar /home/jenil/Documents/NMS_Server/target/surefire 2025-03-29T15-27-00_655-jvmRun1 surefire-20250329152700728_1tmp surefire_0-20250329152700728_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="/home/jenil/Documents/NMS_Server/target/test-classes:/home/jenil/Documents/NMS_Server/target/classes:/home/jenil/.m2/repository/io/vertx/vertx-core/4.5.8/vertx-core-4.5.8.jar:/home/jenil/.m2/repository/io/netty/netty-common/4.1.110.Final/netty-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-buffer/4.1.110.Final/netty-buffer-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport/4.1.110.Final/netty-transport-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler/4.1.110.Final/netty-handler-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec/4.1.110.Final/netty-codec-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler-proxy/4.1.110.Final/netty-handler-proxy-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-socks/4.1.110.Final/netty-codec-socks-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http/4.1.110.Final/netty-codec-http-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http2/4.1.110.Final/netty-codec-http2-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver/4.1.110.Final/netty-resolver-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver-dns/4.1.110.Final/netty-resolver-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-dns/4.1.110.Final/netty-codec-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.16.1/jackson-core-2.16.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-web/4.5.8/vertx-web-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-common/4.5.8/vertx-web-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-auth-common/4.5.8/vertx-auth-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-bridge-common/4.5.8/vertx-bridge-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-junit5/4.5.1/vertx-junit5-4.5.1.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.8.2/junit-jupiter-params-5.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-client/4.5.1/vertx-web-client-4.5.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-uri-template/4.5.8/vertx-uri-template-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-pg-client/4.5.8/vertx-pg-client-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-sql-client/4.5.8/vertx-sql-client-4.5.8.jar:/home/jenil/.m2/repository/org/zeromq/jeromq/0.5.2/jeromq-0.5.2.jar:/home/jenil/.m2/repository/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.16.1/jackson-annotations-2.16.1.jar:/home/jenil/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.8.2/junit-jupiter-api-5.8.2.jar:/home/jenil/.m2/repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-commons/1.8.2/junit-platform-commons-1.8.2.jar:/home/jenil/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.8.2/junit-jupiter-engine-5.8.2.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-engine/1.8.2/junit-platform-engine-1.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-unit/4.4.4/vertx-unit-4.4.4.jar:/home/jenil/.m2/repository/com/github/javafaker/javafaker/1.0.2/javafaker-1.0.2.jar:/home/jenil/.m2/repository/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar:/home/jenil/.m2/repository/org/yaml/snakeyaml/1.23/snakeyaml-1.23-android.jar:/home/jenil/.m2/repository/com/github/mifmif/generex/1.0.2/generex-1.0.2.jar:/home/jenil/.m2/repository/dk/brics/automaton/automaton/1.11-8/automaton-1.11-8.jar:/home/jenil/.m2/repository/com/github/ben-manes/caffeine/caffeine/3.1.8/caffeine-3.1.8.jar:/home/jenil/.m2/repository/org/checkerframework/checker-qual/3.37.0/checker-qual-3.37.0.jar:/home/jenil/.m2/repository/com/google/errorprone/error_prone_annotations/2.21.1/error_prone_annotations-2.21.1.jar:/home/jenil/.m2/repository/commons-codec/commons-codec/1.16.0/commons-codec-1.16.0.jar:"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -28,7 +28,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
-    <property name="surefire.real.class.path" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250325131158186_3.jar"/>
+    <property name="surefire.real.class.path" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250329152700728_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="17.0.14+7-Ubuntu-120.04"/>
     <property name="user.name" value="jenil"/>
@@ -53,68 +53,70 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="61.0"/>
   </properties>
-  <testcase name="testFullPollingFlow(Vertx, VertxTestContext)" classname="io.vertx.nms.polling.PollingIntegrationTest" time="10.234">
-    <system-out><![CDATA[2025-03-25 13:11:58 [vert.x-eventloop-thread-0] INFO  i.vertx.nms.polling.PollingScheduler - Scheduler started
-2025-03-25 13:11:59 [vert.x-eventloop-thread-2] INFO  i.vertx.nms.polling.PollingProcessor - Polling Worker started
-2025-03-25 13:11:59 [vert.x-eventloop-thread-3] DEBUG io.vertx.nms.messaging.ZmqMessenger -  zmq message verticle 
-2025-03-25 13:11:59 [main] INFO  i.v.n.polling.PollingIntegrationTest - Starting testFullPollingFlow
-2025-03-25 13:12:01 [vert.x-eventloop-thread-1] INFO  i.v.n.polling.PollingIntegrationTest - Received database request: {
+  <testcase name="testFullPollingFlow(Vertx, VertxTestContext)" classname="io.vertx.nms.polling.PollingIntegrationTest" time="20.358">
+    <system-out><![CDATA[2025-03-29 15:27:01 [main] INFO  i.v.n.polling.PollingIntegrationTest - Killed existing go_plugin if any.
+2025-03-29 15:27:01 [main] INFO  i.v.n.polling.PollingIntegrationTest - go_plugin started successfully.
+2025-03-29 15:27:01 [vert.x-eventloop-thread-0] INFO  i.vertx.nms.polling.PollingScheduler - Scheduler started
+2025-03-29 15:27:01 [vert.x-eventloop-thread-2] INFO  i.vertx.nms.polling.PollingProcessor - Polling Worker started
+2025-03-29 15:27:01 [vert.x-eventloop-thread-3] DEBUG io.vertx.nms.messaging.ZmqMessenger - zmq message verticle
+2025-03-29 15:27:01 [main] INFO  i.v.n.polling.PollingIntegrationTest - Starting testFullPollingFlow
+2025-03-29 15:27:04 [vert.x-eventloop-thread-1] INFO  i.v.n.polling.PollingIntegrationTest - Received database request: {
   "query" : "SELECT p.id AS job_id, p.ip, p.port, c.system_type, c.credentials FROM provisioning_jobs p JOIN credential_profile c ON p.credential_profile_id = c.id where p.deleted = FALSE ORDER BY p.id LIMIT $1 OFFSET $2",
   "params" : [ 1000, 0 ]
 }
-2025-03-25 13:12:01 [vert.x-eventloop-thread-0] INFO  i.vertx.nms.polling.PollingScheduler - Scheduling batch of 15 devices (Offset: 0)
-2025-03-25 13:12:01 [vert.x-eventloop-thread-0] INFO  i.vertx.nms.polling.PollingScheduler - Last batch fetched (Size: 15). Stopping further fetches.
-2025-03-25 13:12:01 [vert.x-eventloop-thread-2] INFO  i.vertx.nms.polling.PollingProcessor - received 
-2025-03-25 13:12:09 [vert.x-eventloop-thread-2] INFO  i.vertx.nms.polling.PollingProcessor - flushing batch 15
-2025-03-25 13:12:09 [vert.x-eventloop-thread-2] INFO  i.vertx.nms.polling.PollingProcessor - Storing 15 SNMP records in batch...
-2025-03-25 13:12:09 [vert.x-eventloop-thread-1] INFO  i.v.n.polling.PollingIntegrationTest - Received database request: {
-  "query" : "INSERT INTO provision_data (job_id, data, polled_at) VALUES ($1, $2, $3),($4, $5, $6),($7, $8, $9),($10, $11, $12),($13, $14, $15),($16, $17, $18),($19, $20, $21),($22, $23, $24),($25, $26, $27),($28, $29, $30),($31, $32, $33),($34, $35, $36),($37, $38, $39),($40, $41, $42),($43, $44, $45) RETURNING id",
-  "params" : [ 4, {
+2025-03-29 15:27:04 [vert.x-eventloop-thread-0] INFO  i.vertx.nms.polling.PollingScheduler - Scheduling batch of 15 devices (Offset: 0)
+2025-03-29 15:27:04 [vert.x-eventloop-thread-0] INFO  i.vertx.nms.polling.PollingScheduler - Last batch fetched (Size: 15). Stopping further fetches.
+2025-03-29 15:27:04 [vert.x-eventloop-thread-2] INFO  i.vertx.nms.polling.PollingProcessor - received batch of 15
+2025-03-29 15:27:21 [vert.x-eventloop-thread-2] INFO  i.vertx.nms.polling.PollingProcessor - flushing batch 15
+2025-03-29 15:27:21 [vert.x-eventloop-thread-2] INFO  i.vertx.nms.polling.PollingProcessor - Storing 15 SNMP records in batch...
+2025-03-29 15:27:21 [vert.x-eventloop-thread-1] INFO  i.v.n.polling.PollingIntegrationTest - Received database request: {
+  "query" : "insert into provision_data (job_id, data, polled_at) values ($1, $2, $3),($4, $5, $6),($7, $8, $9),($10, $11, $12),($13, $14, $15),($16, $17, $18),($19, $20, $21),($22, $23, $24),($25, $26, $27),($28, $29, $30),($31, $32, $33),($34, $35, $36),($37, $38, $39),($40, $41, $42),($43, $44, $45)",
+  "params" : [ 2, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:02", 1, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224983, 4, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:02", 5, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224983, 5, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:02", 3, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224984, 6, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:02", 2, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224984, 9, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:02", 10, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224984, 3, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:03", 9, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224984, 7, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:03", 8, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224985, 1, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:03", 6, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224985, 8, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:03", 7, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224985, 12, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:03", 13, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224985, 13, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:04", 14, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224985, 11, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:04", 12, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224986, 10, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:04", 11, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224986, 14, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:04", 15, {
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224986, 15, {
     "error" : "SNMP connection failed",
-    "message" : "request timeout (after 1 retries)"
-  }, "2025-03-25 13:12:04" ]
+    "message" : "request timeout (after 0 retries)"
+  }, 1743242224986 ]
 }
 ]]></system-out>
   </testcase>

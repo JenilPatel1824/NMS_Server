@@ -16,6 +16,8 @@ public class Util
 
     private static final String MISSING_REQUIRED_FIELD = "Missing or empty required field: ";
 
+    private static final String IPV4_REGX = "^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$";
+
     // Validates the request body based on the table name.
     // Ensures that all required fields are present and not empty.
     // Ensures that the 'ip' field is not updated in discovery_profiles.
@@ -33,9 +35,7 @@ public class Util
             return false;
         }
 
-        var requiredFields = getRequiredFieldsForTable(tableName);
-
-        for (var field : requiredFields)
+        for (var field : getRequiredFieldsForTable(tableName))
         {
             if (!requestBody.containsKey(field) || requestBody.getValue(field) == null)
             {
@@ -55,15 +55,33 @@ public class Util
 
             if (Constants.IP.equals(field))
             {
-                var ip = requestBody.getString(Constants.IP, "").trim();
-
-                if (!isValidIpv4(ip))
+                if (!isValidIpv4(requestBody.getString(Constants.IP, "").trim()))
                 {
                     context.response().setStatusCode(400).end("Invalid IPv4 format for field 'ip'");
 
                     return false;
                 }
             }
+
+            if (Constants.PORT.equals(field))
+            {
+                if (!(value instanceof Integer))
+                {
+                    context.response().setStatusCode(400).end("Field 'port' must be an integer");
+
+                    return false;
+                }
+
+                int port = (Integer) value;
+
+                if (port <= 0 || port > 65535)
+                {
+                    context.response().setStatusCode(400).end("Field 'port' must be between 1 and 65535");
+
+                    return false;
+                }
+            }
+
 
             if (Constants.DATABASE_TABLE_CREDENTIAL_PROFILE.equals(tableName) && Constants.CREDENTIALS.equals(field))
             {
@@ -76,9 +94,7 @@ public class Util
 
                 var credentialJson = (JsonObject) value;
 
-                var systemType = requestBody.getString(Constants.SYSTEM_TYPE, "").trim();
-
-                if (Constants.SNMP.equalsIgnoreCase(systemType))
+                if (Constants.SNMP.equalsIgnoreCase(requestBody.getString(Constants.SYSTEM_TYPE, "").trim()))
                 {
                     if (!credentialJson.containsKey(Constants.COMMUNITY) || credentialJson.getValue(Constants.COMMUNITY) == null || (credentialJson.getValue(Constants.COMMUNITY) instanceof String && ((String) credentialJson.getValue(Constants.COMMUNITY)).trim().isEmpty()))
                     {
@@ -104,9 +120,7 @@ public class Util
                     }
                     for (var key : credentialJson.fieldNames())
                     {
-                        var innerValue = credentialJson.getValue(key);
-
-                        if (innerValue == null || (innerValue instanceof String && ((String) innerValue).trim().isEmpty()))
+                        if (credentialJson.getValue(key) == null || (credentialJson.getValue(key) instanceof String && ((String) credentialJson.getValue(key)).trim().isEmpty()))
                         {
                             context.response().setStatusCode(400).end("Field 'credential." + key + "' cannot be null or empty");
 
@@ -123,9 +137,7 @@ public class Util
     // @param ip is ip for validation
     private static boolean isValidIpv4(String ip)
     {
-        var ipv4Regex = "^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$";
-
-        return Pattern.compile(ipv4Regex).matcher(ip).matches();
+        return Pattern.compile(IPV4_REGX).matcher(ip).matches();
     }
 
     // Returns the table name based on the request path.
@@ -164,9 +176,7 @@ public class Util
     {
         try
         {
-            var processBuilder = new ProcessBuilder("ping", "-c", "3", ipAddress);
-
-            var process = processBuilder.start();
+            var process = new ProcessBuilder("ping", "-c", "3", ipAddress).start();
 
             var reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
@@ -174,7 +184,6 @@ public class Util
 
             while ((line = reader.readLine()) != null)
             {
-
                 if (line.contains("100% packet loss"))
                 {
                     return false;

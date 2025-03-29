@@ -1,13 +1,12 @@
 package io.vertx.nms.http;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.Vertx;
+import io.vertx.core.Promise;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.DecodeException;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
-import io.vertx.nms.service.Service;
 import io.vertx.nms.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,8 +41,6 @@ public class ApiServer extends AbstractVerticle
 
     private static final String PROVISION_TOP_SPEED_INTERFACES_URL = "/topSpeed";
 
-    private static final String PROVISION_TOP_RESTARTED_DEVICES_URL = "/topRestarts";
-
     private static final String PROVISION_TOP_UPTIME_DEVICES_URL = "/topUpTimeDevices";
 
     private static final String PROVISION_TOP_DOWN_INTERFACES_URL = "/topDownTimeInterfaces";
@@ -55,7 +52,7 @@ public class ApiServer extends AbstractVerticle
     private static final String MESSAGE_REQUIRED_CREDENTIAL_PROFILE_ID = "credential profile id is required.";
 
     @Override
-    public void start()
+    public void start(Promise<Void> startPromise)
     {
         this.service = new Service(vertx);
 
@@ -74,10 +71,14 @@ public class ApiServer extends AbstractVerticle
             if (http.succeeded())
             {
                 logger.info("HTTP Server is listening on port 8080");
+
+                startPromise.complete();
             }
             else
             {
                 logger.error("Failed to start HTTP server: {}", http.cause().getMessage());
+
+                startPromise.fail(http.cause());
             }
         });
     }
@@ -101,9 +102,7 @@ public class ApiServer extends AbstractVerticle
                 }
                 try
                 {
-                    var requestBody = buffer.toJsonObject();
-
-                    service.create(requestBody, context);
+                    service.create(buffer.toJsonObject(), context);
                 }
                 catch (DecodeException e)
                 {
@@ -153,9 +152,7 @@ public class ApiServer extends AbstractVerticle
 
                 try
                 {
-                    var requestBody = buffer.toJsonObject();
-
-                    service.update(credentialProfileId, requestBody, context);
+                    service.update(credentialProfileId,  buffer.toJsonObject(), context);
                 }
                 catch (DecodeException e)
                 {
@@ -249,16 +246,14 @@ public class ApiServer extends AbstractVerticle
             {
                 try
                 {
-                    var updateRequest = buffer.toJsonObject();
-
-                    if (updateRequest.isEmpty())
+                    if (buffer.toJsonObject().isEmpty())
                     {
                         context.response().setStatusCode(400).end(Constants.MESSAGE_EMPTY_REQUEST);
 
                         return;
                     }
 
-                    service.update(discoveryProfileId, updateRequest, context);
+                    service.update(discoveryProfileId, buffer.toJsonObject(), context);
                 }
                 catch (Exception e)
                 {
@@ -361,8 +356,6 @@ public class ApiServer extends AbstractVerticle
         provisionRouter.get(PROVISION_TOP_ERROR_INTERFACES_URL).handler(service::getInterfacesByError);
 
         provisionRouter.get(PROVISION_TOP_SPEED_INTERFACES_URL).handler(service::getInterfacesBySpeed);
-
-        provisionRouter.get(PROVISION_TOP_RESTARTED_DEVICES_URL).handler(service::getDevicesByRestart);
 
         provisionRouter.get(PROVISION_TOP_UPTIME_DEVICES_URL).handler(service::getDevicesByUptime);
 

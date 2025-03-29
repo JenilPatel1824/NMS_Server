@@ -1,6 +1,7 @@
 package io.vertx.nms.polling;
 
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.nms.util.Constants;
@@ -15,18 +16,29 @@ public class PollingScheduler extends AbstractVerticle
 
     private static final long SCHEDULER_INTERVAL = 300_000;
 
+    private static final String FETCH_BATCH_QUERY = "SELECT p.id AS job_id, p.ip, p.port, c.system_type, c.credentials " +
+            "FROM provisioning_jobs p JOIN credential_profile c ON p.credential_profile_id = c.id " +
+            "where p.deleted = FALSE "+
+            "ORDER BY p.id LIMIT $1 OFFSET $2";
+
     private int currentOffset = 0;
 
+    private final JsonObject queryRequest = new JsonObject();
+
+    private final JsonArray queryParams = new JsonArray();
+
     @Override
-    public void start()
+    public void start(Promise<Void> startPromise)
     {
         logger.info("Scheduler started");
 
-        vertx.setPeriodic(  SCHEDULER_INTERVAL, id ->
+        vertx.setPeriodic(2000,SCHEDULER_INTERVAL, id ->
         {
             fetchAllBatches();
 
         });
+
+        startPromise.complete();
     }
 
     // Resets the offset and initiates fetching of data in batches.
@@ -42,20 +54,15 @@ public class PollingScheduler extends AbstractVerticle
     // Sends the fetched batch to the polling event bus and continues fetching until all data is processed.
     private void fetchBatch()
     {
-        var query = "SELECT p.id AS job_id, p.ip, p.port, c.system_type, c.credentials " +
-                "FROM provisioning_jobs p JOIN credential_profile c ON p.credential_profile_id = c.id " +
-                "where p.deleted = FALSE "+
-                "ORDER BY p.id LIMIT $1 OFFSET $2";
+        queryParams.clear();
 
-        var params = new JsonArray().add(FETCH_BATCH_SIZE).add(currentOffset);
+        queryRequest.clear();
 
-        vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, new JsonObject().put(Constants.QUERY, query).put(Constants.PARAMS, params), reply ->
+        vertx.eventBus().<JsonObject>request(Constants.EVENTBUS_DATABASE_ADDRESS, queryRequest.put(Constants.QUERY, FETCH_BATCH_QUERY).put(Constants.PARAMS, queryParams.add(FETCH_BATCH_SIZE).add(currentOffset)), reply ->
         {
             if (reply.succeeded())
             {
-                var result = reply.result().body();
-
-                var data = result.getJsonArray(Constants.DATA);
+                var data = reply.result().body().getJsonArray(Constants.DATA);
 
                 if (data != null && !data.isEmpty())
                 {

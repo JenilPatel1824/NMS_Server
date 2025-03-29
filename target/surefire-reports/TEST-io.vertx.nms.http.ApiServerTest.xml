@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="io.vertx.nms.http.ApiServerTest" time="4.633" tests="12" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="io.vertx.nms.http.ApiServerTest" time="3.213" tests="11" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="17"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="IN"/>
     <property name="sun.boot.library.path" value="/usr/lib/jvm/java-17-openjdk-amd64/lib"/>
-    <property name="sun.java.command" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250325131158186_3.jar /home/jenil/Documents/NMS_Server/target/surefire 2025-03-25T13-11-58_120-jvmRun1 surefire-20250325131158186_1tmp surefire_0-20250325131158186_2tmp"/>
+    <property name="sun.java.command" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250329152700728_3.jar /home/jenil/Documents/NMS_Server/target/surefire 2025-03-29T15-27-00_655-jvmRun1 surefire-20250329152700728_1tmp surefire_0-20250329152700728_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="/home/jenil/Documents/NMS_Server/target/test-classes:/home/jenil/Documents/NMS_Server/target/classes:/home/jenil/.m2/repository/io/vertx/vertx-core/4.5.8/vertx-core-4.5.8.jar:/home/jenil/.m2/repository/io/netty/netty-common/4.1.110.Final/netty-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-buffer/4.1.110.Final/netty-buffer-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport/4.1.110.Final/netty-transport-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler/4.1.110.Final/netty-handler-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-transport-native-unix-common/4.1.110.Final/netty-transport-native-unix-common-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec/4.1.110.Final/netty-codec-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-handler-proxy/4.1.110.Final/netty-handler-proxy-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-socks/4.1.110.Final/netty-codec-socks-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http/4.1.110.Final/netty-codec-http-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-http2/4.1.110.Final/netty-codec-http2-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver/4.1.110.Final/netty-resolver-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-resolver-dns/4.1.110.Final/netty-resolver-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/io/netty/netty-codec-dns/4.1.110.Final/netty-codec-dns-4.1.110.Final.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.16.1/jackson-core-2.16.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-web/4.5.8/vertx-web-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-common/4.5.8/vertx-web-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-auth-common/4.5.8/vertx-auth-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-bridge-common/4.5.8/vertx-bridge-common-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-junit5/4.5.1/vertx-junit5-4.5.1.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.8.2/junit-jupiter-params-5.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-web-client/4.5.1/vertx-web-client-4.5.1.jar:/home/jenil/.m2/repository/io/vertx/vertx-uri-template/4.5.8/vertx-uri-template-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-pg-client/4.5.8/vertx-pg-client-4.5.8.jar:/home/jenil/.m2/repository/io/vertx/vertx-sql-client/4.5.8/vertx-sql-client-4.5.8.jar:/home/jenil/.m2/repository/org/zeromq/jeromq/0.5.2/jeromq-0.5.2.jar:/home/jenil/.m2/repository/eu/neilalexander/jnacl/1.0.0/jnacl-1.0.0.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.15.2/jackson-databind-2.15.2.jar:/home/jenil/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.16.1/jackson-annotations-2.16.1.jar:/home/jenil/.m2/repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-classic/1.5.16/logback-classic-1.5.16.jar:/home/jenil/.m2/repository/ch/qos/logback/logback-core/1.5.16/logback-core-1.5.16.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.8.2/junit-jupiter-api-5.8.2.jar:/home/jenil/.m2/repository/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-commons/1.8.2/junit-platform-commons-1.8.2.jar:/home/jenil/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/home/jenil/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.8.2/junit-jupiter-engine-5.8.2.jar:/home/jenil/.m2/repository/org/junit/platform/junit-platform-engine/1.8.2/junit-platform-engine-1.8.2.jar:/home/jenil/.m2/repository/io/vertx/vertx-unit/4.4.4/vertx-unit-4.4.4.jar:/home/jenil/.m2/repository/com/github/javafaker/javafaker/1.0.2/javafaker-1.0.2.jar:/home/jenil/.m2/repository/org/apache/commons/commons-lang3/3.5/commons-lang3-3.5.jar:/home/jenil/.m2/repository/org/yaml/snakeyaml/1.23/snakeyaml-1.23-android.jar:/home/jenil/.m2/repository/com/github/mifmif/generex/1.0.2/generex-1.0.2.jar:/home/jenil/.m2/repository/dk/brics/automaton/automaton/1.11-8/automaton-1.11-8.jar:/home/jenil/.m2/repository/com/github/ben-manes/caffeine/caffeine/3.1.8/caffeine-3.1.8.jar:/home/jenil/.m2/repository/org/checkerframework/checker-qual/3.37.0/checker-qual-3.37.0.jar:/home/jenil/.m2/repository/com/google/errorprone/error_prone_annotations/2.21.1/error_prone_annotations-2.21.1.jar:/home/jenil/.m2/repository/commons-codec/commons-codec/1.16.0/commons-codec-1.16.0.jar:"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -28,7 +28,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
-    <property name="surefire.real.class.path" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250325131158186_3.jar"/>
+    <property name="surefire.real.class.path" value="/home/jenil/Documents/NMS_Server/target/surefire/surefirebooter-20250329152700728_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="17.0.14+7-Ubuntu-120.04"/>
     <property name="user.name" value="jenil"/>
@@ -53,332 +53,189 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="61.0"/>
   </properties>
-  <testcase name="testDiscoveryRun(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="2.535">
-    <system-out><![CDATA[2025-03-25 13:12:09 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - HTTP Server is listening on port 8080
-2025-03-25 13:12:09 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Checked and ensured tables exist.
-2025-03-25 13:12:09 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database -  DatabaseVerticle Eventbus is ready to listen
-2025-03-25 13:12:09 [vert.x-eventloop-thread-4] DEBUG io.vertx.nms.messaging.ZmqMessenger -  zmq message verticle 
-2025-03-25 13:12:09 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - Discovery Run/:210210
-2025-03-25 13:12:09 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: SELECT dp.id, dp.ip, dp.port, cp.id as credential_profile_id, cp.system_type, cp.credentials FROM discovery_profiles dp JOIN credential_profile cp ON dp.credential_profile_id = cp.id WHERE dp.id = $1
-2025-03-25 13:12:09 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: SELECT dp.id, dp.ip, dp.port, cp.id as credential_profile_id, cp.system_type, cp.credentials FROM discovery_profiles dp JOIN credential_profile cp ON dp.credential_profile_id = cp.id WHERE dp.id = $1 with 1 rows
-2025-03-25 13:12:09 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.service.Service - Found IP for request: 10.20.40.233
-2025-03-25 13:12:11 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.service.Service - ZMQ Response: {"community":"public","data":{"systemName":"jenil-ThinkPad-T14s-Gen-1"},"ip":"10.20.40.233","pluginType":"snmp","port":161,"requestType":"discovery","status":"success","version":"2c"}
-2025-03-25 13:12:11 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: UPDATE discovery_profiles SET status = $1 WHERE id = $2
+  <testcase name="testDiscoveryRun(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="2.526">
+    <system-out><![CDATA[2025-03-29 15:27:21 [main] INFO  io.vertx.nms.http.ApiServerTest - Killed existing go_plugin if any.
+2025-03-29 15:27:21 [main] INFO  io.vertx.nms.http.ApiServerTest - go_plugin started successfully.
+2025-03-29 15:27:22 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - HTTP Server is listening on port 8080
+2025-03-29 15:27:22 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Checked and ensured tables exist.
+2025-03-29 15:27:22 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database -  DatabaseVerticle Eventbus is ready to listen
+2025-03-29 15:27:22 [vert.x-eventloop-thread-4] DEBUG io.vertx.nms.messaging.ZmqMessenger - zmq message verticle
+2025-03-29 15:27:22 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - Discovery Run/:97
+2025-03-29 15:27:22 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: select dp.id, dp.ip, dp.port, cp.id as credential_profile_id, cp.system_type, cp.credentials from discovery_profiles dp join credential_profile cp on dp.credential_profile_id = cp.id where dp.id = $1
+2025-03-29 15:27:22 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: select dp.id, dp.ip, dp.port, cp.id as credential_profile_id, cp.system_type, cp.credentials from discovery_profiles dp join credential_profile cp on dp.credential_profile_id = cp.id where dp.id = $1 with 1 rows
+2025-03-29 15:27:22 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.Service - Found IP for request: 192.168.92.223
+2025-03-29 15:27:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.Service - ZMQ Response: {"community":"public","data":{"systemName":"jenil-ThinkPad-T14s-Gen-1"},"ip":"192.168.92.223","pluginType":"snmp","port":161,"requestType":"discovery","status":"success","version":"2c"}
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: update discovery_profiles set status = $1 where id = $2
 ]]></system-out>
   </testcase>
-  <testcase name="testGetInterfacesByUptime(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="1.399">
-    <system-out><![CDATA[2025-03-25 13:12:11 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query:     WITH parsed_data AS (
-        SELECT
-            pj.ip,
-            pd.job_id,
-            pd.polled_at,
-            pd.data->>'system.uptime' AS raw_uptime,
-            REGEXP_REPLACE(pd.data->>'system.uptime', 'Uptime: ', '') AS clean_uptime,
-            (
-                COALESCE((regexp_match(pd.data->>'system.uptime', '(\d+) days'))[1]::INT, 0) * 86400 +
-                COALESCE((regexp_match(pd.data->>'system.uptime', '(\d+) hours'))[1]::INT, 0) * 3600 +
-                COALESCE((regexp_match(pd.data->>'system.uptime', '(\d+) minutes'))[1]::INT, 0) * 60 +
-                COALESCE((regexp_match(pd.data->>'system.uptime', '(\d+) seconds'))[1]::INT, 0)
-            ) AS uptime_seconds
-        FROM provision_data pd
-        JOIN provisioning_jobs pj ON pd.job_id = pj.id
-        WHERE pd.data ? 'system.uptime'
-        AND pd.polled_at >= NOW() - INTERVAL '7 days'
-    ),
-    sequential_polls AS (
-        SELECT
-            current.ip,
-            current.job_id,
-            current.polled_at,
-            current.raw_uptime,
-            current.uptime_seconds,
-            prev.polled_at AS prev_polled_at,
-            prev.raw_uptime AS prev_raw_uptime,
-            prev.uptime_seconds AS prev_uptime_seconds
-        FROM parsed_data current
-        JOIN LATERAL (
-            SELECT p.polled_at, p.raw_uptime, p.uptime_seconds
-            FROM parsed_data p
-            WHERE p.job_id = current.job_id
-            AND p.polled_at < current.polled_at
-            ORDER BY p.polled_at DESC
-            LIMIT 1
-        ) prev ON true
-    ),
-    reboot_events AS (
-        SELECT
-            ip,
-            job_id,
-            polled_at,
-            raw_uptime,
-            uptime_seconds,
-            prev_polled_at,
-            prev_raw_uptime,
-            prev_uptime_seconds
-        FROM sequential_polls
-        WHERE uptime_seconds < prev_uptime_seconds
-    ),
-    reboot_counts AS (
-        SELECT
-            ip,
-            job_id,
-            COUNT(*) AS reboot_count
-        FROM reboot_events
-        GROUP BY ip, job_id
-        HAVING COUNT(*) > 0
-    )
-    SELECT
-        ip,
-        job_id,
-        reboot_count,
-        DENSE_RANK() OVER (ORDER BY reboot_count DESC) AS reboot_rank
-    FROM reboot_counts
-    ORDER BY reboot_rank ASC, ip
-    LIMIT 10;
-
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Skipping cache for query:     WITH parsed_data AS (
-        SELECT
-            pj.ip,
-            pd.job_id,
-            pd.polled_at,
-            pd.data->>'system.uptime' AS raw_uptime,
-            REGEXP_REPLACE(pd.data->>'system.uptime', 'Uptime: ', '') AS clean_uptime,
-            (
-                COALESCE((regexp_match(pd.data->>'system.uptime', '(\d+) days'))[1]::INT, 0) * 86400 +
-                COALESCE((regexp_match(pd.data->>'system.uptime', '(\d+) hours'))[1]::INT, 0) * 3600 +
-                COALESCE((regexp_match(pd.data->>'system.uptime', '(\d+) minutes'))[1]::INT, 0) * 60 +
-                COALESCE((regexp_match(pd.data->>'system.uptime', '(\d+) seconds'))[1]::INT, 0)
-            ) AS uptime_seconds
-        FROM provision_data pd
-        JOIN provisioning_jobs pj ON pd.job_id = pj.id
-        WHERE pd.data ? 'system.uptime'
-        AND pd.polled_at >= NOW() - INTERVAL '7 days'
-    ),
-    sequential_polls AS (
-        SELECT
-            current.ip,
-            current.job_id,
-            current.polled_at,
-            current.raw_uptime,
-            current.uptime_seconds,
-            prev.polled_at AS prev_polled_at,
-            prev.raw_uptime AS prev_raw_uptime,
-            prev.uptime_seconds AS prev_uptime_seconds
-        FROM parsed_data current
-        JOIN LATERAL (
-            SELECT p.polled_at, p.raw_uptime, p.uptime_seconds
-            FROM parsed_data p
-            WHERE p.job_id = current.job_id
-            AND p.polled_at < current.polled_at
-            ORDER BY p.polled_at DESC
-            LIMIT 1
-        ) prev ON true
-    ),
-    reboot_events AS (
-        SELECT
-            ip,
-            job_id,
-            polled_at,
-            raw_uptime,
-            uptime_seconds,
-            prev_polled_at,
-            prev_raw_uptime,
-            prev_uptime_seconds
-        FROM sequential_polls
-        WHERE uptime_seconds < prev_uptime_seconds
-    ),
-    reboot_counts AS (
-        SELECT
-            ip,
-            job_id,
-            COUNT(*) AS reboot_count
-        FROM reboot_events
-        GROUP BY ip, job_id
-        HAVING COUNT(*) > 0
-    )
-    SELECT
-        ip,
-        job_id,
-        reboot_count,
-        DENSE_RANK() OVER (ORDER BY reboot_count DESC) AS reboot_rank
-    FROM reboot_counts
-    ORDER BY reboot_rank ASC, ip
-    LIMIT 10;
- - either result too large (1 rows) or involves provision_data
+  <testcase name="testCredentialProfileGet(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.01">
+    <system-out><![CDATA[2025-03-29 15:27:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - CredentialHandler Get/:1
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: select * from credential_profile where id = $1
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: select * from credential_profile where id = $1 with 1 rows
 ]]></system-out>
   </testcase>
-  <testcase name="testCredentialProfileGet(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.008">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - CredentialHandler Get/:67
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: SELECT * FROM credential_profile WHERE id = $1
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: SELECT * FROM credential_profile WHERE id = $1 with 1 rows
-]]></system-out>
-  </testcase>
-  <testcase name="testGetInterfacesByError(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.007">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: WITH latest_polling AS (
-    SELECT
+  <testcase name="testGetInterfacesByError(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.04">
+    <system-out><![CDATA[2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: with latest_polling as (
+    select
         pj.ip,
-        interface->>'interface.name' AS interface_name,
-        COALESCE((interface->>'interface.sent.error.packets')::INT, 0) +
-        COALESCE((interface->>'interface.received.error.packets')::INT, 0) AS total_errors
-    FROM provisioning_jobs pj
-    JOIN LATERAL (
-        SELECT pd.data AS interfaces
-        FROM provision_data pd
-        WHERE pd.job_id = pj.id
-        AND pd.data->'interfaces' IS NOT NULL  -- Ensure 'interfaces' exists
-        ORDER BY pd.polled_at DESC
-        LIMIT 1
-    ) latest_pd ON true
-    CROSS JOIN jsonb_array_elements(latest_pd.interfaces->'interfaces') AS interface
+        interface->>'interface.name' as interface_name,
+        coalesce((interface->>'interface.sent.error.packets')::int, 0) +
+        coalesce((interface->>'interface.received.error.packets')::int, 0) as total_errors
+    from provisioning_jobs pj
+    join lateral (
+        select pd.data as interfaces
+        from provision_data pd
+        where pd.job_id = pj.id
+        and pd.data->'interfaces' is not null
+        order by to_timestamp(pd.polled_at / 1000.0) desc
+        limit 1
+    ) latest_pd on true
+    cross join jsonb_array_elements(latest_pd.interfaces->'interfaces') as interface
 )
-SELECT ip, interface_name, total_errors, rank
-FROM (
-    SELECT
+select ip, interface_name, total_errors, rank
+from (
+    select
         ip,
         interface_name,
         total_errors,
-        DENSE_RANK() OVER (ORDER BY total_errors DESC) AS rank
-    FROM latest_polling
-    WHERE total_errors > 0
+        dense_rank() over (order by total_errors desc) as rank
+    from latest_polling
+    where total_errors > 0
 ) ranked
-WHERE rank <= 10;
-
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Skipping cache for query: WITH latest_polling AS (
-    SELECT
+where rank <= 10;
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Skipping cache for query: with latest_polling as (
+    select
         pj.ip,
-        interface->>'interface.name' AS interface_name,
-        COALESCE((interface->>'interface.sent.error.packets')::INT, 0) +
-        COALESCE((interface->>'interface.received.error.packets')::INT, 0) AS total_errors
-    FROM provisioning_jobs pj
-    JOIN LATERAL (
-        SELECT pd.data AS interfaces
-        FROM provision_data pd
-        WHERE pd.job_id = pj.id
-        AND pd.data->'interfaces' IS NOT NULL  -- Ensure 'interfaces' exists
-        ORDER BY pd.polled_at DESC
-        LIMIT 1
-    ) latest_pd ON true
-    CROSS JOIN jsonb_array_elements(latest_pd.interfaces->'interfaces') AS interface
+        interface->>'interface.name' as interface_name,
+        coalesce((interface->>'interface.sent.error.packets')::int, 0) +
+        coalesce((interface->>'interface.received.error.packets')::int, 0) as total_errors
+    from provisioning_jobs pj
+    join lateral (
+        select pd.data as interfaces
+        from provision_data pd
+        where pd.job_id = pj.id
+        and pd.data->'interfaces' is not null
+        order by to_timestamp(pd.polled_at / 1000.0) desc
+        limit 1
+    ) latest_pd on true
+    cross join jsonb_array_elements(latest_pd.interfaces->'interfaces') as interface
 )
-SELECT ip, interface_name, total_errors, rank
-FROM (
-    SELECT
+select ip, interface_name, total_errors, rank
+from (
+    select
         ip,
         interface_name,
         total_errors,
-        DENSE_RANK() OVER (ORDER BY total_errors DESC) AS rank
-    FROM latest_polling
-    WHERE total_errors > 0
+        dense_rank() over (order by total_errors desc) as rank
+    from latest_polling
+    where total_errors > 0
 ) ranked
-WHERE rank <= 10;
- - either result too large (4 rows) or involves provision_data
+where rank <= 10; - either result too large (9 rows) or involves provision_data
 ]]></system-out>
   </testcase>
-  <testcase name="testGetInterfacesBySpeed(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.041">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query:         WITH latest_polling AS (
-            SELECT
+  <testcase name="testGetInterfacesBySpeed(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.059">
+    <system-out><![CDATA[2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: with latest_polling as (
+            select
                 pj.ip,
-                interface->>'interface.name' AS interface_name,
-                (interface->>'interface.speed')::BIGINT AS speed
-            FROM provisioning_jobs pj
-            JOIN LATERAL (
-                SELECT pd.data->'interfaces' AS interfaces
-                FROM provision_data pd
-                WHERE pd.job_id = pj.id
-                AND pd.data->'interfaces' IS NOT NULL  -- Ensure 'interfaces' field exists
-                ORDER BY pd.polled_at DESC
-                LIMIT 1
-            ) latest_pd ON true
-            CROSS JOIN jsonb_array_elements(latest_pd.interfaces) AS interface
-            WHERE (interface->>'interface.speed') IS NOT NULL
-            AND (interface->>'interface.speed') ~ '^[0-9]+$'  -- Ensure speed is a valid number
-            AND (interface->>'interface.speed')::BIGINT > 0  -- Ignore speed = 0
+                interface->>'interface.name' as interface_name,
+                (interface->>'interface.speed')::bigint as speed
+            from provisioning_jobs pj
+            join lateral (
+                select pd.data->'interfaces' as interfaces
+                from provision_data pd
+                where pd.job_id = pj.id
+                and pd.data->'interfaces' is not null
+                order by to_timestamp(pd.polled_at / 1000.0) desc
+                limit 1
+            ) latest_pd on true
+            cross join jsonb_array_elements(latest_pd.interfaces) as interface
+            where (interface->>'interface.speed') is not null
+            and (interface->>'interface.speed') ~ '^[0-9]+$'
+            and (interface->>'interface.speed')::bigint > 0
         )
-        SELECT ip, interface_name, speed, rank
-        FROM (
-            SELECT
+        select ip, interface_name, speed, rank
+        from (
+            select
                 ip,
                 interface_name,
                 speed,
-                DENSE_RANK() OVER (ORDER BY speed DESC) AS rank
-            FROM latest_polling
+                dense_rank() over (order by speed desc) as rank
+            from latest_polling
         ) ranked
-        WHERE rank <= 10;
-
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Skipping cache for query:         WITH latest_polling AS (
-            SELECT
+        where rank <= 10;
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Skipping cache for query: with latest_polling as (
+            select
                 pj.ip,
-                interface->>'interface.name' AS interface_name,
-                (interface->>'interface.speed')::BIGINT AS speed
-            FROM provisioning_jobs pj
-            JOIN LATERAL (
-                SELECT pd.data->'interfaces' AS interfaces
-                FROM provision_data pd
-                WHERE pd.job_id = pj.id
-                AND pd.data->'interfaces' IS NOT NULL  -- Ensure 'interfaces' field exists
-                ORDER BY pd.polled_at DESC
-                LIMIT 1
-            ) latest_pd ON true
-            CROSS JOIN jsonb_array_elements(latest_pd.interfaces) AS interface
-            WHERE (interface->>'interface.speed') IS NOT NULL
-            AND (interface->>'interface.speed') ~ '^[0-9]+$'  -- Ensure speed is a valid number
-            AND (interface->>'interface.speed')::BIGINT > 0  -- Ignore speed = 0
+                interface->>'interface.name' as interface_name,
+                (interface->>'interface.speed')::bigint as speed
+            from provisioning_jobs pj
+            join lateral (
+                select pd.data->'interfaces' as interfaces
+                from provision_data pd
+                where pd.job_id = pj.id
+                and pd.data->'interfaces' is not null
+                order by to_timestamp(pd.polled_at / 1000.0) desc
+                limit 1
+            ) latest_pd on true
+            cross join jsonb_array_elements(latest_pd.interfaces) as interface
+            where (interface->>'interface.speed') is not null
+            and (interface->>'interface.speed') ~ '^[0-9]+$'
+            and (interface->>'interface.speed')::bigint > 0
         )
-        SELECT ip, interface_name, speed, rank
-        FROM (
-            SELECT
+        select ip, interface_name, speed, rank
+        from (
+            select
                 ip,
                 interface_name,
                 speed,
-                DENSE_RANK() OVER (ORDER BY speed DESC) AS rank
-            FROM latest_polling
+                dense_rank() over (order by speed desc) as rank
+            from latest_polling
         ) ranked
-        WHERE rank <= 10;
- - either result too large (440 rows) or involves provision_data
+        where rank <= 10; - either result too large (220 rows) or involves provision_data
 ]]></system-out>
   </testcase>
-  <testcase name="testCredentialProfileCreate(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.109">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - CredentialHandler Post
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: INSERT INTO credential_profile (credential_profile_name, system_type, credentials) VALUES ($1, $2, $3)
+  <testcase name="testCredentialProfileCreate(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.092">
+    <system-out><![CDATA[2025-03-29 15:27:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - CredentialHandler Post
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: insert into credential_profile (credential_profile_name, system_type, credentials) values ($1, $2, $3)
 ]]></system-out>
   </testcase>
-  <testcase name="testCredentialProfileUpdate(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.02">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - CredentialHandler Put/:67
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: UPDATE credential_profile SET credential_profile_name = $1, system_type = $2, credentials = $3 WHERE id = $4
+  <testcase name="testCredentialProfileUpdate(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.018">
+    <system-out><![CDATA[2025-03-29 15:27:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - CredentialHandler Put/:1
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: update credential_profile set credential_profile_name = $1, system_type = $2, credentials = $3 where id = $4
 ]]></system-out>
   </testcase>
-  <testcase name="testUpdateProvisionStatus(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.011">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - ProvisionHandler PUT provision start/ 210128
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: SELECT * FROM discovery_profiles WHERE id = $1
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: SELECT * FROM discovery_profiles WHERE id = $1 with 1 rows
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: INSERT INTO provisioning_jobs (credential_profile_id, ip, port) VALUES ($1, $2, $3)
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] ERROR io.vertx.nms.database.Database - Database query failed: ERROR: duplicate key value violates unique constraint "provisioning_jobs_ip_key" (23505)
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: SELECT id, deleted FROM provisioning_jobs WHERE ip = $1
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: SELECT id, deleted FROM provisioning_jobs WHERE ip = $1 with 1 rows
+  <testcase name="testUpdateProvisionStatus(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.019">
+    <system-out><![CDATA[2025-03-29 15:27:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - ProvisionHandler PUT provision start/ 2
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: select * from discovery_profiles where id = $1
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: select * from discovery_profiles where id = $1 with 1 rows
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: insert into provisioning_jobs (credential_profile_id, ip, port) values ($1, $2, $3)
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] ERROR io.vertx.nms.database.Database - Database query failed: ERROR: duplicate key value violates unique constraint "provisioning_jobs_ip_key" (23505)
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: select id, deleted from provisioning_jobs where ip = $1
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: select id, deleted from provisioning_jobs where ip = $1 with 1 rows
 ]]></system-out>
   </testcase>
-  <testcase name="testDiscoveryProfileGet(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.007">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - Discovery Get/: 210129
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: SELECT * FROM discovery_profiles WHERE id = $1
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: SELECT * FROM discovery_profiles WHERE id = $1 with 1 rows
+  <testcase name="testDiscoveryProfileGet(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.01">
+    <system-out><![CDATA[2025-03-29 15:27:24 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - Discovery Get/: 1
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: select * from discovery_profiles where id = $1
+2025-03-29 15:27:24 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: select * from discovery_profiles where id = $1 with 1 rows
 ]]></system-out>
   </testcase>
-  <testcase name="testDiscoveryProfileCreate(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.027">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - Discovery Post/: 
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: INSERT INTO discovery_profiles (discovery_profile_name, credential_profile_id, ip, port) VALUES ($1, $2, $3, $4)
+  <testcase name="testDiscoveryProfileCreate(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.051">
+    <system-out><![CDATA[2025-03-29 15:27:25 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - Discovery Post/: 
+2025-03-29 15:27:25 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: insert into discovery_profiles (discovery_profile_name, credential_profile_id, ip, port) values ($1, $2, $3, $4)
 ]]></system-out>
   </testcase>
-  <testcase name="testGetProvisionData(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.117">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - ProvisionHandler GET /data/:discoveryProfileID 10152
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: SELECT data, polled_at FROM provision_data WHERE job_id = $1 ORDER BY polled_at DESC
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Skipping cache for query: SELECT data, polled_at FROM provision_data WHERE job_id = $1 ORDER BY polled_at DESC - either result too large (272 rows) or involves provision_data
+  <testcase name="testGetProvisionData(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.066">
+    <system-out><![CDATA[2025-03-29 15:27:25 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - ProvisionHandler GET /data/:discoveryProfileID 1
+2025-03-29 15:27:25 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: select data, polled_at from provision_data where job_id = $1 order by polled_at desc
+2025-03-29 15:27:25 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Skipping cache for query: select data, polled_at from provision_data where job_id = $1 order by polled_at desc - either result too large (62 rows) or involves provision_data
 ]]></system-out>
   </testcase>
-  <testcase name="testDiscoveryProfileUpdate(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.026">
-    <system-out><![CDATA[2025-03-25 13:12:13 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - Discovery Put/:210129
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: SELECT * FROM discovery_profiles WHERE id = $1
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: SELECT * FROM discovery_profiles WHERE id = $1 with 1 rows
-2025-03-25 13:12:13 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: UPDATE discovery_profiles SET discovery_profile_name = $1, ip = $2, port = $3, credential_profile_id = $4 WHERE id = $5
+  <testcase name="testDiscoveryProfileUpdate(VertxTestContext)" classname="io.vertx.nms.http.ApiServerTest" time="0.028">
+    <system-out><![CDATA[2025-03-29 15:27:25 [vert.x-eventloop-thread-1] INFO  io.vertx.nms.http.ApiServer - Discovery Put/:1
+2025-03-29 15:27:25 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: select * from discovery_profiles where id = $1
+2025-03-29 15:27:25 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Inserting into cache for query: select * from discovery_profiles where id = $1 with 1 rows
+2025-03-29 15:27:25 [vert.x-eventloop-thread-3] INFO  io.vertx.nms.database.Database - Executing query: update discovery_profiles set discovery_profile_name = $1, ip = $2, port = $3, credential_profile_id = $4 where id = $5
 ]]></system-out>
   </testcase>
 </testsuite>

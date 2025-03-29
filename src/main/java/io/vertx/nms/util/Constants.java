@@ -14,7 +14,9 @@ public class Constants
 
     public static final String DB_PASSWORD = "admin";
 
-    public static final String ZMQ_ADDRESS = "tcp://localhost:5555";
+    public static final String ZMQ_PUSH_ADDRESS = "tcp://localhost:5555";
+
+    public static final String ZMQ_PULL_ADDRESS = "tcp://localhost:5556";
 
 
     public static final String DATABASE_TABLE_DISCOVERY_PROFILE = "discovery_profiles";
@@ -43,6 +45,8 @@ public class Constants
     public static final String EVENTBUS_ZMQ_ADDRESS = "zmq.send";
 
     public static final String EVENTBUS_POLLING_BATCH_ADDRESS = "polling.batch.process";
+
+    public static final String EVENTBUS_POLLING_REPLY_ADDRESS = "polling.reply";
 
 
     public static final String CONDITION = "condition";
@@ -145,5 +149,4 @@ public class Constants
     public static final Set<String> REQUIRED_FIELDS_CREDENTIAL = Set.of(DATABASE_CREDENTIAL_PROFILE_NAME, SYSTEM_TYPE, CREDENTIALS);
 
     public static final Set<String> REQUIRED_FIELDS_DISCOVERY = Set.of(DATABASE_DISCOVERY_PROFILE_NAME, IP, DATABASE_CREDENTIAL_PROFILE_ID,PORT);
-
 }

@@ -19,11 +19,13 @@ public class ZmqMessenger extends AbstractVerticle
 
     private ZMQ.Context context;
 
-    private ZMQ.Socket dealer;
+    private ZMQ.Socket push;
+
+    private ZMQ.Socket pull;
 
     private static final int RESPONSE_CHECK_INTERVAL_MS = 500;
 
-    private static final long REQUEST_TIMEOUT_MS = 258000;
+    private static final long REQUEST_TIMEOUT_MS = 260_000;
 
     private static final long REQUEST_TIMEOUT_CHECK_INTERVAL = 20000;
 
@@ -54,31 +56,41 @@ public class ZmqMessenger extends AbstractVerticle
     @Override
     public void start(Promise<Void> startPromise)
     {
-        logger.debug(" zmq message verticle ");
+        logger.debug("zmq message verticle");
 
-        context = ZMQ.context(1);
-
-        dealer = context.socket(SocketType.DEALER);
-
-        dealer.setReceiveTimeOut(0);
-
-        dealer.setHWM(0);
-
-        dealer.connect(Constants.ZMQ_ADDRESS);
-
-        vertx.eventBus().<JsonObject>localConsumer(Constants.EVENTBUS_ZMQ_ADDRESS, this::handleRequest);
-
-        vertx.setPeriodic(RESPONSE_CHECK_INTERVAL_MS, id ->
+        try
         {
-            checkResponses();
+            context = ZMQ.context(1);
 
-        });
-        vertx.setPeriodic(REQUEST_TIMEOUT_CHECK_INTERVAL, id ->
+            push = context.socket(SocketType.PUSH);
+
+            pull = context.socket(SocketType.PULL);
+
+            boolean success = push.bind(Constants.ZMQ_PUSH_ADDRESS) && pull.bind(Constants.ZMQ_PULL_ADDRESS);
+
+            if (!success)
+            {
+                startPromise.fail("Failed to bind PUSH or PULL socket");
+            }
+            else
+            {
+                pull.setReceiveTimeOut(0);
+
+                vertx.eventBus().localConsumer(Constants.EVENTBUS_ZMQ_ADDRESS, this::handleRequest);
+
+                vertx.setPeriodic(RESPONSE_CHECK_INTERVAL_MS, id -> checkResponses());
+
+                vertx.setPeriodic(REQUEST_TIMEOUT_CHECK_INTERVAL, id -> checkTimeouts());
+
+                startPromise.complete();
+            }
+        }
+        catch (Exception e)
         {
-            checkTimeouts();
-        });
+            logger.error("Error starting ZMQ Verticle", e);
 
-        startPromise.complete();
+            startPromise.fail(e);
+        }
     }
 
     // Handles incoming ZMQ requests.
@@ -88,15 +100,20 @@ public class ZmqMessenger extends AbstractVerticle
     // @param message The incoming message containing the ZMQ request.
     private void handleRequest(Message<JsonObject> message)
     {
-        var requestId =  UUID.randomUUID().toString();
+        if(message.body().getString(Constants.REQUEST_TYPE).equalsIgnoreCase(Constants.DISCOVERY))
+        {
+            var requestId = UUID.randomUUID().toString();
 
-        message.body().put(REQUEST_ID, requestId);
+            message.body().put(REQUEST_ID, requestId);
 
-        pendingRequests.put(requestId, new PendingRequest(message, System.currentTimeMillis()));
+            pendingRequests.put(requestId, new PendingRequest(message, System.currentTimeMillis()));
 
-        dealer.send("", ZMQ.SNDMORE);
+        }
 
-        dealer.send(message.body().toString());
+        if (!push.send(message.body().toString(),ZMQ.DONTWAIT))
+        {
+            logger.error("Sending Failed, queue is full");
+        }
     }
 
      // Checks for and processes any incoming responses from the ZMQ dealer socket.
@@ -106,7 +123,7 @@ public class ZmqMessenger extends AbstractVerticle
      {
          String response;
 
-         while ((response = dealer.recvStr(ZMQ.DONTWAIT)) != null)
+         while ((response = pull.recvStr()) != null)
          {
              if (response.trim().isEmpty())
              {
@@ -115,22 +132,26 @@ public class ZmqMessenger extends AbstractVerticle
 
              try
              {
-                 var replyJson = new JsonObject(response);
+                 var reply = new JsonObject(response);
 
-                 var requestId = replyJson.getString(REQUEST_ID);
-
-                 replyJson.remove(REQUEST_ID);
-
-                 var pendingRequest = pendingRequests.remove(requestId);
-
-                 if (pendingRequest != null)
+                 if (reply.getString(Constants.REQUEST_TYPE).equalsIgnoreCase(Constants.DISCOVERY))
                  {
-                     pendingRequest.message.reply(replyJson);
+                     var pendingRequest = pendingRequests.remove(reply.getString(REQUEST_ID));
 
+                     reply.remove(REQUEST_ID);
+
+                     if (pendingRequest != null)
+                     {
+                         pendingRequest.message.reply(reply);
+                     }
+                     else
+                     {
+                         logger.error("No pending request found for request_id: {}", reply.getString(REQUEST_ID));
+                     }
                  }
                  else
                  {
-                     logger.error("No pending request found for request_id: {}", requestId);
+                     vertx.eventBus().send(Constants.EVENTBUS_POLLING_REPLY_ADDRESS, reply);
                  }
              }
              catch (Exception e)
@@ -145,10 +166,8 @@ public class ZmqMessenger extends AbstractVerticle
     // Removes the timed-out request from the pending requests map.
     private void checkTimeouts()
     {
-        var now = System.currentTimeMillis();
-
         var timedOutRequests = pendingRequests.entrySet().stream()
-                .filter(entry -> now - entry.getValue().timestamp >= REQUEST_TIMEOUT_MS)
+                .filter(entry -> System.currentTimeMillis() - entry.getValue().timestamp >= REQUEST_TIMEOUT_MS)
                 .toList();
 
         timedOutRequests.forEach(entry ->
@@ -164,15 +183,11 @@ public class ZmqMessenger extends AbstractVerticle
     @Override
     public void stop(Promise<Void> stopPromise)
     {
-        if (dealer != null)
-        {
-            dealer.close();
-        }
+        if (push != null) push.close();
 
-        if (context != null)
-        {
-            context.close();
-        }
+        if (pull != null) pull.close();
+
+        if (context != null) context.close();
 
         stopPromise.complete();
     }

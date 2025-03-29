@@ -12,35 +12,60 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PollingProcessor extends AbstractVerticle
 {
     private static final Logger logger = LoggerFactory.getLogger(PollingProcessor.class);
 
-    private static final String DB_QUERY_ADDRESS = Constants.EVENTBUS_DATABASE_ADDRESS;
+    private static final int DATABASE_INSERT_BATCH_SIZE = 20;
 
-    private static final String ZMQ_REQUEST_ADDRESS = Constants.EVENTBUS_ZMQ_ADDRESS;
-
-    private static final int BATCH_SIZE = 100;
-
-    private static final long BATCH_FLUSH_INTERVAL = 10_000;
+    private static final long BATCH_FLUSH_INTERVAL = 20_000;
 
     private static final long BATCH_FLUSH_CHECK_INTERVAL = 10_000;
 
+    private static final long RESPONSE_TIMEOUT = 270_000;
+
+    private static final long CHECK_TIMEOUT_MS = 30_000;
+
     private final List<JsonObject> batchSnmpData = new ArrayList<>();
 
+    private final Map<Long, Long> pendingRequests = new HashMap<>();
+
     private long lastFlushTime = System.currentTimeMillis();
+
+    private final JsonObject requestJson = new JsonObject();
+
+    private final StringBuilder queryBuilder = new StringBuilder();
+
+    private final JsonArray params = new JsonArray();
+
+    private final JsonObject dbRequest = new JsonObject();
 
     @Override
     public void start(Promise<Void> startPromise)
     {
-        vertx.eventBus().<JsonArray>consumer(Constants.EVENTBUS_POLLING_BATCH_ADDRESS, msg ->
+        vertx.eventBus().<JsonArray>localConsumer(Constants.EVENTBUS_POLLING_BATCH_ADDRESS, message ->
         {
-            logger.info("received ");
+            logger.info("received batch of "+message.body().size());
 
-            processDevices(new JsonObject().put(Constants.DATA, msg.body()));
+            clearPendingRequests();
+
+            processDevices(message.body());
         });
+
+        vertx.eventBus().<JsonObject>localConsumer(Constants.EVENTBUS_POLLING_REPLY_ADDRESS, message ->
+        {
+            if(message.body() != null)
+            {
+                addToBatch(message.body().getJsonObject(Constants.DATA), Long.parseLong(message.body().getString(Constants.DATABASE_JOB_ID)));
+            }
+
+        });
+
+        vertx.setPeriodic(CHECK_TIMEOUT_MS, id -> checkPendingTimeouts());
 
         vertx.setPeriodic(BATCH_FLUSH_CHECK_INTERVAL, id -> checkBatchTimeFlush());
 
@@ -53,10 +78,14 @@ public class PollingProcessor extends AbstractVerticle
     // Extracts the Constants.DATA array from the response and iterates through each device.
     // Sends each device's details to the ZMQ request handler.
     // @param body The response object received from the database query, expected to be a JsonObject containing a Constants.DATA array.
-    private void processDevices(JsonObject body)
+    private void processDevices(JsonArray body)
     {
-        body.getJsonArray(Constants.DATA).forEach(entry ->
+        body.forEach(entry ->
         {
+            var device = (JsonObject) entry;
+
+            pendingRequests.put(device.getLong(Constants.DATABASE_JOB_ID), System.currentTimeMillis());
+
             sendZmqRequest((JsonObject) entry);
         });
     }
@@ -67,25 +96,17 @@ public class PollingProcessor extends AbstractVerticle
     // @param device The JSON object containing device details, including IP, credentials, and system type.
     private void sendZmqRequest(JsonObject device)
     {
-        var credentials = device.getJsonObject(Constants.CREDENTIALS);
+        requestJson.clear();
 
-        var request = new JsonObject().put(Constants.IP, device.getString(Constants.IP)).put(Constants.COMMUNITY, credentials.getString(Constants.COMMUNITY))
-                .put(Constants.VERSION, credentials.getString(Constants.VERSION))
-                .put(Constants.REQUEST_TYPE, Constants.POLLING)
-                .put(Constants.PORT,device.getLong(Constants.PORT))
-                .put(Constants.PLUGIN_TYPE, device.getString(Constants.SYSTEM_TYPE));
-
-        vertx.<JsonObject>eventBus().<JsonObject>request(ZMQ_REQUEST_ADDRESS, request,new DeliveryOptions().setSendTimeout(280000),reply ->
-        {
-            if (reply.succeeded() && reply.result().body().getString(Constants.STATUS).equalsIgnoreCase(Constants.SUCCESS))
-            {
-                addToBatch(reply.result().body().getJsonObject(Constants.DATA), device.getLong(Constants.DATABASE_JOB_ID));
-            }
-            else
-            {
-                logger.error("Failed to get SNMP response: ");
-            }
-        });
+        vertx.eventBus().send(Constants.EVENTBUS_ZMQ_ADDRESS, requestJson
+                        .put(Constants.IP, device.getString(Constants.IP))
+                        .put(Constants.COMMUNITY, device.getJsonObject(Constants.CREDENTIALS).getString(Constants.COMMUNITY))
+                        .put(Constants.VERSION, device.getJsonObject(Constants.CREDENTIALS).getString(Constants.VERSION))
+                        .put(Constants.REQUEST_TYPE, Constants.POLLING)
+                        .put(Constants.PORT, device.getLong(Constants.PORT))
+                        .put(Constants.PLUGIN_TYPE, device.getString(Constants.SYSTEM_TYPE))
+                        .put(Constants.DATABASE_JOB_ID, device.getLong(Constants.DATABASE_JOB_ID))
+        );
     }
 
     // Adds SNMP data to the batch for bulk insertion.
@@ -94,29 +115,23 @@ public class PollingProcessor extends AbstractVerticle
     // @param jobId The ID of the job associated with the device.
     private void addToBatch(JsonObject snmpData, long jobId)
     {
-        var istTime = ZonedDateTime.now(ZoneId.of("Asia/Kolkata"));
+        pendingRequests.remove(jobId);
 
-        var timestamp = istTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        batchSnmpData.add(new JsonObject()
+                    .put(Constants.DATABASE_JOB_ID, jobId)
+                    .put(Constants.DATA, snmpData)
+                    .put(Constants.POLLED_AT, System.currentTimeMillis()));
 
-        var entry = new JsonObject()
-                .put(Constants.DATABASE_JOB_ID, jobId)
-                .put(Constants.DATA, snmpData)
-                .put(Constants.POLLED_AT, timestamp);
-
-        batchSnmpData.add(entry);
-
-        if (batchSnmpData.size() >= BATCH_SIZE)
-        {
-            flushBatchData();
-        }
+            if (batchSnmpData.size() >= DATABASE_INSERT_BATCH_SIZE)
+            {
+                flushBatchData();
+            }
     }
 
     // Checks if batch flush interval has passed and flushes if needed.
     private void checkBatchTimeFlush()
     {
-        var currentTime = System.currentTimeMillis();
-
-        if (!batchSnmpData.isEmpty() && (currentTime - lastFlushTime >= BATCH_FLUSH_INTERVAL))
+        if (!batchSnmpData.isEmpty() && (System.currentTimeMillis() - lastFlushTime >= BATCH_FLUSH_INTERVAL))
         {
             flushBatchData();
         }
@@ -127,56 +142,84 @@ public class PollingProcessor extends AbstractVerticle
     {
         logger.info("flushing batch {}", batchSnmpData.size());
 
-        if (batchSnmpData.isEmpty()) return;
+        if (!batchSnmpData.isEmpty())
+        {
+            var batchCopy = new ArrayList<>(batchSnmpData);
 
-        var batchCopy = new ArrayList<>(batchSnmpData);
+            batchSnmpData.clear();
 
-        batchSnmpData.clear();
+            lastFlushTime = System.currentTimeMillis();
 
-        lastFlushTime = System.currentTimeMillis();
-
-        storeSnmpDataBatch(batchCopy);
+            storeSnmpDataBatch(batchCopy);
+        }
     }
 
     // Stores SNMP data in batch.
     // @param snmpDataList List of JSON objects containing SNMP data to be stored.
     private void storeSnmpDataBatch(List<JsonObject> snmpDataList)
     {
-        if (snmpDataList.isEmpty()) return;
-
-        logger.info("Storing {} SNMP records in batch...", snmpDataList.size());
-
-        var queryBuilder = new StringBuilder("INSERT INTO provision_data (job_id, data, polled_at) VALUES ");
-
-        var params = new JsonArray();
-
-        var index = 1;
-
-        for (var data : snmpDataList)
+        if (!snmpDataList.isEmpty())
         {
-            queryBuilder.append("($").append(index++).append(", $").append(index++).append(", $").append(index++).append("),");
+            logger.info("Storing {} SNMP records in batch...", snmpDataList.size());
 
-            params.add(data.getLong(Constants.DATABASE_JOB_ID))
-                    .add(data.getJsonObject(Constants.DATA))
-                    .add(data.getString(Constants.POLLED_AT));
+            queryBuilder.setLength(0);
+
+            params.clear();
+
+            dbRequest.clear();
+
+            queryBuilder.append("insert into provision_data (job_id, data, polled_at) values ");
+
+            var index = 1;
+
+            for (var data : snmpDataList)
+            {
+                queryBuilder.append("($").append(index++).append(", $").append(index++).append(", $").append(index++).append("),");
+
+                params.add(data.getLong(Constants.DATABASE_JOB_ID))
+                        .add(data.getJsonObject(Constants.DATA))
+                        .add(data.getLong(Constants.POLLED_AT));
+            }
+
+            queryBuilder.setLength(queryBuilder.length() - 1);
+
+            vertx.eventBus().send(Constants.EVENTBUS_DATABASE_ADDRESS, dbRequest.put(Constants.QUERY, queryBuilder.toString()).put(Constants.PARAMS, params));
         }
+    }
 
-        queryBuilder.setLength(queryBuilder.length() - 1);
+    // Checks for pending requests that have exceeded the response timeout.
+    // Logs error and removes the timed-out requests from the pending list.
+    private void checkPendingTimeouts()
+    {
+        var now = System.currentTimeMillis();
 
-        queryBuilder.append(" RETURNING id");
+        pendingRequests.entrySet().removeIf(entry -> {
 
-        var queryRequest = new JsonObject().put(Constants.QUERY, queryBuilder.toString()).put(Constants.PARAMS, params);
-
-        vertx.eventBus().<JsonObject>request(DB_QUERY_ADDRESS, queryRequest, reply ->
-        {
-            if (reply.succeeded())
+            if (now - entry.getValue() > RESPONSE_TIMEOUT)
             {
-                logger.info("Batch SNMP data stored successfully.");
+                logger.error("Polling response timeout for jobId {}", entry.getKey());
+
+                return true;
             }
-            else
-            {
-                logger.error("Failed to store SNMP data batch: {}", reply.cause().getMessage());
-            }
+            return false;
         });
+    }
+
+    // Logs all pending requests as errors and clears the pending requests map.
+    // This is called when a new batch starts to reset old pending requests.
+    private void clearPendingRequests()
+    {
+        if (!pendingRequests.isEmpty())
+        {
+            for (Map.Entry<Long, Long> entry : pendingRequests.entrySet())
+            {
+                var jobId = entry.getKey();
+
+                long sentTime = entry.getValue();
+
+                logger.error("pending request detected. jobId={}, sentAt={}", jobId, sentTime);
+            }
+            pendingRequests.clear();
+        }
     }
 }

@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 
+import java.io.File;
+
 public class Main
 {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
@@ -21,24 +23,33 @@ public class Main
 
     private static final String OK = "ok";
 
+    private static Process goProcess;
+
     public static void main(String[] args)
     {
+        startGoPlugin();
+
         try (var context = ZMQ.context(1);
-             var socket = context.socket(SocketType.REQ))
+             var push = context.socket(SocketType.PUSH);
+             var pull = context.socket(SocketType.PULL);)
         {
-            socket.connect(Constants.ZMQ_ADDRESS);
+            push.bind(Constants.ZMQ_PUSH_ADDRESS);
 
-            socket.send(HEALTH_CHECK, ZMQ.NOBLOCK);
+            pull.bind(Constants.ZMQ_PULL_ADDRESS);
 
-            socket.setReceiveTimeOut(500);
+            push.setSendTimeOut(500);
 
-            var response = socket.recvStr();
+            push.send(HEALTH_CHECK );
+
+            pull.setReceiveTimeOut(500);
+
+            var response = pull.recvStr();
 
             if (response == null)
             {
-                logger.error("ZMQ server is not responding.");
+                logger.error("ZMQ server is not responding. Port 5555 might be in use");
 
-                socket.close();
+                pull.close();
 
                 System.exit(1);
             }
@@ -59,42 +70,103 @@ public class Main
         var vertx = Vertx.vertx();
 
         vertx.deployVerticle(new ApiServer())
-            .compose(apiRes ->
+                .compose(apiRes ->
+                {
+                    logger.info("HTTP server verticle deployed");
+
+                    return vertx.deployVerticle(Database.class.getName());
+                })
+                .compose(databaseRes ->
+                {
+                    logger.info("Database verticle deployed");
+
+                    return vertx.deployVerticle(ZmqMessenger.class.getName());
+                })
+                .compose(zmqRes ->
+                {
+                    logger.info("ZMQ Messenger verticle deployed");
+
+                    return vertx.deployVerticle(PollingProcessor.class.getName(), new DeploymentOptions().setInstances(1));
+                })
+                .compose(pollingRes ->
+                {
+                    logger.info("Polling engine verticle deployed");
+
+                    return vertx.deployVerticle(PollingScheduler.class.getName());
+                })
+                .onSuccess(schedulerRes ->
+                {
+                    logger.info("Scheduler verticle deployed");
+
+                    logger.info("All verticles deployed successfully.");
+                })
+                .onFailure(err ->
+                {
+                    logger.error("Failed to deploy verticles: {}", err.getMessage());
+
+                    vertx.close();
+                });
+    }
+
+    // startGoPlugin starts go plugin using process builder
+    private static void startGoPlugin()
+    {
+        try
+        {
+            try
             {
-                logger.info("HTTP server verticle deployed");
+                var killProcessBuilder = new ProcessBuilder("pkill", "-f", "go_plugin");
 
-                return vertx.deployVerticle(Database.class.getName());
-            })
-            .compose(dbRes ->
+                killProcessBuilder.start().waitFor();
+
+                logger.info("Killed existing go_plugin if any.");
+            }
+
+            catch (Exception e)
             {
-                logger.info("Database verticle deployed");
+                logger.warn("No existing go_plugin found or failed to kill: {}", e.getMessage());
+            }
 
-                return vertx.deployVerticle(ZmqMessenger.class.getName());
-            })
-            .compose(zmqRes ->
+            var projectDir = System.getProperty("user.dir");
+
+            var goPlugin = new File(projectDir + "/go_executable/go_plugin");
+
+            if (!goPlugin.exists())
             {
-                logger.info("ZMQ Messenger verticle deployed");
+                logger.error("go_plugin not found at: {}", goPlugin.getAbsolutePath());
 
-                return vertx.deployVerticle(PollingProcessor.class.getName(),new DeploymentOptions().setInstances(1));
-            })
-            .compose(pollingRes ->
+                System.exit(1);
+            }
+
+            if (!goPlugin.canExecute())
             {
-                logger.info("Polling engine verticle deployed");
+                logger.error("go_plugin is not executable. Please run: chmod +x {}", goPlugin.getAbsolutePath());
 
-                return vertx.deployVerticle(PollingScheduler.class.getName());
+                System.exit(1);
+            }
 
-            })
-            .onSuccess(schedulerRes ->
+            var processBuilder = new ProcessBuilder(goPlugin.getAbsolutePath());
+
+            goProcess = processBuilder.start();
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() ->
             {
-                logger.info("Scheduler verticle deployed");
+                if (goProcess.isAlive())
+                {
+                    goProcess.destroy();
 
-                logger.info("All verticles deployed successfully.");
-            })
-            .onFailure(err ->
-            {
-                logger.error("Failed to deploy verticles: {}", err.getMessage());
+                    logger.info("go_plugin terminated on JVM shutdown.");
+                }
+            }));
 
-                vertx.close();
-            });
+            logger.info("go_plugin started successfully.");
+
+        }
+        catch (Exception e)
+        {
+            logger.error("Failed to start go_plugin: {}", e.getMessage());
+
+            System.exit(1);
+        }
     }
 }
