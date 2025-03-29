@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,7 +41,7 @@ public class Database extends AbstractVerticle
 
     private Cache<String, CacheEntry> cache;
 
-    private final Map<String, Set<String>> tableToCacheKeys = new HashMap<>();
+    private final Map<String, Set<String>> tableToCacheKeys = new ConcurrentHashMap<>();
 
     private static final String INSERT_TABLE_NAME_REGEX = "insert\\s+into\\s+((\"[^\"]+\"|[^\\s(]+))";
 
@@ -220,7 +222,7 @@ public class Database extends AbstractVerticle
 
                                     parseTablesForSelect(finalQuery).forEach(table ->
                                     {
-                                        tableToCacheKeys.computeIfAbsent(table, k -> new HashSet<>()).add(generateCacheKey(finalQuery, finalParams));
+                                        tableToCacheKeys.computeIfAbsent(table, k -> new CopyOnWriteArraySet<>()).add(generateCacheKey(finalQuery, finalParams));
                                     });
 
                                 }
@@ -258,7 +260,7 @@ public class Database extends AbstractVerticle
                         }
                     });
 
-                },  res -> {
+                },false, res -> {
 
                     if (res.succeeded())
                     {
@@ -294,9 +296,6 @@ public class Database extends AbstractVerticle
     // Creates tables if they do not already exist and sets up necessary constraints.
     private Future<Object> init()
     {
-
-        var promise = Promise.promise();
-
         var createTablesAndIndexesQuery = """
             CREATE TABLE IF NOT EXISTS credential_profile (
             id SERIAL PRIMARY KEY,
@@ -344,23 +343,24 @@ public class Database extends AbstractVerticle
             CREATE INDEX IF NOT EXISTS idx_provision_data_jsonb ON provision_data USING GIN (data);
         """;
 
-        pgClient.query(createTablesAndIndexesQuery).execute(ar ->
+        return vertx.executeBlocking(promise ->
         {
-            if (ar.succeeded())
+            pgClient.query(createTablesAndIndexesQuery).execute(ar ->
             {
-                logger.info("Checked and ensured tables exist.");
+                if (ar.succeeded())
+                {
+                    logger.info("Checked and ensured tables exist.");
 
-                promise.complete();
-            }
-            else
-            {
-                logger.error("Failed to create tables: {}", ar.cause().getMessage());
+                    promise.complete();
+                }
+                else
+                {
+                    logger.error("Failed to create tables: {}", ar.cause().getMessage());
 
-                promise.fail(ar.cause());
-            }
+                    promise.fail(ar.cause());
+                }
+            });
         });
-
-        return promise.future();
     }
 
     // Generates a cache key by hashing the query and parameters.

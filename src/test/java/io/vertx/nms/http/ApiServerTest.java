@@ -37,7 +37,6 @@ class ApiServerTest
 
     private static final Logger logger = LoggerFactory.getLogger(ApiServerTest.class);
 
-
     @BeforeAll
     static void setup(VertxTestContext testContext)
     {
