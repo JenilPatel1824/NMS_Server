@@ -1,7 +1,5 @@
 package io.vertx.nms.database;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -18,23 +16,30 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 public class Database extends AbstractVerticle
 {
     private static final int MAX_CACHEABLE_ROWS = 1000;
 
-    private record CacheEntry(JsonObject response, Set<String> tables) {}
+    private static final int MAX_CACHE_SIZE = 20;
+
+    private static final long CACHE_EXPIRATION_MS = 30 * 60 * 1000;
+
+    private static final long CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+
+    private record CacheEntry(JsonObject response, Set<String> tables, long timestamp) {}
 
     private static final Logger logger = LoggerFactory.getLogger(Database.class);
 
     private PgPool pgClient;
 
-    private Cache<String, CacheEntry> cache;
-
     private final Map<String, Set<String>> tableToCacheKeys = new ConcurrentHashMap<>();
+
+    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
+
+    private final AtomicBoolean cleanupScheduled = new AtomicBoolean(false);
 
     private static final String INSERT_INTO_PROVISION_DATA = "insert into provision_data";
 
@@ -54,32 +59,7 @@ public class Database extends AbstractVerticle
 
         pgClient = PgPool.pool(vertx, connectOptions, poolOptions);
 
-        cache = Caffeine.newBuilder()
-                .maximumSize(20)
-                .expireAfterWrite(30, TimeUnit.MINUTES)
-                .removalListener((key, value, cause) ->
-                {
-                    if (value != null)
-                    {
-                        var entry = (CacheEntry) value;
-
-                        entry.tables.forEach(table ->
-                        {
-                            var keys = tableToCacheKeys.get(table);
-
-                            if (keys != null)
-                            {
-                                keys.remove(key);
-
-                                if (keys.isEmpty())
-                                {
-                                    tableToCacheKeys.remove(table);
-                                }
-                            }
-                        });
-                    }
-                })
-                .build();
+        scheduleCacheCleanup();
 
         init().onComplete(ar ->
         {
@@ -96,6 +76,89 @@ public class Database extends AbstractVerticle
                 startPromise.fail(ar.cause());
             }
         });
+    }
+
+    // Custom cache implementation methods
+    private void scheduleCacheCleanup()
+    {
+        if (cleanupScheduled.compareAndSet(false, true))
+        {
+            vertx.setPeriodic(CLEANUP_INTERVAL_MS, id ->
+            {
+                var now = System.currentTimeMillis();
+
+                cache.entrySet().removeIf(entry ->
+                {
+                    var expired = now - entry.getValue().timestamp() > CACHE_EXPIRATION_MS;
+
+                    if (expired)
+                    {
+                        removeFromTableMapping(entry.getKey(), entry.getValue().tables());
+                    }
+                    return expired;
+                });
+            });
+        }
+    }
+
+    private CacheEntry getFromCache(String key)
+    {
+        var entry = cache.get(key);
+
+        if (entry != null && System.currentTimeMillis() - entry.timestamp() < CACHE_EXPIRATION_MS)
+        {
+            return entry;
+        }
+        if (entry != null)
+        {
+            cache.remove(key);
+
+            removeFromTableMapping(key, entry.tables());
+        }
+        return null;
+    }
+
+    private void putInCache(String key, JsonObject response, Set<String> tables) {
+        if (cache.size() >= MAX_CACHE_SIZE)
+        {
+            evictOldestEntry();
+        }
+
+        var newEntry = new CacheEntry(response, tables, System.currentTimeMillis());
+
+        cache.put(key, newEntry);
+
+        tables.forEach(table -> tableToCacheKeys.computeIfAbsent(table, k -> ConcurrentHashMap.newKeySet()).add(key)
+        );
+    }
+
+    private void evictOldestEntry()
+    {
+        cache.entrySet().stream()
+                .min(Comparator.comparingLong(entry -> entry.getValue().timestamp()))
+                .ifPresent(oldest ->
+                {
+                    cache.remove(oldest.getKey());
+
+                    removeFromTableMapping(oldest.getKey(), oldest.getValue().tables());
+                });
+    }
+
+    private void removeFromTableMapping(String key, Set<String> tables)
+    {
+        tables.forEach(table ->
+                tableToCacheKeys.computeIfPresent(table, (k, keys) ->
+                {
+                    keys.remove(key);
+
+                    return keys.isEmpty() ? null : keys;
+                })
+        );
+    }
+
+    private void invalidateCacheForTables(Set<String> tables)
+    {
+        tables.forEach(table -> tableToCacheKeys.getOrDefault(table, Collections.emptySet()).forEach(cache::remove));
     }
 
     //Sets up an EventBus consumer to handle database queries, execute them using the PostgreSQL client,
@@ -131,11 +194,13 @@ public class Database extends AbstractVerticle
 
             if ((query.startsWith(Constants.SELECT) || query.startsWith(Constants.WITH)) && !queryInvolvesProvisionData(query))
             {
-                if (cache.getIfPresent(Util.generateCacheKey(query, params)) != null)
+                 var entry = getFromCache((Util.generateCacheKey(query, params)));
+
+                if (entry != null)
                 {
                     logger.info("Cache hit for query: {}", query);
 
-                    message.reply(cache.getIfPresent(Util.generateCacheKey(query, params)).response);
+                    message.reply(entry.response());
 
                     cacheHit=true;
                 }
@@ -169,10 +234,7 @@ public class Database extends AbstractVerticle
 
                             if (isInsertOrUpdate || finalQuery.startsWith(Constants.DELETE))
                             {
-                                Util.parseTablesForMutation(finalQuery).forEach(table ->
-                                {
-                                    new ArrayList<>(tableToCacheKeys.getOrDefault(table, Collections.emptySet())).forEach(cache::invalidate);
-                                });
+                                invalidateCacheForTables(Util.parseTablesForMutation(finalQuery));
                             }
 
                             if (finalQuery.startsWith(Constants.SELECT) || finalQuery.startsWith(Constants.WITH))
@@ -201,15 +263,9 @@ public class Database extends AbstractVerticle
                                 {
                                     logger.info("Inserting into cache for query: {} with {} rows", finalQuery, resultData.size());
 
-                                    cache.put(Util.generateCacheKey(finalQuery, finalParams),
-                                            new CacheEntry(response.put(Constants.DATA, resultData),
-                                                    Util.parseTablesForSelect(finalQuery)));
-
-                                    Util.parseTablesForSelect(finalQuery).forEach(table ->
-                                    {
-                                        tableToCacheKeys.computeIfAbsent(table, k -> new CopyOnWriteArraySet<>()).add(Util.generateCacheKey(finalQuery, finalParams));
-                                    });
-
+                                    putInCache(Util.generateCacheKey(finalQuery, finalParams),
+                                            response.put(Constants.DATA, resultData),
+                                            Util.parseTablesForSelect(finalQuery));
                                 }
                                 else
                                 {
@@ -365,7 +421,7 @@ public class Database extends AbstractVerticle
             {
                 if (ar.succeeded())
                 {
-                    cache.invalidateAll();
+                    cache.clear();
 
                     stopPromise.complete();
                 }
@@ -377,7 +433,7 @@ public class Database extends AbstractVerticle
         }
         else
         {
-            cache.invalidateAll();
+            cache.clear();
 
             stopPromise.complete();
         }
