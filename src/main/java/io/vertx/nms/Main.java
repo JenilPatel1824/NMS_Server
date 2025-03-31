@@ -25,6 +25,8 @@ public class Main
 
     private static Process goProcess;
 
+    public static final String ZMQ_WORKER_POOL_NAME = "zmq-receiver";
+
     public static void main(String[] args)
     {
         startGoPlugin();
@@ -69,18 +71,18 @@ public class Main
 
         var vertx = Vertx.vertx();
 
-        vertx.deployVerticle(new ApiServer())
+        vertx.deployVerticle(ApiServer.class.getName())
                 .compose(apiRes ->
                 {
                     logger.info("HTTP server verticle deployed");
 
                     return vertx.deployVerticle(Database.class.getName());
                 })
-                .compose(databaseRes ->
+                    .compose(databaseRes ->
                 {
                     logger.info("Database verticle deployed");
 
-                    return vertx.deployVerticle(ZmqMessenger.class.getName());
+                    return vertx.deployVerticle(ZmqMessenger.class.getName(),new DeploymentOptions().setWorkerPoolName(ZMQ_WORKER_POOL_NAME).setWorkerPoolSize(1));
                 })
                 .compose(zmqRes ->
                 {

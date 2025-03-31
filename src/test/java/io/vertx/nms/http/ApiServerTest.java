@@ -242,7 +242,7 @@ class ApiServerTest
     @Test
     void testDiscoveryRun(VertxTestContext testContext)
     {
-        var discoveryProfileId = "97";
+        var discoveryProfileId = "1";
 
         webClient.post(8080, "localhost", "/discovery/" + discoveryProfileId + "/run")
                 .send(response ->

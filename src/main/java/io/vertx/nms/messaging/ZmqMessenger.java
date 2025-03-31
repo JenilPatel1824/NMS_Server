@@ -23,7 +23,7 @@ public class ZmqMessenger extends AbstractVerticle
 
     private ZMQ.Socket pull;
 
-    private static final int RESPONSE_CHECK_INTERVAL_MS = 500;
+    private static final int RESPONSE_CHECK_INTERVAL_MS = 1000;
 
     private static final long REQUEST_TIMEOUT_MS = 260_000;
 
@@ -121,44 +121,47 @@ public class ZmqMessenger extends AbstractVerticle
      // Parses the response and matches it to a pending request using the request ID.
      private void checkResponses()
      {
-         String response;
-
-         while ((response = pull.recvStr()) != null)
+         vertx.executeBlocking(promise ->
          {
-             if (response.trim().isEmpty())
-             {
-                 continue;
-             }
+             String response;
 
-             try
+             while ((response = pull.recvStr()) != null)
              {
-                 var reply = new JsonObject(response);
-
-                 if (reply.getString(Constants.REQUEST_TYPE).equalsIgnoreCase(Constants.DISCOVERY))
+                 if (response.trim().isEmpty())
                  {
-                     var pendingRequest = pendingRequests.remove(reply.getString(REQUEST_ID));
+                     continue;
+                 }
 
-                     reply.remove(REQUEST_ID);
+                 try
+                 {
+                     var reply = new JsonObject(response);
 
-                     if (pendingRequest != null)
+                     if (reply.getString(Constants.REQUEST_TYPE).equalsIgnoreCase(Constants.DISCOVERY))
                      {
-                         pendingRequest.message.reply(reply);
+                         var pendingRequest = pendingRequests.remove(reply.getString(REQUEST_ID));
+
+                         reply.remove(REQUEST_ID);
+
+                         if (pendingRequest != null)
+                         {
+                             pendingRequest.message.reply(reply);
+                         }
+                         else
+                         {
+                             logger.error("No pending request found for request_id: {}", reply.getString(REQUEST_ID));
+                         }
                      }
                      else
                      {
-                         logger.error("No pending request found for request_id: {}", reply.getString(REQUEST_ID));
+                         vertx.eventBus().send(Constants.EVENTBUS_POLLING_REPLY_ADDRESS, reply);
                      }
-                 }
-                 else
+                 } catch (Exception e)
                  {
-                     vertx.eventBus().send(Constants.EVENTBUS_POLLING_REPLY_ADDRESS, reply);
+                     logger.error("Failed to parse response as JSON: {} from plugin", response, e);
                  }
              }
-             catch (Exception e)
-             {
-                 logger.error("Failed to parse response as JSON: {} from plugin", response, e);
-             }
-         }
+             promise.complete();
+         });
      }
 
     // Checks for and handles any pending requests that have timed out.

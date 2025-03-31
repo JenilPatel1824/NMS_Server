@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: io.vertx.nms.http.ApiServerTest
 -------------------------------------------------------------------------------
-Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.213 s -- in io.vertx.nms.http.ApiServerTest
+Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.044 s -- in io.vertx.nms.http.ApiServerTest
