@@ -101,6 +101,9 @@ public class Database extends AbstractVerticle
         }
     }
 
+    // Retrieves a cache entry if it is still valid; otherwise, removes expired entries.
+    // @param key The cache key to look up.
+    // @return The cached entry if valid, otherwise null.
     private CacheEntry getFromCache(String key)
     {
         var entry = cache.get(key);
@@ -118,7 +121,12 @@ public class Database extends AbstractVerticle
         return null;
     }
 
-    private void putInCache(String key, JsonObject response, Set<String> tables) {
+    // Stores a response in the cache, evicting the oldest entry if the cache is full.
+    // @param key The cache key.
+    // @param response The JSON response to store.
+    // @param tables The set of tables associated with the cache entry.
+    private void putInCache(String key, JsonObject response, Set<String> tables)
+    {
         if (cache.size() >= MAX_CACHE_SIZE)
         {
             evictOldestEntry();
@@ -128,8 +136,7 @@ public class Database extends AbstractVerticle
 
         cache.put(key, newEntry);
 
-        tables.forEach(table -> tableToCacheKeys.computeIfAbsent(table, k -> ConcurrentHashMap.newKeySet()).add(key)
-        );
+        tables.forEach(table -> tableToCacheKeys.computeIfAbsent(table, k -> ConcurrentHashMap.newKeySet()).add(key));
     }
 
     private void evictOldestEntry()
@@ -156,6 +163,8 @@ public class Database extends AbstractVerticle
         );
     }
 
+    // Invalidates cache entries associated with the given tables.
+    // @param tables The set of tables whose cache entries should be removed.
     private void invalidateCacheForTables(Set<String> tables)
     {
         tables.forEach(table -> tableToCacheKeys.getOrDefault(table, Collections.emptySet()).forEach(cache::remove));
