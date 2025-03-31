@@ -8,6 +8,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.nms.util.Constants;
+import io.vertx.nms.util.Util;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
@@ -42,14 +43,6 @@ public class Database extends AbstractVerticle
     private Cache<String, CacheEntry> cache;
 
     private final Map<String, Set<String>> tableToCacheKeys = new ConcurrentHashMap<>();
-
-    private static final String INSERT_TABLE_NAME_REGEX = "insert\\s+into\\s+((\"[^\"]+\"|[^\\s(]+))";
-
-    private static final String UPDATE_TABLE_NAME_REGEX = "update\\s+((\"[^\"]+\"|[^\\s]+))";
-
-    private static final String DELETE_TABLE_NAME_REGEX = "delete\\s+from\\s+((\"[^\"]+\"|[^\\s]+))";
-
-    private static final String PARSE_TABLE_REGX = "(?:from|join)\\s+([^\\s,)(]+)";
 
     private static final String INSERT_INTO_PROVISION_DATA = "insert into provision_data";
 
@@ -146,11 +139,11 @@ public class Database extends AbstractVerticle
 
             if ((query.startsWith(Constants.SELECT) || query.startsWith(Constants.WITH)) && !queryInvolvesProvisionData(query))
             {
-                if (cache.getIfPresent(generateCacheKey(query, params)) != null)
+                if (cache.getIfPresent(Util.generateCacheKey(query, params)) != null)
                 {
                     logger.info("Cache hit for query: {}", query);
 
-                    message.reply(cache.getIfPresent(generateCacheKey(query, params)).response);
+                    message.reply(cache.getIfPresent(Util.generateCacheKey(query, params)).response);
 
                     cacheHit=true;
                 }
@@ -184,7 +177,7 @@ public class Database extends AbstractVerticle
 
                             if (isInsertOrUpdate || finalQuery.startsWith(Constants.DELETE))
                             {
-                                parseTablesForMutation(finalQuery).forEach(table ->
+                                Util.parseTablesForMutation(finalQuery).forEach(table ->
                                 {
                                     new ArrayList<>(tableToCacheKeys.getOrDefault(table, Collections.emptySet())).forEach(cache::invalidate);
                                 });
@@ -216,13 +209,13 @@ public class Database extends AbstractVerticle
                                 {
                                     logger.info("Inserting into cache for query: {} with {} rows", finalQuery, resultData.size());
 
-                                    cache.put(generateCacheKey(finalQuery, finalParams),
+                                    cache.put(Util.generateCacheKey(finalQuery, finalParams),
                                             new CacheEntry(response.put(Constants.DATA, resultData),
-                                                    parseTablesForSelect(finalQuery)));
+                                                    Util.parseTablesForSelect(finalQuery)));
 
-                                    parseTablesForSelect(finalQuery).forEach(table ->
+                                    Util.parseTablesForSelect(finalQuery).forEach(table ->
                                     {
-                                        tableToCacheKeys.computeIfAbsent(table, k -> new CopyOnWriteArraySet<>()).add(generateCacheKey(finalQuery, finalParams));
+                                        tableToCacheKeys.computeIfAbsent(table, k -> new CopyOnWriteArraySet<>()).add(Util.generateCacheKey(finalQuery, finalParams));
                                     });
 
                                 }
@@ -363,107 +356,12 @@ public class Database extends AbstractVerticle
         });
     }
 
-    // Generates a cache key by hashing the query and parameters.
-    // @param query  The SQL query string.
-    // @param params The parameters used in the query as a JsonArray.
-    // @return A SHA-1 hashed string representing the cache key.
-    private String generateCacheKey(String query, JsonArray params)
-    {
-        return DigestUtils.sha1Hex(query + params.toString());
-    }
-
     // Checks if a query involves the provision_data table
     // @param query The SQL query string.
     // @return True if the query involves the provision_data table, false otherwise.
     private boolean queryInvolvesProvisionData(String query)
     {
         return query.contains(Constants.DATABASE_TABLE_PROVISION_DATA);
-    }
-
-    // Extracts table names from a SELECT query using regex pattern matching.
-    // @param query The SQL SELECT query string.
-    // @return A set of table names found in the query.
-    private Set<String> parseTablesForSelect(String query)
-    {
-        var tables = new HashSet<String>();
-
-        var matcher = Pattern.compile(PARSE_TABLE_REGX, Pattern.CASE_INSENSITIVE).matcher(query.toLowerCase());
-
-        while (matcher.find())
-        {
-            var table = matcher.group(1).replaceAll("\"", "");
-
-            if (table.contains("."))
-            {
-                table = table.substring(table.lastIndexOf('.') + 1);
-            }
-
-            tables.add(table);
-        }
-        return tables;
-    }
-
-    // Extracts table names from an INSERT, UPDATE, or DELETE query using regex pattern matching.
-    // @param query The SQL mutation query (INSERT, UPDATE, or DELETE).
-    // @return A set of table names affected by the mutation.
-    private Set<String> parseTablesForMutation(String query)
-    {
-        var tables = new HashSet<String>();
-
-        Matcher matcher;
-
-        if (query.startsWith(Constants.INSERT))
-        {
-            var insertPattern = Pattern.compile(INSERT_TABLE_NAME_REGEX, Pattern.CASE_INSENSITIVE);
-
-            matcher = insertPattern.matcher(query);
-
-            if (matcher.find())
-            {
-                var table = matcher.group(1).replaceAll("\"", "");
-
-                if (table.contains("."))
-                {
-                    table = table.substring(table.lastIndexOf('.') + 1);
-                }
-
-                tables.add(table);
-            }
-        }
-        else if (query.startsWith(Constants.UPDATE))
-        {
-            matcher = Pattern.compile(UPDATE_TABLE_NAME_REGEX, Pattern.CASE_INSENSITIVE).matcher(query);
-
-            if (matcher.find())
-            {
-                var table = matcher.group(1).replaceAll("\"", "");
-
-                if (table.contains("."))
-                {
-                    table = table.substring(table.lastIndexOf('.') + 1);
-                }
-
-                tables.add(table);
-            }
-        }
-        else if (query.startsWith(Constants.DELETE))
-        {
-            matcher = Pattern.compile(DELETE_TABLE_NAME_REGEX, Pattern.CASE_INSENSITIVE).matcher(query);
-
-            if (matcher.find())
-            {
-                var table = matcher.group(1).replaceAll("\"", "");
-
-                if (table.contains("."))
-                {
-                    table = table.substring(table.lastIndexOf('.') + 1);
-                }
-
-                tables.add(table);
-            }
-        }
-
-        return tables;
     }
 
     @Override

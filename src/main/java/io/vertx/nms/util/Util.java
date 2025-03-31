@@ -1,13 +1,17 @@
 package io.vertx.nms.util;
 
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Util
@@ -17,6 +21,14 @@ public class Util
     private static final String MISSING_REQUIRED_FIELD = "Missing or empty required field: ";
 
     private static final String IPV4_REGX = "^((25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[0-1]?[0-9][0-9]?)$";
+
+    private static final String INSERT_TABLE_NAME_REGEX = "insert\\s+into\\s+((\"[^\"]+\"|[^\\s(]+))";
+
+    private static final String UPDATE_TABLE_NAME_REGEX = "update\\s+((\"[^\"]+\"|[^\\s]+))";
+
+    private static final String DELETE_TABLE_NAME_REGEX = "delete\\s+from\\s+((\"[^\"]+\"|[^\\s]+))";
+
+    private static final String PARSE_TABLE_REGX = "(?:from|join)\\s+([^\\s,)(]+)";
 
     // Validates the request body based on the table name.
     // Ensures that all required fields are present and not empty.
@@ -203,5 +215,100 @@ public class Util
 
             return false;
         }
+    }
+
+    // Generates a cache key by hashing the query and parameters.
+    // @param query  The SQL query string.
+    // @param params The parameters used in the query as a JsonArray.
+    // @return A SHA-1 hashed string representing the cache key.
+    public static String generateCacheKey(String query, JsonArray params)
+    {
+        return DigestUtils.sha1Hex(query + params.toString());
+    }
+
+    // Extracts table names from an INSERT, UPDATE, or DELETE query using regex pattern matching.
+    // @param query The SQL mutation query (INSERT, UPDATE, or DELETE).
+    // @return A set of table names affected by the mutation.
+    public static Set<String> parseTablesForMutation(String query)
+    {
+        var tables = new HashSet<String>();
+
+        Matcher matcher;
+
+        if (query.startsWith(Constants.INSERT))
+        {
+            var insertPattern = Pattern.compile(INSERT_TABLE_NAME_REGEX, Pattern.CASE_INSENSITIVE);
+
+            matcher = insertPattern.matcher(query);
+
+            if (matcher.find())
+            {
+                var table = matcher.group(1).replaceAll("\"", "");
+
+                if (table.contains("."))
+                {
+                    table = table.substring(table.lastIndexOf('.') + 1);
+                }
+
+                tables.add(table);
+            }
+        }
+        else if (query.startsWith(Constants.UPDATE))
+        {
+            matcher = Pattern.compile(UPDATE_TABLE_NAME_REGEX, Pattern.CASE_INSENSITIVE).matcher(query);
+
+            if (matcher.find())
+            {
+                var table = matcher.group(1).replaceAll("\"", "");
+
+                if (table.contains("."))
+                {
+                    table = table.substring(table.lastIndexOf('.') + 1);
+                }
+
+                tables.add(table);
+            }
+        }
+        else if (query.startsWith(Constants.DELETE))
+        {
+            matcher = Pattern.compile(DELETE_TABLE_NAME_REGEX, Pattern.CASE_INSENSITIVE).matcher(query);
+
+            if (matcher.find())
+            {
+                var table = matcher.group(1).replaceAll("\"", "");
+
+                if (table.contains("."))
+                {
+                    table = table.substring(table.lastIndexOf('.') + 1);
+                }
+
+                tables.add(table);
+            }
+        }
+
+        return tables;
+    }
+
+    // Extracts table names from a SELECT query using regex pattern matching.
+    // @param query The SQL SELECT query string.
+    // @return A set of table names found in the query.
+    public static Set<String> parseTablesForSelect(String query)
+    {
+        var tables = new HashSet<String>();
+
+        var matcher = Pattern.compile(PARSE_TABLE_REGX, Pattern.CASE_INSENSITIVE).matcher(query.toLowerCase());
+
+        while (matcher.find())
+        {
+            var table = matcher.group(1).replaceAll("\"", "");
+
+            if (table.contains("."))
+            {
+                table = table.substring(table.lastIndexOf('.') + 1);
+            }
+
+            tables.add(table);
+        }
+        return tables;
     }
 }
